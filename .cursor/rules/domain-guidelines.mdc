@@ -1,0 +1,401 @@
+---
+title: "Domain Guidelines"
+description: "Business entities and domain rules for RFP Draft Booster"
+---
+
+# Domain Guidelines
+
+## Overview
+
+This document defines the core business entities, their relationships, and business rules for the RFP Draft Booster system.
+
+## Purpose
+
+Maintain business domain entities in `/domain` folder, updating them automatically when new PRDs or Jira tickets introduce changes.
+
+## Core Rules
+
+### Entity Files
+- **One file per entity** named in descriptive form (e.g., `rfp-entity.md`, `requirement-entity.md`)
+- **No code** - only business descriptions, properties, rules, and relationships
+- **Keep well-organized** and comprehensive
+
+### Missing Information Handling
+- **Ask for clarification** if inconsistencies exist
+- **Mark missing info** as: `**Missing information**`
+- **Mark inconsistencies** as: `**Inconsistent: In ticket XYZ-1234 the rule is: ...**`
+
+## Automatic Domain Update Rule
+
+**When a new PRD is created, the agent MUST:**
+
+1. **Analyze PRD content** for new business rules, properties, or relationships
+2. **Update relevant domain entities** by adding/modifying information
+3. **Ensure consistency** across all domain documents
+4. **Create summary** of changes made
+
+### Example
+PRD "RFP must contain deadline validation" → Update `domain/rfp-entity.md` with new deadline validation rules.
+
+## Core Entities
+
+### 1. RFP (Request for Proposal)
+
+**Description:** The central document uploaded by sales teams containing requirements from potential clients.
+
+**Attributes:**
+- `id`: Unique identifier (UUID)
+- `title`: RFP document name
+- `file_name`: Original PDF filename
+- `file_size`: Size in bytes
+- `upload_date`: Timestamp of upload
+- `status`: (uploaded, processing, completed, error)
+- `uploaded_by`: User who uploaded
+- `client_name`: Name of requesting company
+- `deadline`: RFP submission deadline
+- `total_pages`: Number of pages in PDF
+- `processing_time`: Time taken to process (seconds)
+
+**Business Rules:**
+- Maximum file size: 50MB
+- Supported format: PDF only
+- Must contain extractable text (no scanned images without OCR)
+- Title is required and must be unique per user
+- Deadline must be in the future
+- Status transitions: uploaded → processing → completed|error
+
+**Example:**
+```python
+{
+  "id": "rfp-123e4567-e89b-12d3-a456-426614174000",
+  "title": "Cloud Infrastructure Migration - ACME Corp",
+  "file_name": "ACME_RFP_2025_Q1.pdf",
+  "file_size": 2457600,
+  "upload_date": "2025-11-07T10:30:00Z",
+  "status": "completed",
+  "uploaded_by": "john.doe@company.com",
+  "client_name": "ACME Corporation",
+  "deadline": "2025-11-30T23:59:59Z",
+  "total_pages": 45,
+  "processing_time": 28.5
+}
+```
+
+### 2. Requirement
+
+**Description:** Individual requirements extracted from RFP documents.
+
+**Attributes:**
+- `id`: Unique identifier
+- `rfp_id`: Foreign key to RFP
+- `category`: Type of requirement (technical, functional, timeline, budget, compliance)
+- `description`: Extracted requirement text
+- `page_number`: Source page in PDF
+- `priority`: (critical, high, medium, low)
+- `confidence_score`: LLM extraction confidence (0.0-1.0)
+- `extracted_date`: When requirement was extracted
+- `manually_verified`: Boolean flag
+- `verified_by`: User who verified (if applicable)
+
+**Business Rules:**
+- Confidence score below 0.7 requires manual review
+- Each requirement must be linked to exactly one RFP
+- Category must be from predefined list
+- Priority affects matching algorithm weight
+- Description must be at least 10 characters
+
+**Example:**
+```python
+{
+  "id": "req-987f6543-e21b-45d3-b789-426614174111",
+  "rfp_id": "rfp-123e4567-e89b-12d3-a456-426614174000",
+  "category": "technical",
+  "description": "Solution must support 99.9% uptime SLA with automated failover",
+  "page_number": 12,
+  "priority": "critical",
+  "confidence_score": 0.95,
+  "extracted_date": "2025-11-07T10:30:45Z",
+  "manually_verified": true,
+  "verified_by": "john.doe@company.com"
+}
+```
+
+### 3. Service
+
+**Description:** Internal company services/offerings that can fulfill RFP requirements.
+
+**Attributes:**
+- `id`: Unique identifier
+- `name`: Service name
+- `category`: Service type (cloud, consulting, development, support)
+- `description`: Detailed service description
+- `capabilities`: List of capabilities/features
+- `pricing_model`: (fixed, hourly, subscription, custom)
+- `typical_duration`: Estimated time to deliver
+- `team_size`: Typical team composition
+- `past_projects`: Number of similar projects completed
+- `success_rate`: Historical success percentage
+- `tags`: Keywords for matching
+
+**Business Rules:**
+- Service must have at least 3 capabilities
+- Pricing model required for automated quote generation
+- Tags used for requirement-to-service matching
+- Success rate calculated from past 12 months
+- Active services only appear in matching
+
+**Example:**
+```python
+{
+  "id": "svc-456a7890-b12c-34d5-e678-426614174222",
+  "name": "Cloud Infrastructure Migration",
+  "category": "cloud",
+  "description": "Full-service cloud migration including assessment, planning, execution, and optimization",
+  "capabilities": [
+    "AWS/Azure/GCP migration",
+    "High availability architecture",
+    "Disaster recovery setup",
+    "24/7 monitoring and support",
+    "Performance optimization"
+  ],
+  "pricing_model": "custom",
+  "typical_duration": "12-16 weeks",
+  "team_size": "3 cloud architects, 2 DevOps engineers",
+  "past_projects": 47,
+  "success_rate": 0.94,
+  "tags": ["cloud", "migration", "infrastructure", "AWS", "Azure", "high-availability", "SLA"]
+}
+```
+
+### 4. ServiceMatch
+
+**Description:** Mapping between extracted requirements and internal services.
+
+**Attributes:**
+- `id`: Unique identifier
+- `requirement_id`: Foreign key to Requirement
+- `service_id`: Foreign key to Service
+- `match_score`: Algorithm confidence (0.0-1.0)
+- `reasoning`: Explanation of why matched
+- `suggested_date`: When match was suggested
+- `status`: (suggested, approved, rejected, alternative_needed)
+- `approved_by`: User who approved match
+
+**Business Rules:**
+- Match score threshold for auto-approval: 0.85
+- Scores 0.70-0.84 require manual review
+- Scores below 0.70 flagged for alternative
+- One requirement can match multiple services
+- Reasoning must be provided for all matches
+
+**Example:**
+```python
+{
+  "id": "match-321b6543-c45d-67e8-f901-426614174333",
+  "requirement_id": "req-987f6543-e21b-45d3-b789-426614174111",
+  "service_id": "svc-456a7890-b12c-34d5-e678-426614174222",
+  "match_score": 0.92,
+  "reasoning": "Service includes 99.99% uptime SLA with automated failover, exceeds requirement of 99.9%",
+  "suggested_date": "2025-11-07T10:31:00Z",
+  "status": "approved",
+  "approved_by": "john.doe@company.com"
+}
+```
+
+### 5. RiskClause
+
+**Description:** Potentially problematic clauses detected in RFP documents.
+
+**Attributes:**
+- `id`: Unique identifier
+- `rfp_id`: Foreign key to RFP
+- `risk_type`: (legal, financial, timeline, technical, compliance)
+- `severity`: (critical, high, medium, low)
+- `clause_text`: Exact text from RFP
+- `page_number`: Source page
+- `risk_description`: What makes this risky
+- `recommendation`: Suggested action
+- `detected_by`: (regex, llm, manual)
+- `confidence_score`: Detection confidence (0.0-1.0)
+- `flagged_date`: When risk was detected
+- `acknowledged`: Boolean flag
+- `acknowledged_by`: User who acknowledged
+
+**Business Rules:**
+- Critical risks block draft generation until acknowledged
+- High risks require manager approval
+- Recommendations must be actionable
+- Manual risks override automated detection
+- Confidence below 0.6 requires manual verification
+
+**Example:**
+```python
+{
+  "id": "risk-654c9876-d56e-78f9-g012-426614174444",
+  "rfp_id": "rfp-123e4567-e89b-12d3-a456-426614174000",
+  "risk_type": "financial",
+  "severity": "high",
+  "clause_text": "Vendor shall provide unlimited revisions at no additional cost",
+  "page_number": 23,
+  "risk_description": "Unlimited revisions clause creates unbounded cost liability",
+  "recommendation": "Propose maximum 3 revision rounds, additional revisions at 50% hourly rate",
+  "detected_by": "llm",
+  "confidence_score": 0.88,
+  "flagged_date": "2025-11-07T10:31:15Z",
+  "acknowledged": true,
+  "acknowledged_by": "manager@company.com"
+}
+```
+
+### 6. Draft
+
+**Description:** Generated proposal draft response to RFP.
+
+**Attributes:**
+- `id`: Unique identifier
+- `rfp_id`: Foreign key to RFP
+- `version`: Version number (1, 2, 3...)
+- `status`: (generated, editing, reviewed, approved, exported)
+- `content`: Draft text (Markdown format)
+- `sections`: List of section IDs
+- `generated_date`: When draft was created
+- `generated_by`: (ai, hybrid, manual)
+- `editing_time`: Total time in editing (seconds)
+- `word_count`: Total words in draft
+- `exported_to_gdocs`: Boolean flag
+- `gdocs_url`: Google Docs link (if exported)
+- `approved_by`: User who approved
+- `approval_date`: When approved
+
+**Business Rules:**
+- Version increments with each regeneration
+- Content must be in Markdown format
+- Draft requires at least executive summary and services sections
+- Cannot export until status is 'reviewed' or 'approved'
+- Word count must be between 500-10,000 words
+
+**Example:**
+```python
+{
+  "id": "draft-789d0123-e67f-89g0-h123-426614174555",
+  "rfp_id": "rfp-123e4567-e89b-12d3-a456-426614174000",
+  "version": 2,
+  "status": "approved",
+  "content": "# Proposal for ACME Corp Cloud Migration\n\n## Executive Summary\n...",
+  "sections": ["exec_summary", "approach", "services", "timeline", "pricing"],
+  "generated_date": "2025-11-07T10:32:00Z",
+  "generated_by": "hybrid",
+  "editing_time": 1847,
+  "word_count": 3250,
+  "exported_to_gdocs": true,
+  "gdocs_url": "https://docs.google.com/document/d/abc123...",
+  "approved_by": "manager@company.com",
+  "approval_date": "2025-11-07T15:45:00Z"
+}
+```
+
+### 7. User
+
+**Description:** System users (sales reps, managers, admins).
+
+**Attributes:**
+- `id`: Unique identifier
+- `email`: User email (unique)
+- `name`: Full name
+- `role`: (sales_rep, sales_manager, admin)
+- `department`: Department name
+- `permissions`: List of permissions
+- `created_date`: Account creation date
+- `last_login`: Last login timestamp
+- `active`: Boolean flag
+
+**Business Rules:**
+- Email must be unique and validated
+- Role determines permissions
+- Sales reps can upload and edit own RFPs
+- Managers can approve all RFPs in department
+- Admins have full system access
+
+## Entity Relationships
+
+```
+User (1) ─── uploads ──→ (N) RFP
+RFP (1) ─── contains ──→ (N) Requirement
+RFP (1) ─── has ──→ (N) RiskClause
+RFP (1) ─── generates ──→ (N) Draft
+Requirement (N) ─── matches ──→ (M) Service (via ServiceMatch)
+```
+
+## Business Workflows
+
+### 1. RFP Processing Workflow
+
+```
+1. User uploads PDF → RFP created (status: uploaded)
+2. System extracts text → RFP (status: processing)
+3. LLM extracts requirements → Requirements created
+4. System detects risk clauses → RiskClauses created
+5. Matching algorithm runs → ServiceMatches created
+6. Critical risks checked → Awaits acknowledgment if any
+7. RFP (status: completed)
+```
+
+### 2. Draft Generation Workflow
+
+```
+1. User requests draft → Check RFP is completed
+2. Check critical risks acknowledged → Block if not
+3. Retrieve approved ServiceMatches
+4. LLM generates draft sections → Draft created (status: generated)
+5. User edits in UI → Draft (status: editing)
+6. User marks ready → Draft (status: reviewed)
+7. Manager approves → Draft (status: approved)
+8. User exports → Draft (exported_to_gdocs: true)
+```
+
+### 3. Risk Management Workflow
+
+```
+1. Risk detected → RiskClause created
+2. If severity = critical → Notify manager immediately
+3. If severity = high → Require manager approval
+4. User/manager reviews → acknowledged = true
+5. Recommendations implemented → Update draft
+```
+
+## Validation Rules
+
+### Required Field Validations
+- RFP: title, file_name, client_name, deadline
+- Requirement: category, description, priority
+- Service: name, category, capabilities, pricing_model
+- Risk: risk_type, severity, clause_text, recommendation
+
+### Data Type Validations
+- Email: Valid email format
+- URLs: Valid URL format (gdocs_url)
+- Dates: ISO 8601 format, timezone-aware
+- Confidence scores: Float between 0.0 and 1.0
+- File size: Integer, positive, max 52428800 (50MB)
+
+### Business Logic Validations
+- Deadline must be future date
+- Version must increment sequentially
+- Status transitions must follow allowed paths
+- Match score threshold enforcement
+- Risk acknowledgment for critical items
+
+## Related Files
+
+Domain entity definitions stored in:
+- `/domain/rfp-entity.md`
+- `/domain/requirement-entity.md`
+- `/domain/service-catalog-entity.md`
+- `/domain/risk-clause-entity.md`
+- `/domain/draft-entity.md`
+
+## Related Guidelines
+
+- [PRD Guidelines](prd-guidelines.mdc)
+- [User Story Guidelines](user-story-guidelines.mdc)
+- [Basic Guidelines](basic-guidelines.mdc)

@@ -1,0 +1,598 @@
+---
+title: "Python Development Practices"
+description: "Python coding standards and best practices for RFP Draft Booster"
+---
+
+# Python Development Practices
+
+## Overview
+
+This document defines Python coding standards, patterns, and best practices for the RFP Draft Booster project.
+
+## Python Version
+
+- **Required:** Python 3.10+
+- **Recommended:** Python 3.11 or 3.12 for best performance
+
+## Code Style
+
+### PEP 8 Compliance
+
+Follow [PEP 8](https://peps.python.org/pep-0008/) style guide:
+
+- Line length: 88 characters (Black formatter default)
+- Indentation: 4 spaces (no tabs)
+- Blank lines: 2 between top-level functions/classes, 1 between methods
+- Imports: Organized in groups (standard, third-party, local)
+
+### Naming Conventions
+
+```python
+# Modules and packages: lowercase with underscores
+file_parser.py
+requirement_extractor.py
+
+# Classes: PascalCase
+class RFPProcessor:
+    pass
+
+class ServiceMatcher:
+    pass
+
+# Functions and variables: snake_case
+def extract_requirements(rfp_text):
+    max_confidence_score = 0.95
+    return results
+
+# Constants: UPPERCASE with underscores
+MAX_FILE_SIZE = 52428800  # 50MB in bytes
+DEFAULT_LLM_TEMPERATURE = 0.7
+
+# Private methods/attributes: leading underscore
+def _internal_helper():
+    pass
+
+_private_variable = "internal use"
+```
+
+## Type Hints
+
+**Always use type hints** for function signatures and class attributes:
+
+```python
+from typing import List, Dict, Optional, Union, Tuple
+from pathlib import Path
+
+def extract_requirements(
+    rfp_text: str,
+    min_confidence: float = 0.7
+) -> List[Dict[str, Union[str, float]]]:
+    """Extract requirements from RFP text.
+    
+    Args:
+        rfp_text: Full text content of RFP document
+        min_confidence: Minimum confidence threshold (0.0-1.0)
+        
+    Returns:
+        List of requirement dictionaries with extracted data
+        
+    Raises:
+        ValueError: If min_confidence not in valid range
+    """
+    if not 0.0 <= min_confidence <= 1.0:
+        raise ValueError("min_confidence must be between 0.0 and 1.0")
+    
+    requirements: List[Dict[str, Union[str, float]]] = []
+    # Implementation...
+    return requirements
+```
+
+### Complex Types
+
+```python
+from typing import TypedDict, Protocol
+from dataclasses import dataclass
+
+# Use dataclasses for data structures
+@dataclass
+class Requirement:
+    id: str
+    rfp_id: str
+    category: str
+    description: str
+    confidence_score: float
+    page_number: Optional[int] = None
+
+# Use TypedDict for dictionaries with known structure
+class ServiceDict(TypedDict):
+    id: str
+    name: str
+    capabilities: List[str]
+    match_score: float
+
+# Use Protocol for duck typing
+class LLMProvider(Protocol):
+    def generate(self, prompt: str) -> str:
+        ...
+    
+    def embed(self, text: str) -> List[float]:
+        ...
+```
+
+## Documentation
+
+### Docstrings
+
+Use Google-style docstrings:
+
+```python
+def match_requirements_to_services(
+    requirements: List[Requirement],
+    services: List[Service],
+    threshold: float = 0.7
+) -> Dict[str, List[ServiceMatch]]:
+    """Match RFP requirements to internal service offerings.
+    
+    Uses semantic similarity and keyword matching to identify
+    relevant services for each requirement.
+    
+    Args:
+        requirements: List of extracted RFP requirements
+        services: List of available service offerings
+        threshold: Minimum match score to include (0.0-1.0)
+        
+    Returns:
+        Dictionary mapping requirement IDs to lists of matched services,
+        sorted by match score descending.
+        
+    Raises:
+        ValueError: If threshold not in valid range
+        LLMException: If embedding generation fails
+        
+    Example:
+        >>> requirements = [Requirement(id="req-1", ...)]
+        >>> services = [Service(id="svc-1", ...)]
+        >>> matches = match_requirements_to_services(requirements, services)
+        >>> matches["req-1"][0].match_score
+        0.92
+    """
+    pass
+```
+
+### Module Docstrings
+
+```python
+"""RFP requirement extraction module.
+
+This module provides functionality to extract structured requirements
+from RFP PDF documents using LLM-based extraction.
+
+Typical usage example:
+    extractor = RequirementExtractor(llm_provider)
+    requirements = extractor.extract_from_pdf("rfp.pdf")
+"""
+```
+
+## Error Handling
+
+### Custom Exceptions
+
+```python
+# src/exceptions.py
+class RFPDraftBoosterException(Exception):
+    """Base exception for RFP Draft Booster."""
+    pass
+
+class PDFProcessingError(RFPDraftBoosterException):
+    """Raised when PDF processing fails."""
+    pass
+
+class LLMException(RFPDraftBoosterException):
+    """Raised when LLM operations fail."""
+    pass
+
+class InvalidRFPError(RFPDraftBoosterException):
+    """Raised when RFP validation fails."""
+    pass
+```
+
+### Error Handling Patterns
+
+```python
+import logging
+from typing import Optional
+
+logger = logging.getLogger(__name__)
+
+def process_rfp(file_path: str) -> Optional[RFP]:
+    """Process RFP PDF file with comprehensive error handling."""
+    try:
+        # Validate file
+        if not Path(file_path).exists():
+            raise FileNotFoundError(f"RFP file not found: {file_path}")
+        
+        # Process
+        rfp = RFP.from_pdf(file_path)
+        logger.info(f"Successfully processed RFP: {rfp.id}")
+        return rfp
+        
+    except PDFProcessingError as e:
+        logger.error(f"Failed to process PDF: {e}", exc_info=True)
+        raise
+        
+    except LLMException as e:
+        logger.error(f"LLM extraction failed: {e}", exc_info=True)
+        # Return partial result or None
+        return None
+        
+    except Exception as e:
+        logger.exception(f"Unexpected error processing RFP: {e}")
+        raise RFPDraftBoosterException(f"RFP processing failed: {e}") from e
+```
+
+## Project Structure
+
+```
+src/
+├── __init__.py
+├── main.py                    # Streamlit app entry point
+├── config.py                  # Configuration management
+├── exceptions.py              # Custom exceptions
+│
+├── models/                    # Data models
+│   ├── __init__.py
+│   ├── rfp.py
+│   ├── requirement.py
+│   ├── service.py
+│   ├── risk.py
+│   └── draft.py
+│
+├── services/                  # Business logic
+│   ├── __init__.py
+│   ├── pdf_processor.py
+│   ├── requirement_extractor.py
+│   ├── service_matcher.py
+│   ├── risk_detector.py
+│   ├── draft_generator.py
+│   └── gdocs_exporter.py
+│
+├── llm/                       # LLM integrations
+│   ├── __init__.py
+│   ├── base.py               # Base LLM interface
+│   ├── gemini.py
+│   ├── groq.py
+│   └── ollama.py
+│
+├── utils/                     # Utilities
+│   ├── __init__.py
+│   ├── logging.py
+│   ├── validators.py
+│   └── helpers.py
+│
+└── ui/                        # Streamlit UI components
+    ├── __init__.py
+    ├── upload.py
+    ├── requirements.py
+    ├── services.py
+    ├── risks.py
+    └── draft.py
+
+tests/
+├── __init__.py
+├── conftest.py               # Pytest fixtures
+├── test_models/
+├── test_services/
+├── test_llm/
+└── test_integration/
+```
+
+## Testing
+
+### pytest Configuration
+
+```python
+# tests/conftest.py
+import pytest
+from pathlib import Path
+
+@pytest.fixture
+def sample_rfp_pdf():
+    """Provide sample RFP PDF for testing."""
+    return Path(__file__).parent / "fixtures" / "sample_rfp.pdf"
+
+@pytest.fixture
+def mock_llm():
+    """Provide mock LLM for testing."""
+    class MockLLM:
+        def generate(self, prompt: str) -> str:
+            return "Mock response"
+    return MockLLM()
+```
+
+### Unit Tests
+
+```python
+# tests/test_services/test_requirement_extractor.py
+import pytest
+from src.services.requirement_extractor import RequirementExtractor
+from src.exceptions import InvalidRFPError
+
+class TestRequirementExtractor:
+    """Test suite for requirement extraction."""
+    
+    def test_extract_from_valid_text(self, mock_llm):
+        """Test extraction from valid RFP text."""
+        extractor = RequirementExtractor(mock_llm)
+        text = "The solution must provide 99.9% uptime SLA."
+        
+        requirements = extractor.extract_from_text(text)
+        
+        assert len(requirements) > 0
+        assert requirements[0].category == "technical"
+        assert requirements[0].confidence_score >= 0.7
+    
+    def test_extract_with_invalid_input(self, mock_llm):
+        """Test extraction handles invalid input."""
+        extractor = RequirementExtractor(mock_llm)
+        
+        with pytest.raises(InvalidRFPError):
+            extractor.extract_from_text("")
+    
+    @pytest.mark.parametrize("confidence,expected", [
+        (0.95, True),
+        (0.65, False),
+        (0.7, True),
+    ])
+    def test_confidence_threshold(self, confidence, expected):
+        """Test confidence threshold filtering."""
+        req = Requirement(confidence_score=confidence)
+        assert req.meets_threshold(0.7) == expected
+```
+
+### Integration Tests
+
+```python
+# tests/test_integration/test_rfp_workflow.py
+def test_full_rfp_processing_workflow(sample_rfp_pdf):
+    """Test complete RFP processing from upload to draft."""
+    # Upload
+    rfp = process_rfp(sample_rfp_pdf)
+    assert rfp.status == "completed"
+    
+    # Extract requirements
+    assert len(rfp.requirements) > 0
+    
+    # Detect risks
+    assert len(rfp.risks) >= 0
+    
+    # Generate draft
+    draft = generate_draft(rfp)
+    assert draft.word_count > 500
+    assert draft.status == "generated"
+```
+
+## Dependencies
+
+### requirements.txt
+
+```txt
+# Core
+streamlit>=1.28.0
+python-dotenv>=1.0.0
+
+# PDF Processing
+pypdf2>=3.0.0
+pdfplumber>=0.10.0
+
+# LLM
+langchain>=0.1.0
+google-generativeai>=0.3.0
+groq>=0.4.0
+
+# Google Docs
+google-auth>=2.23.0
+google-api-python-client>=2.100.0
+
+# Utilities
+pydantic>=2.4.0
+requests>=2.31.0
+tenacity>=8.2.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+```
+
+## Configuration Management
+
+```python
+# src/config.py
+from pydantic_settings import BaseSettings
+from typing import Optional
+
+class Settings(BaseSettings):
+    """Application settings with validation."""
+    
+    # App
+    app_name: str = "RFP Draft Booster"
+    debug: bool = False
+    
+    # File Upload
+    max_file_size: int = 52428800  # 50MB
+    allowed_extensions: list = [".pdf"]
+    
+    # LLM
+    llm_provider: str = "gemini"  # gemini, groq, ollama
+    gemini_api_key: Optional[str] = None
+    groq_api_key: Optional[str] = None
+    llm_temperature: float = 0.7
+    llm_max_tokens: int = 2000
+    
+    # Matching
+    match_threshold: float = 0.7
+    min_confidence: float = 0.7
+    
+    # Google Docs
+    gdocs_credentials_path: Optional[str] = None
+    
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+settings = Settings()
+```
+
+## Logging
+
+```python
+# src/utils/logging.py
+import logging
+import sys
+from pathlib import Path
+
+def setup_logging(level: str = "INFO") -> None:
+    """Configure application logging."""
+    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    
+    logging.basicConfig(
+        level=getattr(logging, level.upper()),
+        format=log_format,
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler("logs/app.log"),
+        ]
+    )
+    
+    # Suppress verbose third-party logs
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("google").setLevel(logging.WARNING)
+```
+
+## Code Quality Tools
+
+### Black (Formatter)
+
+```bash
+black src/ tests/ --line-length 88
+```
+
+### isort (Import Sorting)
+
+```bash
+isort src/ tests/ --profile black
+```
+
+### pylint (Linting)
+
+```bash
+pylint src/ --max-line-length 88
+```
+
+### mypy (Type Checking)
+
+```bash
+mypy src/ --strict
+```
+
+## Performance
+
+### Memory Management
+
+When optimizing code, always consider:
+- Using tools like `cProfile` or `pyinstrument` for profiling
+- Employ generators and streaming for processing large datasets
+- Use `__slots__` to reduce memory overhead in classes
+- Use caching for expensive or repeated operations (e.g., `functools.lru_cache` or Redis)
+- Use `ThreadPoolExecutor` or `ProcessPoolExecutor` for CPU-bound tasks
+- Leverage NumPy's GIL release for numerical workloads
+
+### I/O-bound Operations
+
+For I/O-bound operations (AWS, Database), implement:
+- Use batching to reduce the number of individual I/O operations
+- Employ concurrent execution using (in order of preference):
+  1. `asyncio` for best performance when available
+  2. `ThreadPoolExecutor` with appropriate pool sizing
+  3. Standard threading when above options aren't suitable
+- Consider request coalescing to combine similar operations
+- Monitor and adjust batch sizes based on resources
+- Implement proper error handling and retries
+
+### Caching
+
+```python
+from functools import lru_cache
+import streamlit as st
+
+# LRU cache for expensive functions
+@lru_cache(maxsize=128)
+def load_services_catalog() -> List[Service]:
+    """Load services catalog with caching."""
+    return Service.load_all()
+
+# Streamlit caching
+@st.cache_data(ttl=3600)
+def load_rfp_from_cache(rfp_id: str) -> RFP:
+    """Load RFP with Streamlit caching."""
+    return RFP.load(rfp_id)
+```
+
+### Async Operations
+
+```python
+import asyncio
+from typing import List
+
+async def process_multiple_rfps(rfp_files: List[str]) -> List[RFP]:
+    """Process multiple RFPs concurrently."""
+    tasks = [process_rfp_async(file) for file in rfp_files]
+    return await asyncio.gather(*tasks)
+```
+
+## Security
+
+### Input Validation
+
+```python
+from pathlib import Path
+from src.exceptions import InvalidRFPError
+
+def validate_file_upload(file_path: str) -> None:
+    """Validate uploaded file for security."""
+    path = Path(file_path)
+    
+    # Check extension
+    if path.suffix.lower() not in [".pdf"]:
+        raise InvalidRFPError("Only PDF files allowed")
+    
+    # Check size
+    if path.stat().st_size > settings.max_file_size:
+        raise InvalidRFPError("File exceeds maximum size")
+    
+    # Check file type (not just extension)
+    import magic
+    file_type = magic.from_file(str(path), mime=True)
+    if file_type != "application/pdf":
+        raise InvalidRFPError("File is not a valid PDF")
+```
+
+### Environment Variables
+
+```python
+# Never hardcode secrets
+# ❌ BAD
+api_key = "sk-abc123..."
+
+# ✅ GOOD
+import os
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("GEMINI_API_KEY not set")
+```
+
+## Related Guidelines
+
+- [Streamlit Guidelines](streamlit-guidelines.mdc)
+- [Basic Guidelines](basic-guidelines.mdc)
+- [Git Guidelines](git-guidelines.md)

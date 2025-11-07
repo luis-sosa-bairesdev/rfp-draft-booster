@@ -1,0 +1,658 @@
+---
+title: "Streamlit Development Guidelines"
+description: "Best practices for building Streamlit applications"
+---
+
+# Streamlit Development Guidelines
+
+## Overview
+
+This document defines standards and best practices for developing the RFP Draft Booster Streamlit application.
+
+## App Structure
+
+### Multi-Page Architecture
+
+```python
+# main.py (home page)
+import streamlit as st
+
+st.set_page_config(
+    page_title="RFP Draft Booster",
+    page_icon="📄",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+st.title("🚀 RFP Draft Booster")
+st.markdown("Accelerate your RFP responses by 80%")
+```
+
+### Page Organization
+
+```
+src/
+├── main.py                    # Home page
+└── pages/
+    ├── 1_📤_Upload_RFP.py
+    ├── 2_📋_Requirements.py
+    ├── 3_⚠️_Risk_Analysis.py
+    ├── 4_🤝_Service_Matching.py
+    └── 5_📝_Generate_Draft.py
+```
+
+## Session State Management
+
+### Initialize State
+
+```python
+# src/utils/session.py
+import streamlit as st
+from typing import Optional
+from src.models.rfp import RFP
+
+def init_session_state() -> None:
+    """Initialize all session state variables."""
+    if "current_rfp" not in st.session_state:
+        st.session_state.current_rfp: Optional[RFP] = None
+    
+    if "requirements" not in st.session_state:
+        st.session_state.requirements = []
+    
+    if "service_matches" not in st.session_state:
+        st.session_state.service_matches = {}
+    
+    if "draft" not in st.session_state:
+        st.session_state.draft = None
+    
+    if "editing_mode" not in st.session_state:
+        st.session_state.editing_mode = False
+```
+
+### Access State
+
+```python
+# In pages
+import streamlit as st
+from src.utils.session import init_session_state
+
+init_session_state()
+
+# Get current RFP
+current_rfp = st.session_state.current_rfp
+
+# Update state
+if st.button("Process RFP"):
+    st.session_state.current_rfp = process_rfp(uploaded_file)
+    st.rerun()  # Trigger rerun to update UI
+```
+
+## Caching Strategies
+
+### Data Caching
+
+```python
+import streamlit as st
+from typing import List
+from src.models.service import Service
+
+@st.cache_data(ttl=3600)
+def load_services_catalog() -> List[Service]:
+    """Load services catalog with 1-hour cache."""
+    return Service.load_from_db()
+
+@st.cache_data
+def load_config() -> dict:
+    """Load configuration (cached indefinitely)."""
+    return load_config_from_file()
+```
+
+### Resource Caching
+
+```python
+@st.cache_resource
+def load_llm_client():
+    """Load LLM client as singleton resource."""
+    from src.llm.gemini import GeminiClient
+    return GeminiClient()
+
+@st.cache_resource
+def get_pdf_processor():
+    """Get PDF processor instance."""
+    from src.services.pdf_processor import PDFProcessor
+    return PDFProcessor()
+```
+
+### Clear Cache
+
+```python
+# Add cache clearing button for development
+if st.sidebar.button("🔄 Clear Cache"):
+    st.cache_data.clear()
+    st.cache_resource.clear()
+    st.success("Cache cleared!")
+    st.rerun()
+```
+
+## UI Components
+
+### File Upload
+
+```python
+import streamlit as st
+from pathlib import Path
+
+def render_file_upload() -> Optional[bytes]:
+    """Render file upload component with validation."""
+    uploaded_file = st.file_uploader(
+        "Upload RFP Document",
+        type=["pdf"],
+        help="Maximum file size: 50MB",
+        key="rfp_uploader"
+    )
+    
+    if uploaded_file is not None:
+        # Validate file size
+        file_size = len(uploaded_file.getvalue())
+        if file_size > 52428800:  # 50MB
+            st.error("File exceeds 50MB limit")
+            return None
+        
+        # Show file info
+        st.info(f"📄 {uploaded_file.name} ({file_size / 1024 / 1024:.2f} MB)")
+        return uploaded_file.getvalue()
+    
+    return None
+```
+
+### Progress Indicators
+
+```python
+import time
+import streamlit as st
+
+def process_with_progress(rfp_file: bytes) -> RFP:
+    """Process RFP with progress indicator."""
+    progress_bar = st.progress(0, text="Processing RFP...")
+    
+    # Step 1: Parse PDF
+    progress_bar.progress(20, text="Parsing PDF...")
+    text = extract_text(rfp_file)
+    
+    # Step 2: Extract requirements
+    progress_bar.progress(50, text="Extracting requirements...")
+    requirements = extract_requirements(text)
+    
+    # Step 3: Detect risks
+    progress_bar.progress(75, text="Analyzing risks...")
+    risks = detect_risks(text)
+    
+    # Step 4: Complete
+    progress_bar.progress(100, text="Complete!")
+    time.sleep(0.5)
+    progress_bar.empty()
+    
+    return RFP(text=text, requirements=requirements, risks=risks)
+```
+
+### Tabs
+
+```python
+def render_rfp_details(rfp: RFP) -> None:
+    """Render RFP details in tabs."""
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "📋 Requirements",
+        "⚠️ Risks",
+        "🤝 Matched Services",
+        "📄 Original Document"
+    ])
+    
+    with tab1:
+        render_requirements(rfp.requirements)
+    
+    with tab2:
+        render_risks(rfp.risks)
+    
+    with tab3:
+        render_service_matches(rfp.service_matches)
+    
+    with tab4:
+        st.text_area("Original Text", rfp.text, height=400)
+```
+
+### Data Display
+
+```python
+import pandas as pd
+import streamlit as st
+
+def render_requirements(requirements: List[Requirement]) -> None:
+    """Display requirements in interactive table."""
+    if not requirements:
+        st.info("No requirements extracted yet")
+        return
+    
+    # Convert to DataFrame
+    df = pd.DataFrame([
+        {
+            "Category": req.category,
+            "Description": req.description[:100] + "...",
+            "Priority": req.priority,
+            "Confidence": f"{req.confidence_score:.0%}",
+            "Page": req.page_number or "N/A"
+        }
+        for req in requirements
+    ])
+    
+    # Display with filtering
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Confidence": st.column_config.ProgressColumn(
+                "Confidence",
+                min_value=0,
+                max_value=1,
+            )
+        }
+    )
+    
+    # Selection
+    selected_idx = st.selectbox(
+        "View details:",
+        range(len(requirements)),
+        format_func=lambda i: f"{requirements[i].category}: {requirements[i].description[:50]}..."
+    )
+    
+    if selected_idx is not None:
+        req = requirements[selected_idx]
+        with st.expander("Full Details", expanded=True):
+            st.write(f"**Category:** {req.category}")
+            st.write(f"**Priority:** {req.priority}")
+            st.write(f"**Confidence:** {req.confidence_score:.0%}")
+            st.write(f"**Description:**\n{req.description}")
+```
+
+### Forms
+
+```python
+def render_manual_requirement_form() -> None:
+    """Form for manually adding requirements."""
+    with st.form("add_requirement_form"):
+        st.subheader("Add Requirement Manually")
+        
+        category = st.selectbox(
+            "Category",
+            ["technical", "functional", "timeline", "budget", "compliance"]
+        )
+        
+        description = st.text_area(
+            "Description",
+            placeholder="Enter requirement description...",
+            height=100
+        )
+        
+        priority = st.select_slider(
+            "Priority",
+            options=["low", "medium", "high", "critical"]
+        )
+        
+        page_number = st.number_input(
+            "Page Number (optional)",
+            min_value=1,
+            value=None
+        )
+        
+        submitted = st.form_submit_button("Add Requirement")
+        
+        if submitted:
+            if not description:
+                st.error("Description is required")
+            else:
+                req = Requirement(
+                    category=category,
+                    description=description,
+                    priority=priority,
+                    page_number=page_number,
+                    confidence_score=1.0,  # Manual entry
+                    manually_verified=True
+                )
+                st.session_state.requirements.append(req)
+                st.success("Requirement added!")
+                st.rerun()
+```
+
+## Layout Patterns
+
+### Sidebar Configuration
+
+```python
+def render_sidebar() -> None:
+    """Render sidebar with configuration options."""
+    with st.sidebar:
+        st.header("⚙️ Configuration")
+        
+        # LLM Settings
+        st.subheader("LLM Provider")
+        llm_provider = st.selectbox(
+            "Provider",
+            ["gemini", "groq", "ollama"],
+            help="Select AI model provider"
+        )
+        
+        temperature = st.slider(
+            "Temperature",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.7,
+            step=0.1,
+            help="Higher = more creative, Lower = more focused"
+        )
+        
+        # Matching Settings
+        st.subheader("Matching")
+        match_threshold = st.slider(
+            "Match Threshold",
+            min_value=0.5,
+            max_value=1.0,
+            value=0.7,
+            step=0.05
+        )
+        
+        # Store in session state
+        st.session_state.config = {
+            "llm_provider": llm_provider,
+            "temperature": temperature,
+            "match_threshold": match_threshold
+        }
+```
+
+### Column Layout
+
+```python
+def render_dashboard() -> None:
+    """Render dashboard with metrics."""
+    st.header("📊 RFP Dashboard")
+    
+    # Metrics row
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric(
+            "Total RFPs",
+            len(st.session_state.rfps),
+            delta="+3 this week"
+        )
+    
+    with col2:
+        st.metric(
+            "Avg Response Time",
+            "2.5 hours",
+            delta="-40 min",
+            delta_color="inverse"
+        )
+    
+    with col3:
+        st.metric(
+            "Win Rate",
+            "28%",
+            delta="+5%"
+        )
+    
+    with col4:
+        st.metric(
+            "Drafts Generated",
+            "47",
+            delta="+12"
+        )
+```
+
+### Expanders
+
+```python
+def render_risk_details(risks: List[RiskClause]) -> None:
+    """Display risks with expandable details."""
+    if not risks:
+        st.success("✅ No critical risks detected")
+        return
+    
+    # Group by severity
+    critical = [r for r in risks if r.severity == "critical"]
+    high = [r for r in risks if r.severity == "high"]
+    medium = [r for r in risks if r.severity == "medium"]
+    
+    if critical:
+        st.error(f"🚨 {len(critical)} Critical Risk(s)")
+        for risk in critical:
+            with st.expander(f"{risk.risk_type.upper()}: {risk.clause_text[:60]}..."):
+                st.write(f"**Page:** {risk.page_number}")
+                st.write(f"**Risk:** {risk.risk_description}")
+                st.write(f"**Recommendation:** {risk.recommendation}")
+                
+                if st.button(f"Acknowledge Risk", key=f"ack_{risk.id}"):
+                    risk.acknowledged = True
+                    st.rerun()
+    
+    if high:
+        with st.expander(f"⚠️ {len(high)} High Risk(s)"):
+            for risk in high:
+                st.write(f"- {risk.clause_text[:100]}...")
+```
+
+## Notifications & Feedback
+
+### Toast Messages
+
+```python
+import streamlit as st
+
+# Success
+st.toast("✅ RFP processed successfully!", icon="✅")
+
+# Info
+st.toast("ℹ️ Processing may take up to 2 minutes", icon="ℹ️")
+
+# Warning
+st.toast("⚠️ Low confidence score detected", icon="⚠️")
+
+# Error
+st.toast("❌ Processing failed", icon="❌")
+```
+
+### Status Messages
+
+```python
+# Info box
+st.info("💡 Tip: Upload RFPs in PDF format for best results")
+
+# Success box
+st.success("✅ Draft generated successfully!")
+
+# Warning box
+st.warning("⚠️ Some requirements have low confidence scores")
+
+# Error box
+st.error("❌ Failed to connect to LLM provider")
+```
+
+### Balloons & Snow
+
+```python
+# Celebrate successful generation
+if draft_generated:
+    st.balloons()
+    st.success("🎉 Draft ready for export!")
+```
+
+## Performance Optimization
+
+### Lazy Loading
+
+```python
+def render_large_draft(draft: Draft) -> None:
+    """Render large draft with lazy loading."""
+    sections = draft.get_sections()
+    
+    # Show summary first
+    st.subheader("Draft Summary")
+    st.write(f"Word count: {draft.word_count}")
+    st.write(f"Sections: {len(sections)}")
+    
+    # Lazy load sections
+    for i, section in enumerate(sections):
+        with st.expander(f"Section {i+1}: {section.title}"):
+            # Only render when expanded
+            st.markdown(section.content)
+```
+
+### Pagination
+
+```python
+def render_paginated_requirements(requirements: List[Requirement]) -> None:
+    """Display requirements with pagination."""
+    items_per_page = 10
+    total_pages = (len(requirements) + items_per_page - 1) // items_per_page
+    
+    page = st.number_input(
+        "Page",
+        min_value=1,
+        max_value=total_pages,
+        value=1
+    )
+    
+    start_idx = (page - 1) * items_per_page
+    end_idx = start_idx + items_per_page
+    
+    page_items = requirements[start_idx:end_idx]
+    render_requirements(page_items)
+    
+    st.caption(f"Showing {start_idx + 1}-{min(end_idx, len(requirements))} of {len(requirements)}")
+```
+
+## Error Handling
+
+### Try-Except with UI Feedback
+
+```python
+def process_rfp_safe(file: bytes) -> Optional[RFP]:
+    """Process RFP with error handling and UI feedback."""
+    try:
+        with st.spinner("Processing RFP..."):
+            rfp = process_rfp(file)
+            st.success("✅ RFP processed successfully!")
+            return rfp
+            
+    except PDFProcessingError as e:
+        st.error(f"❌ PDF Processing Error: {e}")
+        st.info("💡 Ensure the PDF contains extractable text")
+        return None
+        
+    except LLMException as e:
+        st.error(f"❌ LLM Error: {e}")
+        st.warning("🔄 Try again or switch LLM provider in settings")
+        return None
+        
+    except Exception as e:
+        st.error(f"❌ Unexpected Error: {e}")
+        with st.expander("Show Error Details"):
+            st.exception(e)
+        return None
+```
+
+## Styling
+
+### Custom CSS
+
+```python
+def apply_custom_css() -> None:
+    """Apply custom CSS styling."""
+    st.markdown("""
+        <style>
+        /* Hide Streamlit branding */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        
+        /* Custom button styling */
+        .stButton>button {
+            width: 100%;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        
+        /* Card-like containers */
+        .element-container {
+            background-color: #f0f2f6;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+```
+
+### Color Coding
+
+```python
+def get_priority_color(priority: str) -> str:
+    """Get color code for priority level."""
+    colors = {
+        "critical": "🔴",
+        "high": "🟠",
+        "medium": "🟡",
+        "low": "🟢"
+    }
+    return colors.get(priority, "⚪")
+
+# Usage
+st.write(f"{get_priority_color(req.priority)} {req.description}")
+```
+
+## Testing
+
+### Component Testing
+
+```python
+# tests/test_ui/test_components.py
+from streamlit.testing.v1 import AppTest
+
+def test_file_upload_component():
+    """Test file upload component behavior."""
+    at = AppTest.from_file("src/pages/1_📤_Upload_RFP.py")
+    at.run()
+    
+    # Verify upload widget exists
+    assert len(at.file_uploader) == 1
+    
+    # Simulate file upload
+    at.file_uploader[0].upload("test.pdf", b"test content")
+    at.run()
+    
+    # Verify processing started
+    assert at.success[0].value == "✅ RFP processed successfully!"
+```
+
+## Best Practices
+
+### Do's ✅
+
+- Use `st.cache_data` for data loading functions
+- Initialize session state at app start
+- Provide loading indicators for long operations
+- Use forms to batch input submissions
+- Clear error messages with actionable guidance
+- Responsive layout with columns and containers
+
+### Don'ts ❌
+
+- Don't use global variables (use session state)
+- Don't forget to clear file uploaders after processing
+- Don't nest forms (Streamlit doesn't support this)
+- Don't use `st.experimental_rerun()` in loops
+- Don't forget mobile responsiveness
+- Don't cache mutable objects without hashing
+
+## Related Guidelines
+
+- [Python Practices](python-practices.mdc)
+- [Basic Guidelines](basic-guidelines.mdc)

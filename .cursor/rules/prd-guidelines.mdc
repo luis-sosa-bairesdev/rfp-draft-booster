@@ -1,0 +1,231 @@
+---
+title: "PRD Guidelines"
+description: "Standards for writing Product Requirements Documents"
+---
+
+# PRD Guidelines
+
+## Overview
+
+Product Requirements Documents (PRDs) serve as the single source of truth for product features and functionality. They bridge the gap between business objectives and technical implementation.
+
+## Core Rules (Must Follow)
+
+- Always create **one .md document per PRD or User Story** in `/deliverables`
+- **Do not group** multiple user stories or PRDs in a single file
+- Always use the PRD template from `.cursor/rules/templates/prd_template.md`
+- If updating a document, **must change document version**
+- Before finishing, **reflect on PRD content** and ensure completeness
+- Always use `@context.md` (now `context/context.md`) before defining a product requirement
+
+## PRD Finalization Checklist
+
+Before finalizing and distributing, ensure:
+- [ ] All sections are fully completed, clear, and explicitly detailed
+- [ ] All ambiguities have been resolved or explicitly noted for clarification
+- [ ] The PRD has a document version number
+- [ ] Related domain entities have been updated
+- [ ] All required sections from template are present
+
+## Document Structure
+
+### Required Sections
+
+1. **Header**
+   - Product Name
+   - Version/Release Number
+   - Author(s)
+   - Last Updated Date
+   - Status (Draft, Review, Approved, Deprecated)
+
+2. **Executive Summary**
+   - One-paragraph overview
+   - Key objectives and success metrics
+   - Target users and use cases
+
+3. **Problem Statement**
+   - Clear description of the problem being solved
+   - Current pain points and limitations
+   - Business impact and urgency
+
+4. **Solution Overview**
+   - High-level description of proposed solution
+   - Key features and capabilities
+   - Differentiators and unique value
+
+5. **Business Value**
+   - Expected outcomes and benefits
+   - Success metrics and KPIs
+   - ROI projections
+   - Strategic alignment
+
+6. **User Personas**
+   - Target user segments
+   - User needs and goals
+   - Use cases and scenarios
+
+7. **Functional Requirements**
+   - Core features (Must-have)
+   - Enhanced features (Should-have)
+   - Optional features (Nice-to-have)
+   - Out of scope (explicitly)
+
+8. **Technical Requirements**
+   - System architecture overview
+   - Integration points
+   - Performance requirements
+   - Scalability considerations
+   - Security requirements
+
+9. **Non-Functional Requirements**
+   - Usability standards
+   - Accessibility requirements
+   - Compliance and regulatory
+   - Data privacy and security
+
+10. **Dependencies & Constraints**
+    - External dependencies
+    - Technical constraints
+    - Resource limitations
+    - Timeline constraints
+
+11. **Success Metrics**
+    - Quantitative metrics
+    - Qualitative measures
+    - Measurement methodology
+    - Target values and timelines
+
+12. **Risks & Mitigation**
+    - Identified risks
+    - Impact assessment
+    - Mitigation strategies
+    - Contingency plans
+
+13. **Timeline & Milestones**
+    - Project phases
+    - Key milestones
+    - Delivery schedule
+    - Review checkpoints
+
+14. **Appendix**
+    - References and links
+    - Supporting documents
+    - Research data
+    - Glossary of terms
+
+## Writing Standards
+
+### Language & Style
+- Use clear, concise language
+- Avoid jargon unless necessary (define when used)
+- Write in active voice
+- Be specific and measurable
+- Use present tense for current state, future tense for planned features
+
+### Formatting
+- Use consistent heading hierarchy (H1, H2, H3)
+- Include table of contents for long documents
+- Use bullet points for lists
+- Use tables for comparative data
+- Include diagrams and flowcharts where helpful
+
+### Examples
+Always include concrete examples:
+```markdown
+**User Story Example:**
+As a sales manager, I want to upload RFP PDFs and get automated draft responses, so that I can respond to 3x more RFPs per week.
+
+**Acceptance Criteria Example:**
+- User can upload PDF files up to 50MB
+- System extracts requirements within 30 seconds
+- Draft response is generated in under 2 minutes
+```
+
+## Requirement Specification
+
+### Functional Requirements Format
+```markdown
+**FR-001: PDF Upload**
+- **Priority:** Must-have
+- **Description:** Users can upload RFP documents in PDF format
+- **Acceptance Criteria:**
+  - Supports PDF files up to 50MB
+  - Validates file format before processing
+  - Shows upload progress indicator
+  - Displays error for invalid files
+- **Dependencies:** None
+- **Estimated Effort:** 5 story points
+```
+
+### User Stories Format
+Follow this template:
+```markdown
+As a [user type],
+I want to [action],
+So that [benefit/goal].
+```
+
+### Acceptance Criteria
+Use Given-When-Then format when appropriate:
+```markdown
+Given [context/precondition]
+When [action/event]
+Then [expected outcome]
+```
+
+## Validation Checklist
+
+Before finalizing a PRD, verify:
+
+- [ ] All required sections are complete
+- [ ] Problem statement is clear and validated
+- [ ] Solution addresses the problem effectively
+- [ ] Success metrics are measurable and realistic
+- [ ] Functional requirements have acceptance criteria
+- [ ] Dependencies are identified and documented
+- [ ] Risks are assessed with mitigation plans
+- [ ] Timeline is realistic and achievable
+- [ ] Stakeholders have reviewed and approved
+- [ ] Document follows naming conventions
+- [ ] Links and references are valid
+- [ ] Version history is maintained
+
+## Collaboration
+
+### Review Process
+1. **Draft:** Author creates initial version
+2. **Review:** Stakeholders provide feedback
+3. **Revision:** Author incorporates feedback
+4. **Approval:** Final sign-off from stakeholders
+5. **Publication:** Share with development team
+
+### Feedback Guidelines
+- Be specific and constructive
+- Reference section and line numbers
+- Suggest alternatives when possible
+- Focus on clarity and completeness
+- Validate assumptions and requirements
+
+## Maintenance
+
+### Version Control
+- Use semantic versioning (1.0, 1.1, 2.0)
+- Document changes in version history
+- Archive previous versions
+- Update "Last Modified" date
+
+### Updates
+- Review quarterly or when major changes occur
+- Keep aligned with implementation reality
+- Update based on user feedback
+- Document lessons learned
+
+## Templates
+
+Reference the PRD template at: `.cursor/rules/templates/prd_template.md`
+
+## Related Guidelines
+
+- [User Story Guidelines](user-story-guidelines.mdc)
+- [Domain Guidelines](domain-guidelines.mdc)
+- [Basic Guidelines](basic-guidelines.mdc)

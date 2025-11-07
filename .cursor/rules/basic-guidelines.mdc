@@ -1,0 +1,239 @@
+---
+alwaysApply: true
+title: "Basic Guidelines"
+description: "Fundamental principles for AI assistant behavior - always applied"
+---
+
+# Basic Guidelines
+
+## Language Requirements
+
+### Code and Documentation Language
+- User can write in any language but **all generated code, JSON, properties, documentation, and deliverables MUST be in ENGLISH**
+- Code comments: English
+- Variable names: English
+- Documentation: English
+- Commit messages: English
+- Only user-facing UI text may be in other languages if specifically requested
+
+## Core Principles
+
+### 1. Never Assume or Invent Information
+- **ALWAYS** ask for clarification when requirements are unclear or incomplete
+- **NEVER** invent business rules, user stories, or technical specifications
+- **NEVER** assume data structures, API endpoints, or integration details
+- If information is missing, explicitly state what is needed before proceeding
+- When unclear about language version, always **use the latest released language version**
+
+### 2. Structured Communication
+- Use clear, concise language in all responses
+- Break down complex tasks into actionable steps
+- Provide context for technical decisions
+- Explain trade-offs when multiple approaches exist
+
+### 3. Quality Standards
+- Follow established coding standards and best practices
+- Write self-documenting code with clear variable and function names
+- Include inline comments for complex logic
+- Ensure all code is testable and maintainable
+
+### 4. Documentation Requirements
+- Keep documentation synchronized with code changes
+- Use consistent formatting across all documents
+- Include examples and templates where appropriate
+- Reference related documents and dependencies
+
+### 5. Testing & Validation
+- Write unit tests for all new functionality
+- Ensure tests cover edge cases and error conditions
+- Validate inputs and handle errors gracefully
+- Run tests before marking tasks as complete
+
+### 6. Security & Privacy
+- Never hardcode sensitive information (API keys, passwords, tokens)
+- Use environment variables for configuration
+- Sanitize user inputs to prevent injection attacks
+- Follow principle of least privilege for access control
+
+### 7. Version Control
+- Write clear, descriptive commit messages
+- Follow conventional commit format: `type(scope): description`
+- Keep commits atomic and focused on single concerns
+- Reference ticket numbers in commit messages
+- Follow semantic versioning for releases (MAJOR.MINOR.PATCH)
+- Maintain CHANGELOG.md with all notable changes
+
+### 8. Iterative Development
+- Build features incrementally with clear milestones
+- Test each layer before moving to the next
+- Commit working code frequently
+- Rollback if tests fail or issues arise
+
+## AI Assistant Behavior
+
+### When to Ask Questions
+- Requirement is ambiguous or contradictory
+- Multiple valid implementation approaches exist
+- Business rules are not clearly defined
+- Integration details are missing
+- Security implications are unclear
+
+### When to Proceed
+- Requirements are clear and complete
+- Established patterns and standards exist
+- Implementation path is straightforward
+- Changes are within defined scope
+
+### Response Format
+- Start with confirmation of understanding
+- List assumptions if any
+- Outline implementation approach
+- Identify potential risks or blockers
+- Provide estimated effort when relevant
+
+## Workflow Integration
+
+### Before Starting Work
+1. Confirm understanding of requirements
+2. Identify dependencies and blockers
+3. Review related documentation
+4. Check for existing patterns or implementations
+5. Plan testing approach
+
+### During Work
+1. Follow layered development approach
+2. Write tests alongside implementation
+3. Document decisions and trade-offs
+4. Keep stakeholders informed of progress
+5. Commit working increments frequently
+
+### After Completion
+1. Verify all tests pass
+2. Update documentation
+3. Review code quality and standards
+4. Update ticket status
+5. Request code review if needed
+
+## File Organization
+
+### Naming Conventions
+- Use kebab-case for file names: `user-story-guidelines.mdc`
+- Use descriptive, self-explanatory names
+- Avoid version numbers in file names (use Git)
+- Use appropriate extensions: `.md` for docs, `.mdc` for rules
+
+### Directory Structure
+- Keep related files together
+- Separate documentation from code
+- Use consistent folder hierarchy
+- Maintain clean, organized repositories
+
+## Error Handling
+
+### When Errors Occur
+- Provide clear, actionable error messages
+- Log errors with sufficient context
+- Fail gracefully with fallback options
+- Never expose sensitive information in errors
+
+### Recovery Strategy
+- Implement retry logic for transient failures
+- Provide rollback mechanisms
+- Maintain data consistency
+- Alert appropriate stakeholders
+
+## Continuous Improvement
+
+### Rule Maintenance
+- Review guidelines with each new model release
+- Update based on team feedback
+- Remove outdated or conflicting rules
+- Test rules with different AI assistants
+
+### Learning & Adaptation
+- Document lessons learned
+- Share best practices with team
+- Stay current with technology updates
+- Refine processes based on results
+
+## JSON and API Responses
+
+### JSON Formatting
+- Unless strictly requested by the user, all generated **JSON should follow snake_case** convention
+- When creating nested JSON objects, **objects should be designed to be reusable**
+- Avoid deeply nested structures when possible
+
+**Example:**
+```json
+{
+  "user_id": 123,
+  "first_name": "John",
+  "contact_info": {
+    "email": "john@example.com",
+    "phone_number": "+1234567890"
+  }
+}
+```
+
+## Logging Standards
+
+### Logging Levels
+- **Always use DEBUG as the default logging level** unless requested otherwise
+- Use appropriate logging levels:
+  - **DEBUG:** Detailed information for diagnosing problems
+  - **INFO:** Confirmation that things are working as expected
+  - **WARNING:** Indication of potential problems
+  - **ERROR:** Serious problems that prevented functionality
+  - **CRITICAL:** Very serious errors that may cause application failure
+
+**Example:**
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Default DEBUG level
+logger.debug("Processing RFP: %s", rfp_id)
+logger.info("RFP processing completed successfully")
+logger.warning("Low confidence score: %f", confidence)
+logger.error("Failed to extract requirements: %s", error)
+```
+
+## Versioning and Releases
+
+### Semantic Versioning
+- All projects **MUST follow [Semantic Versioning 2.0.0](https://semver.org)**
+- Version format: `MAJOR.MINOR.PATCH[-QUALIFIER]`
+  - **MAJOR:** Increment for incompatible API changes
+  - **MINOR:** Increment for backward-compatible functionality additions
+  - **PATCH:** Increment for backward-compatible bug fixes
+  - **QUALIFIER:** Optional label for pre-release or build metadata (e.g., `-alpha`, `-beta`, `-rc1`)
+
+### Release Process
+- Tag all releases in Git with the version number prefixed with 'v' (e.g., `v1.2.3`)
+- Document all changes in `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com) format
+- Update version in all relevant files:
+  - `src/__init__.py`
+  - `pyproject.toml` or `setup.py`
+  - Documentation
+
+**Example CHANGELOG entry:**
+```markdown
+## [1.2.0] - 2025-11-07
+
+### Added
+- New feature for risk detection
+- Support for Groq LLM provider
+
+### Fixed
+- PDF extraction for complex layouts
+```
+
+## Documentation Requirements
+
+### Technical Documentation
+- If not exist, the agent must **create a new folder called "documentation"** to store all technical documentation
+- Use the `document-template.mc` for all technical documents
+- Before starting new tasks, **review relevant documents** in the "documentation" folder
+- **Document all key technical decisions** clearly in English
+- Keep documentation synchronized with code changes

@@ -1,0 +1,302 @@
+---
+title: "User Story Guidelines"
+description: "Standards for writing effective, testable user stories with clear acceptance criteria"
+---
+
+# User Story Guidelines
+
+## Overview
+
+User stories describe features from the end user's perspective. They should be simple, testable, and focused on delivering value.
+
+## Story Format
+
+### Standard Template
+
+```markdown
+As a [user type/persona],
+I want to [action/capability],
+So that [benefit/value/goal].
+```
+
+### Example
+
+```markdown
+As a sales representative,
+I want to upload an RFP PDF and get automated risk analysis,
+So that I can identify problematic clauses before submitting proposals.
+```
+
+## INVEST Principles
+
+Good user stories follow INVEST criteria:
+
+- **Independent:** Can be developed and delivered separately
+- **Negotiable:** Details can be discussed and refined
+- **Valuable:** Delivers clear value to users
+- **Estimable:** Team can estimate effort required
+- **Small:** Completable within one sprint
+- **Testable:** Clear criteria for done
+
+## Acceptance Criteria
+
+### Gherkin Format (Preferred)
+
+Use Given-When-Then format for clear, testable criteria:
+
+```gherkin
+Scenario: Upload valid RFP PDF
+  Given I am on the RFP upload page
+  When I select a PDF file under 50MB
+  And I click the "Upload" button
+  Then the file uploads successfully
+  And I see a confirmation message
+  And the file appears in my documents list
+
+Scenario: Upload invalid file type
+  Given I am on the RFP upload page
+  When I select a non-PDF file (e.g., .docx)
+  And I click the "Upload" button
+  Then I see an error message "Only PDF files are supported"
+  And the file is not uploaded
+```
+
+### Checklist Format (Alternative)
+
+For simple stories, use checklist format:
+
+```markdown
+**Acceptance Criteria:**
+- [ ] User can select PDF file from local system
+- [ ] System validates file type is PDF
+- [ ] System validates file size is under 50MB
+- [ ] Upload progress indicator is displayed
+- [ ] Success message appears on completion
+- [ ] Uploaded file appears in documents list
+- [ ] Error messages are clear and actionable
+```
+
+## Story Components
+
+### Required Elements
+
+1. **Title:** Clear, action-oriented (verb + object)
+   - ✅ Good: "Upload RFP PDF with validation"
+   - ❌ Bad: "PDF upload feature"
+
+2. **Description:** User story in standard format
+
+3. **Acceptance Criteria:** Testable conditions (Gherkin or checklist)
+
+4. **Priority:** Must-have, Should-have, Nice-to-have
+
+5. **Estimation:** Story points or t-shirt size
+
+### Optional Elements
+
+- **Business Value:** Why this matters (when not obvious)
+- **Dependencies:** Other stories or systems required
+- **Technical Notes:** Implementation hints (not requirements)
+- **Mockups/Wireframes:** Visual references
+- **Test Data:** Sample inputs and expected outputs
+
+## Story Sizing
+
+### Story Points (Fibonacci)
+- **1-2 points:** Simple, clear implementation (few hours)
+- **3-5 points:** Moderate complexity (1-2 days)
+- **8-13 points:** Complex, may need breakdown (3-5 days)
+- **21+ points:** Epic - must be broken down
+
+### When to Split Stories
+
+Split if:
+- Estimated at 13+ story points
+- Multiple acceptance criteria clusters
+- Different user roles involved
+- Can deliver value incrementally
+- Has unclear or ambiguous requirements
+
+### Splitting Techniques
+
+**By workflow steps:**
+```markdown
+Original: "User uploads RFP and gets draft response"
+Split:
+  → "User uploads RFP PDF"
+  → "System extracts requirements from RFP"
+  → "System generates draft response"
+```
+
+**By acceptance criteria:**
+```markdown
+Original: "System validates uploaded file"
+Split:
+  → "System validates file type"
+  → "System validates file size"
+  → "System validates file content"
+```
+
+**By user roles:**
+```markdown
+Original: "Users manage RFP documents"
+Split:
+  → "Sales rep uploads RFP documents"
+  → "Manager reviews uploaded documents"
+  → "Admin configures document settings"
+```
+
+## Definition of Ready (DoR)
+
+Story is ready for development when:
+
+- [ ] User story follows standard format
+- [ ] Acceptance criteria are clear and testable
+- [ ] Dependencies are identified
+- [ ] Story is estimated by team
+- [ ] Priority is assigned
+- [ ] Mockups/designs available (if needed)
+- [ ] Business value is understood
+- [ ] No major unknowns or blockers
+
+## Definition of Done (DoD)
+
+Story is complete when:
+
+- [ ] All acceptance criteria met
+- [ ] Code reviewed and approved
+- [ ] Unit tests written and passing (80%+ coverage)
+- [ ] Integration tests passing (if applicable)
+- [ ] Documentation updated
+- [ ] No critical bugs
+- [ ] Deployed to test environment
+- [ ] Product owner approved
+- [ ] Regression tests passing
+
+## Common Anti-Patterns
+
+### ❌ Avoid These
+
+**Too technical:**
+```markdown
+As a developer, I want to implement JWT authentication...
+```
+→ Focus on user value, not implementation
+
+**Too vague:**
+```markdown
+As a user, I want a better experience...
+```
+→ Be specific about action and outcome
+
+**No acceptance criteria:**
+```markdown
+As a sales rep, I want to upload RFPs.
+```
+→ Always include testable criteria
+
+**Too large:**
+```markdown
+As a user, I want a complete RFP management system...
+```
+→ Break into smaller, deliverable stories
+
+## Story Categories
+
+### Feature Stories
+New functionality that delivers user value
+```markdown
+As a sales manager,
+I want to view analytics on RFP response times,
+So that I can optimize our sales process.
+```
+
+### Bug Stories
+Defects that need fixing
+```markdown
+As a user,
+I want the PDF upload to handle special characters correctly,
+So that my RFPs with accented names are processed successfully.
+```
+
+### Technical Stories
+Infrastructure or refactoring (use sparingly)
+```markdown
+As a development team,
+We need to optimize the LLM prompt caching,
+So that response generation is 50% faster.
+```
+
+### Spike Stories
+Research or investigation
+```markdown
+As a development team,
+We need to evaluate Google Gemini vs Groq API,
+So that we can choose the most cost-effective LLM provider.
+
+**Timebox:** 8 hours
+**Deliverable:** Comparison document with recommendation
+```
+
+## Examples by Feature Area
+
+### RFP Upload Feature
+
+```markdown
+**Story:** Upload RFP PDF
+As a sales representative,
+I want to upload RFP documents in PDF format,
+So that I can start the automated response process.
+
+**Acceptance Criteria:**
+Scenario: Successful PDF upload
+  Given I am logged into the RFP Draft Booster
+  When I click the "Upload RFP" button
+  And I select a PDF file under 50MB
+  And I click "Confirm Upload"
+  Then the file uploads within 10 seconds
+  And I see "Upload successful" message
+  And the RFP appears in my documents list
+
+Scenario: File size validation
+  Given I am on the upload page
+  When I select a PDF file over 50MB
+  Then I see an error "File exceeds 50MB limit"
+  And the upload button is disabled
+
+**Priority:** Must-have
+**Estimation:** 5 story points
+**Dependencies:** None
+```
+
+### LLM Integration Feature
+
+```markdown
+**Story:** Extract Requirements with LLM
+As a sales representative,
+I want the system to automatically extract key requirements from uploaded RFPs,
+So that I don't have to manually read through 50+ page documents.
+
+**Acceptance Criteria:**
+- [ ] System processes PDF within 30 seconds of upload
+- [ ] Extracts at minimum: scope, deliverables, timeline, budget
+- [ ] Displays extracted requirements in structured format
+- [ ] Highlights confidence score for each extraction
+- [ ] Allows manual correction of extracted data
+- [ ] Handles RFPs up to 100 pages
+
+**Priority:** Must-have
+**Estimation:** 13 story points
+**Dependencies:** PDF Upload story completed
+**Technical Note:** Use LangChain with Gemini API
+```
+
+## Templates
+
+See `.cursor/rules/templates/user_story_template.md` for blank template.
+
+## Related Guidelines
+
+- [PRD Guidelines](prd-guidelines.mdc)
+- [Basic Guidelines](basic-guidelines.mdc)
+- [Domain Guidelines](domain-guidelines.mdc)

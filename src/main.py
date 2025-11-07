@@ -1,0 +1,113 @@
+"""RFP Draft Booster - Main Streamlit Application.
+
+This is the main entry point for the RFP Draft Booster application.
+It provides the home page and navigation to other pages.
+"""
+
+import streamlit as st
+from src.config import settings
+from src.utils.logging_config import setup_logging
+from src.utils.session import init_session_state
+
+
+# Page configuration
+st.set_page_config(
+    page_title=settings.app_name,
+    page_icon="📄",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://github.com/bairesdev/rfp-draft-booster',
+        'Report a bug': 'https://github.com/bairesdev/rfp-draft-booster/issues',
+        'About': f'# {settings.app_name}\n\nVersion {settings.version}\n\nAI-powered RFP response automation'
+    }
+)
+
+# Initialize
+setup_logging()
+init_session_state()
+
+
+def main() -> None:
+    """Main application entry point."""
+    
+    # Header
+    st.title("🚀 RFP Draft Booster")
+    st.markdown("**Accelerate your RFP responses by 80%**")
+    
+    st.divider()
+    
+    # Welcome message
+    st.markdown("""
+    ## Welcome!
+    
+    RFP Draft Booster automates the time-consuming process of responding to Request for Proposals. 
+    
+    ### How it works:
+    
+    1. **📤 Upload** - Upload your RFP PDF (up to 50MB)
+    2. **🔍 Extract** - AI extracts requirements automatically
+    3. **⚠️ Analyze** - Detect risky clauses and terms
+    4. **🤝 Match** - Match requirements to our services
+    5. **📝 Generate** - Create editable proposal draft
+    6. **📄 Export** - Export to Google Docs
+    
+    ### Benefits:
+    
+    - ⚡ **80% faster** response time
+    - 📈 **25-30% higher** win rates
+    - 💰 **100+ hours** saved per month
+    - 🎯 **Zero requirements** missed
+    
+    ---
+    
+    ### Ready to get started?
+    
+    Use the sidebar to navigate to **Upload RFP** to begin!
+    """)
+    
+    # Statistics (mock data for now)
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric(
+            label="RFPs Processed",
+            value="0",
+            delta="Start now!"
+        )
+    
+    with col2:
+        st.metric(
+            label="Avg Response Time",
+            value="N/A",
+            delta="Coming soon"
+        )
+    
+    with col3:
+        st.metric(
+            label="Time Saved",
+            value="0 hours",
+            delta="Track savings"
+        )
+    
+    with col4:
+        st.metric(
+            label="Win Rate",
+            value="N/A",
+            delta="Measure success"
+        )
+    
+    st.divider()
+    
+    # Footer
+    st.markdown("""
+    <div style='text-align: center; color: #666; padding: 20px;'>
+        <p>Built with ❤️ by BairesDev | Powered by AI</p>
+        <p style='font-size: 0.9em;'>Version {version}</p>
+    </div>
+    """.format(version=settings.version), unsafe_allow_html=True)
+
+
+if __name__ == "__main__":
+    main()
+
