@@ -1,0 +1,16 @@
+{
+  "epic": {
+    "project_key": "SCRUM",
+    "summary": "[EPIC] Project Setup & Infrastructure",
+    "description": "Establish the foundational project structure, development environment, and core infrastructure needed for the RFP Draft Booster application. This includes setting up the Streamlit application, configuring development tools, implementing project guidelines, and creating the basic UI shell.\n\n## Business Value\n\n### Problem Being Solved\nBefore feature development can begin, we need a solid foundation with proper tooling, standards, and infrastructure to ensure consistent, high-quality code delivery.\n\n### Expected Benefits\n- **Faster Development:** Standardized structure accelerates feature implementation\n- **Code Quality:** Automated linting and formatting ensure consistency\n- **Collaboration:** Clear guidelines enable smooth team collaboration\n- **Maintainability:** Well-organized code easier to maintain and extend\n\n### Success Metrics\n| Metric | Target | How Measured |\n|--------|--------|-------------|\n| Setup Time | < 30 minutes | Time for new developer to set up environment |\n| Code Quality Score | > 8.0/10 | Pylint score |\n| Test Coverage | > 80% | pytest-cov report |\n\n## Technical Overview\n\n### Architecture\n```\nrfp-draft-booster/\n├── .cursor/rules/          # AI development guidelines\n├── .github/                # GitHub configuration\n├── context/                # Project configuration\n├── domain/                 # Business entities\n├── deliverables/           # PRDs, Epics, Stories\n├── src/                   # Source code\n│   ├── main.py           # Streamlit entry point\n│   ├── models/           # Data models\n│   ├── services/         # Business logic\n│   ├── llm/             # LLM integrations\n│   ├── ui/              # UI components\n│   └── utils/           # Utilities\n├── tests/                 # Test suite\n├── data/                  # Data storage\n├── logs/                  # Application logs\n├── .env                   # Environment variables\n├── .gitignore\n├── requirements.txt\n└── README.md\n```\n\n### Key Components\n1. **Streamlit App Shell:** Basic multi-page structure with navigation\n2. **Configuration Management:** Environment variables, settings\n3. **Logging System:** Structured logging to files and console\n4. **Testing Framework:** pytest with fixtures and mocking\n\n### Technology Stack\n- Python 3.10+\n- Streamlit 1.28+\n- pytest for testing\n- Black for formatting\n- pylint, mypy for linting\n\n## Timeline\n- **Start Date:** 2025-11-11\n- **Target Date:** 2025-11-15\n- **Sprint:** Sprint 1 (Week 1)\n\n## Story Points\n- **Total:** 40 points\n- **Must-Have (P0):** 32 points\n- **Should-Have (P1):** 8 points",
+    "issue_type": "Epic",
+    "priority": "High",
+    "assignee": "luis.sosa@bairesdev.com",
+    "labels": ["foundation", "infrastructure", "setup"],
+    "additional_fields": {
+      "customfield_10011": "2025-11-11",
+      "customfield_10012": "2025-11-15"
+    }
+  }
+}
+

@@ -5,9 +5,9 @@ It provides the home page and navigation to other pages.
 """
 
 import streamlit as st
-from src.config import settings
-from src.utils.logging_config import setup_logging
-from src.utils.session import init_session_state
+from config import settings
+from utils.logging_config import setup_logging
+from utils.session import init_session_state
 
 
 # Page configuration

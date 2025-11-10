@@ -1,10 +1,10 @@
 """Data models for RFP Draft Booster."""
 
-from src.models.rfp import RFP, RFPStatus
-from src.models.requirement import Requirement, RequirementCategory, RequirementPriority
-from src.models.service import Service, ServiceMatch, ServiceCategory
-from src.models.risk import RiskClause, RiskType, RiskSeverity
-from src.models.draft import Draft, DraftStatus, DraftSection
+from models.rfp import RFP, RFPStatus
+from models.requirement import Requirement, RequirementCategory, RequirementPriority
+from models.service import Service, ServiceMatch, ServiceCategory
+from models.risk import RiskClause, RiskType, RiskSeverity
+from models.draft import Draft, DraftStatus, DraftSection
 
 __all__ = [
     "RFP",

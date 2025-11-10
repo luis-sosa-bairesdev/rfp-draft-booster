@@ -45,6 +45,11 @@ class RFP:
     status: RFPStatus = RFPStatus.UPLOADED
     error_message: Optional[str] = None
     extracted_text: Optional[str] = None
+    extracted_text_by_page: dict[int, str] = field(default_factory=dict)
+    
+    # Additional metadata
+    notes: str = ""
+    tags: list[str] = field(default_factory=list)
     
     # User & ownership
     uploaded_by: str = ""

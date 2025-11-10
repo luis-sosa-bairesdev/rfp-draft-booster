@@ -2,7 +2,7 @@
 
 import streamlit as st
 from typing import Optional, List, Dict, Any
-from src.models import RFP, Requirement, Service, ServiceMatch, RiskClause, Draft
+from models import RFP, Requirement, Service, ServiceMatch, RiskClause, Draft
 
 
 def init_session_state() -> None:

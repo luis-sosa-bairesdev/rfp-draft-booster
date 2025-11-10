@@ -1,0 +1,115 @@
+{
+  "user_stories": [
+    {
+      "key": "RFP-2",
+      "summary": "Setup project repository and folder structure",
+      "description": "## User Story\nAs a **developer**, I want a **well-organized project structure**, so that **I can easily navigate and understand the codebase**.\n\n## Acceptance Criteria\n- [ ] Repository created with standardized folder structure\n- [ ] All required directories present (.cursor/rules, context, domain, deliverables, src, tests, data, logs)\n- [ ] .gitignore configured to exclude sensitive files and caches\n- [ ] Initial README.md with project description\n- [ ] VERSION file initialized at 0.1.0\n- [ ] All AI development guidelines in .cursor/rules/\n\n## Technical Notes\n- Follow BairesDev project structure standards\n- Include domain entity definitions\n- Setup deliverables folder for PRDs and epics\n\n## Story Points\n5\n\n## Priority\nHighest\n\n## Type\nTask",
+      "issue_type": "Task",
+      "priority": "Highest",
+      "assignee": "luis.sosa@bairesdev.com",
+      "story_points": 5,
+      "labels": ["setup", "infrastructure"],
+      "parent": "RFP-1"
+    },
+    {
+      "key": "RFP-3",
+      "summary": "Configure Python virtual environment and dependencies",
+      "description": "## User Story\nAs a **developer**, I want a **configured Python environment**, so that **I can install dependencies consistently**.\n\n## Acceptance Criteria\n- [ ] Python 3.10+ virtual environment created\n- [ ] requirements.txt with pinned versions\n- [ ] All core dependencies installed (Streamlit, pytest, Black, pylint, mypy)\n- [ ] Virtual environment activation documented in README\n- [ ] Dependencies install without errors\n- [ ] Version compatibility verified\n\n## Technical Notes\n- Use venv for virtual environment\n- Pin all package versions for reproducibility\n- Include dev dependencies separate section\n\n## Dependencies\n- Requires: RFP-2 (project structure)\n\n## Story Points\n5\n\n## Priority\nHighest\n\n## Type\nTask",
+      "issue_type": "Task",
+      "priority": "Highest",
+      "assignee": "luis.sosa@bairesdev.com",
+      "story_points": 5,
+      "labels": ["setup", "dependencies"],
+      "parent": "RFP-1"
+    },
+    {
+      "key": "RFP-4",
+      "summary": "Create basic Streamlit app with navigation",
+      "description": "## User Story\nAs a **user**, I want a **basic Streamlit application**, so that **I can navigate through different pages**.\n\n## Acceptance Criteria\n- [ ] Streamlit app runs on localhost:8501\n- [ ] Multi-page structure implemented\n- [ ] Navigation sidebar with page links\n- [ ] Home page with project overview\n- [ ] Placeholder pages for main features\n- [ ] Basic styling and branding applied\n- [ ] App loads without errors\n\n## Technical Notes\n- Use Streamlit's native multi-page support\n- Create src/main.py as entry point\n- Setup src/ui/ for UI components\n- Include session state management\n\n## Pages to Create\n1. Home / Dashboard\n2. Upload RFP\n3. Requirements\n4. Risk Analysis\n5. Service Matching\n6. Generate Draft\n\n## Dependencies\n- Requires: RFP-3 (dependencies installed)\n\n## Story Points\n8\n\n## Priority\nHighest\n\n## Type\nTask",
+      "issue_type": "Task",
+      "priority": "Highest",
+      "assignee": "luis.sosa@bairesdev.com",
+      "story_points": 8,
+      "labels": ["streamlit", "ui", "navigation"],
+      "parent": "RFP-1"
+    },
+    {
+      "key": "RFP-5",
+      "summary": "Implement code quality tools (Black, pylint, mypy)",
+      "description": "## User Story\nAs a **developer**, I want **automated code quality tools**, so that **I can maintain consistent code standards**.\n\n## Acceptance Criteria\n- [ ] Black configured with line length 88\n- [ ] pylint configured with project-specific rules\n- [ ] mypy configured for strict type checking\n- [ ] isort configured for import sorting\n- [ ] Configuration files in project root (.pylintrc, pyproject.toml)\n- [ ] All existing code passes quality checks\n- [ ] Commands documented in README\n\n## Technical Notes\n- Create pyproject.toml for tool configuration\n- Setup .pylintrc for custom rules\n- Configure mypy for gradual typing\n- Integrate with IDE (VSCode/Cursor)\n\n## Quality Gates\n- Black: All files formatted\n- pylint: Score >= 8.0/10\n- mypy: No errors in strict mode\n- isort: All imports sorted\n\n## Dependencies\n- Requires: RFP-3 (dependencies installed)\n\n## Story Points\n3\n\n## Priority\nHigh\n\n## Type\nTask",
+      "issue_type": "Task",
+      "priority": "High",
+      "assignee": "luis.sosa@bairesdev.com",
+      "story_points": 3,
+      "labels": ["code-quality", "linting"],
+      "parent": "RFP-1"
+    },
+    {
+      "key": "RFP-6",
+      "summary": "Setup pytest and test infrastructure",
+      "description": "## User Story\nAs a **developer**, I want a **testing framework**, so that **I can write and run tests reliably**.\n\n## Acceptance Criteria\n- [ ] pytest installed and configured\n- [ ] pytest-cov for coverage reporting\n- [ ] Test directory structure created (tests/ with subdirectories)\n- [ ] conftest.py with shared fixtures\n- [ ] Sample test passing\n- [ ] Coverage report generated (target: 80%+)\n- [ ] Test commands documented in README\n\n## Technical Notes\n- Create tests/ directory matching src/ structure\n- Setup pytest.ini for configuration\n- Include fixtures for common test scenarios\n- Configure coverage exclusions\n\n## Test Structure\n```\ntests/\n├── __init__.py\n├── conftest.py\n├── test_models/\n├── test_services/\n├── test_llm/\n└── test_integration/\n```\n\n## Dependencies\n- Requires: RFP-3 (dependencies installed)\n\n## Story Points\n5\n\n## Priority\nHigh\n\n## Type\nTask",
+      "issue_type": "Task",
+      "priority": "High",
+      "assignee": "luis.sosa@bairesdev.com",
+      "story_points": 5,
+      "labels": ["testing", "pytest"],
+      "parent": "RFP-1"
+    },
+    {
+      "key": "RFP-7",
+      "summary": "Create .env configuration for API keys",
+      "description": "## User Story\nAs a **developer**, I want **environment-based configuration**, so that **I can manage secrets securely**.\n\n## Acceptance Criteria\n- [ ] .env.example file with required variables\n- [ ] .env added to .gitignore\n- [ ] Configuration loader in src/config.py\n- [ ] Environment variables validated on startup\n- [ ] Clear error messages for missing variables\n- [ ] Documentation for obtaining API keys\n- [ ] No secrets committed to repository\n\n## Technical Notes\n- Use python-dotenv for loading\n- Create src/config.py for centralized config\n- Validate all required variables\n- Provide defaults for optional settings\n\n## Required Environment Variables\n```\n# LLM Configuration\nGEMINI_API_KEY=\nGROQ_API_KEY=\n\n# Google Docs Export\nGDOCS_CREDENTIALS_PATH=\n\n# Application Settings\nDEBUG=False\nLOG_LEVEL=INFO\n```\n\n## Dependencies\n- Requires: RFP-2 (project structure)\n\n## Story Points\n3\n\n## Priority\nHigh\n\n## Type\nTask",
+      "issue_type": "Task",
+      "priority": "High",
+      "assignee": "luis.sosa@bairesdev.com",
+      "story_points": 3,
+      "labels": ["configuration", "security"],
+      "parent": "RFP-1"
+    },
+    {
+      "key": "RFP-8",
+      "summary": "Setup Git hooks and pre-commit checks",
+      "description": "## User Story\nAs a **developer**, I want **automated pre-commit checks**, so that **I don't commit code that fails quality standards**.\n\n## Acceptance Criteria\n- [ ] pre-commit framework installed\n- [ ] .pre-commit-config.yaml configured\n- [ ] Hooks run Black formatting automatically\n- [ ] Hooks run pylint checks\n- [ ] Hooks prevent commits with errors\n- [ ] Hooks documented in README\n- [ ] Team can install hooks easily\n\n## Technical Notes\n- Use pre-commit framework\n- Include hooks for: Black, isort, pylint, trailing whitespace, YAML validation\n- Configure to run on git commit\n- Allow bypass with --no-verify flag (documented)\n\n## Pre-commit Hooks\n1. Black (auto-format)\n2. isort (sort imports)\n3. pylint (linting)\n4. trailing-whitespace\n5. end-of-file-fixer\n6. check-yaml\n7. check-added-large-files\n\n## Dependencies\n- Requires: RFP-5 (code quality tools)\n\n## Story Points\n3\n\n## Priority\nMedium\n\n## Type\nTask",
+      "issue_type": "Task",
+      "priority": "Medium",
+      "assignee": "luis.sosa@bairesdev.com",
+      "story_points": 3,
+      "labels": ["git", "automation"],
+      "parent": "RFP-1"
+    },
+    {
+      "key": "RFP-9",
+      "summary": "Create README with setup instructions",
+      "description": "## User Story\nAs a **new developer**, I want **clear setup instructions**, so that **I can get started in under 30 minutes**.\n\n## Acceptance Criteria\n- [ ] Comprehensive README.md created\n- [ ] Quick Start section with step-by-step instructions\n- [ ] Prerequisites listed clearly\n- [ ] Installation commands provided\n- [ ] Running the app documented\n- [ ] Testing commands documented\n- [ ] Troubleshooting section included\n- [ ] Links to additional documentation\n- [ ] New developer can setup in < 30 minutes\n\n## Technical Notes\n- Follow markdown best practices\n- Include code examples\n- Add badges for build status, coverage\n- Link to PRD and other docs\n\n## README Sections\n1. Project Overview\n2. Business Value\n3. Features\n4. Technology Stack\n5. Prerequisites\n6. Quick Start\n7. Usage Guide\n8. Development\n9. Testing\n10. Documentation\n11. Contributing\n12. Support\n\n## Dependencies\n- Requires: All other Epic 1 stories completed\n\n## Story Points\n3\n\n## Priority\nMedium\n\n## Type\nTask",
+      "issue_type": "Task",
+      "priority": "Medium",
+      "assignee": "luis.sosa@bairesdev.com",
+      "story_points": 3,
+      "labels": ["documentation"],
+      "parent": "RFP-1"
+    },
+    {
+      "key": "RFP-10",
+      "summary": "Setup CI/CD pipeline (GitHub Actions)",
+      "description": "## User Story\nAs a **developer**, I want **automated CI/CD**, so that **tests run automatically on every push**.\n\n## Acceptance Criteria\n- [ ] GitHub Actions workflow created\n- [ ] Workflow runs on push and PR\n- [ ] Workflow runs all tests\n- [ ] Workflow checks code quality (Black, pylint, mypy)\n- [ ] Workflow generates coverage report\n- [ ] Workflow fails if tests fail or coverage < 80%\n- [ ] Status badge added to README\n- [ ] Workflow documented\n\n## Technical Notes\n- Create .github/workflows/ci.yml\n- Use Python 3.10, 3.11, 3.12 matrix\n- Cache dependencies for speed\n- Upload coverage to Codecov (optional)\n\n## CI Pipeline Steps\n1. Checkout code\n2. Setup Python\n3. Install dependencies\n4. Run Black (check only)\n5. Run isort (check only)\n6. Run pylint\n7. Run mypy\n8. Run pytest with coverage\n9. Upload coverage report\n\n## Dependencies\n- Requires: RFP-6 (test infrastructure)\n- Requires: RFP-5 (code quality tools)\n\n## Story Points\n5\n\n## Priority\nMedium\n\n## Type\nTask",
+      "issue_type": "Task",
+      "priority": "Medium",
+      "assignee": "luis.sosa@bairesdev.com",
+      "story_points": 5,
+      "labels": ["ci-cd", "automation", "github-actions"],
+      "parent": "RFP-1"
+    },
+    {
+      "key": "RFP-11",
+      "summary": "Configure logging infrastructure",
+      "description": "## User Story\nAs a **developer**, I want **structured logging**, so that **I can debug issues and monitor application behavior**.\n\n## Acceptance Criteria\n- [ ] Logging configured with DEBUG default level\n- [ ] Logs written to both console and file\n- [ ] Log rotation implemented (daily, keep 30 days)\n- [ ] Structured log format with timestamp, level, module, message\n- [ ] Different log levels used appropriately (DEBUG, INFO, WARNING, ERROR, CRITICAL)\n- [ ] Sensitive data never logged\n- [ ] Logging utility in src/utils/logging_config.py\n- [ ] All modules use configured logger\n\n## Technical Notes\n- Use Python logging module\n- Create src/utils/logging_config.py\n- Configure log rotation with RotatingFileHandler\n- Set up different formatters for console vs file\n\n## Log Configuration\n```python\n# Default Level: DEBUG\n# Console: INFO and above\n# File: DEBUG and above\n# Format: [%(asctime)s] %(levelname)s [%(name)s] %(message)s\n# Rotation: 10MB per file, keep 5 files\n```\n\n## Dependencies\n- Requires: RFP-2 (project structure)\n\n## Story Points\n3\n\n## Priority\nMedium\n\n## Type\nTask",
+      "issue_type": "Task",
+      "priority": "Medium",
+      "assignee": "luis.sosa@bairesdev.com",
+      "story_points": 3,
+      "labels": ["logging", "observability"],
+      "parent": "RFP-1"
+    }
+  ]
+}
+

@@ -1,0 +1,11 @@
+{
+  "epic": {
+    "project_key": "SCRUM",
+    "summary": "[EPIC] PDF Processing & Upload",
+    "description": "Build the PDF upload and text extraction functionality that allows sales reps to upload RFP documents and extract text content for downstream processing. This includes file validation, upload progress tracking, text extraction, and error handling.\n\n## Business Value\n\n### Problem Being Solved\nSales reps spend 5-8 hours manually reading through 50-100 page RFP PDFs. Automated text extraction is the first critical step in the automation pipeline.\n\n### Expected Benefits\n- **Automated Extraction:** No manual transcription needed\n- **Fast Processing:** Extract text from 100-page PDFs in under 30 seconds\n- **Quality Validation:** Ensure PDFs contain extractable text\n- **User-Friendly:** Simple drag-and-drop upload\n\n### Success Metrics\n| Metric | Target | How Measured |\n|--------|--------|-------------|\n| Upload Success Rate | > 95% | Successful uploads / total attempts |\n| Extraction Speed | < 30 seconds | Time for 100-page PDF |\n| Extraction Accuracy | > 98% | Manual spot-check of text quality |\n| User Satisfaction | > 4.0/5.0 | User feedback surveys |\n\n## Technical Overview\n\n### Architecture\n```\nPDF Upload Flow:\nUser → Upload Component → Validation → Storage → Text Extraction → Display Results\n```\n\n### Key Components\n1. **File Upload Handler:** Streamlit file_uploader with validation\n2. **PDF Parser:** PyPDF2/pdfplumber for text extraction\n3. **Storage Manager:** Save PDFs to data/uploads/\n4. **RFP Model:** Dataclass for RFP metadata\n5. **Session State:** Track current RFP\n\n### Technology Stack\n- **Streamlit:** file_uploader, progress bars\n- **PyPDF2:** PDF parsing\n- **pdfplumber:** Advanced text extraction\n- **python-magic:** File type detection\n\n## Dependencies\n- **Depends On:** SCRUM-1 (Project Setup) ✅\n\n## Timeline\n- **Start Date:** 2025-11-18\n- **Target Date:** 2025-11-29\n- **Total Story Points:** 42",
+    "issue_type": "Epic",
+    "priority": "High",
+    "assignee": "luis.sosa@bairesdev.com",
+    "labels": ["pdf", "upload", "extraction", "epic-2"]
+  }
+}

@@ -3,7 +3,7 @@
 import logging
 import sys
 from pathlib import Path
-from src.config import settings
+from config import settings
 
 
 def setup_logging(level: str = None) -> None:

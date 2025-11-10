@@ -7,6 +7,21 @@ class RFPDraftBoosterException(Exception):
 
 
 class PDFProcessingError(RFPDraftBoosterException):
+    """Exception raised when PDF processing fails."""
+    pass
+
+
+class ValidationError(RFPDraftBoosterException):
+    """Exception raised when validation fails."""
+    pass
+
+
+class StorageError(RFPDraftBoosterException):
+    """Exception raised when storage operations fail."""
+    pass
+
+
+class PDFProcessingError(RFPDraftBoosterException):
     """Raised when PDF processing fails."""
     pass
 
