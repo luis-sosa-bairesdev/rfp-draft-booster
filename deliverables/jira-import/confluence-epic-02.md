@@ -1,6 +1,6 @@
 # Epic 2: PDF Processing & Upload
 
-> **Status:** To Do | **Priority:** High | **Points:** 42
+> **Status:** ✅ DONE | **Priority:** High | **Points:** 42
 > 
 > **JIRA Epic:** [SCRUM-32](https://luis-sosa-bairesdev.atlassian.net/browse/SCRUM-32)
 > 
@@ -294,29 +294,35 @@ class RFP:
 
 ## ✅ Acceptance Criteria (Epic Level)
 
-- [ ] Users can drag-and-drop or browse to select PDF files
-- [ ] System validates file type and size before upload
-- [ ] Upload progress bar shows real-time progress
-- [ ] PDFs with extractable text successfully extracted
-- [ ] Extracted text preserves basic structure
-- [ ] Page numbers tracked for reference
-- [ ] Error messages clear and actionable
-- [ ] RFP metadata captured and stored
-- [ ] Uploaded files saved to data/uploads/
-- [ ] Session state tracks current RFP
+- [x] Users can drag-and-drop or browse to select PDF files
+- [x] System validates file type and size before upload
+- [x] Upload progress bar shows real-time progress
+- [x] PDFs with extractable text successfully extracted
+- [x] Extracted text preserves basic structure
+- [x] Page numbers tracked for reference
+- [x] Error messages clear and actionable
+- [x] RFP metadata captured and stored
+- [x] Uploaded files saved to data/uploads/
+- [x] Session state tracks current RFP
 
 ---
 
 ## 📊 Progress Dashboard
 
-**Status:** To Do (0% Complete)
+**Status:** ✅ COMPLETED (100% Complete)
 
 | Status | Count | Points | Percentage |
 |--------|-------|--------|------------|
-| ✅ Done | 0 | 0 | 0% |
+| ✅ Done | 8 | 42 | 100% |
 | 🔄 In Progress | 0 | 0 | 0% |
-| 📋 To Do | 8 | 42 | 100% |
+| 📋 To Do | 0 | 0 | 0% |
 | **Total** | **8** | **42** | **100%** |
+
+### Completion Details
+- **Completed Date:** November 10, 2025
+- **Sprint:** Sprint 2
+- **Commit:** f5ccbf3
+- **All User Stories:** SCRUM-33 to SCRUM-40 marked as "Listo" (Done)
 
 ---
 
@@ -349,6 +355,6 @@ class RFP:
 
 ---
 
-**Last Updated:** 2025-11-07  
-**Version:** 1.0  
-**Status:** To Do
+**Last Updated:** 2025-11-10  
+**Version:** 2.0  
+**Status:** ✅ COMPLETED
