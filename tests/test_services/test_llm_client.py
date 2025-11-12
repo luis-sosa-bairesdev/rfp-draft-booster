@@ -13,6 +13,7 @@ Tests cover:
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 import json
+import os
 
 from services.llm_client import LLMClient, LLMProvider, create_llm_client
 
@@ -20,21 +21,28 @@ from services.llm_client import LLMClient, LLMProvider, create_llm_client
 class TestLLMClient:
     """Test LLM Client initialization and basic functionality."""
     
-    @patch('services.llm_client.genai')
-    def test_gemini_initialization(self, mock_genai):
+    @patch('google.generativeai.configure')
+    @patch('google.generativeai.GenerativeModel')
+    def test_gemini_initialization(self, mock_model_class, mock_configure):
         """Test Gemini client initialization."""
-        with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GEMINI)
+        mock_model_instance = Mock()
+        mock_model_class.return_value = mock_model_instance
+        
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'test-key'}):
+            client = LLMClient(provider=LLMProvider.GEMINI, api_key='test-key')
             
             assert client.provider == LLMProvider.GEMINI
             assert client.model == "gemini-pro"
-            mock_genai.configure.assert_called_once_with(api_key='test-key')
+            mock_configure.assert_called_once_with(api_key='test-key')
     
-    @patch('services.llm_client.Groq')
+    @patch('groq.Groq')
     def test_groq_initialization(self, mock_groq_class):
         """Test Groq client initialization."""
-        with patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GROQ)
+        mock_groq_instance = Mock()
+        mock_groq_class.return_value = mock_groq_instance
+        
+        with patch.dict(os.environ, {'GROQ_API_KEY': 'test-key'}):
+            client = LLMClient(provider=LLMProvider.GROQ, api_key='test-key')
             
             assert client.provider == LLMProvider.GROQ
             assert client.model == "mixtral-8x7b-32768"
@@ -42,27 +50,37 @@ class TestLLMClient:
     
     def test_initialization_without_api_key_raises_error(self):
         """Test that initialization without API key raises error."""
-        with patch.dict('os.environ', {}, clear=True):
+        with patch.dict(os.environ, {}, clear=True):
             with pytest.raises(ValueError, match="GEMINI_API_KEY not found"):
                 LLMClient(provider=LLMProvider.GEMINI)
     
-    @patch('services.llm_client.genai')
-    def test_custom_model_selection(self, mock_genai):
+    @patch('google.generativeai.configure')
+    @patch('google.generativeai.GenerativeModel')
+    def test_custom_model_selection(self, mock_model_class, mock_configure):
         """Test custom model can be specified."""
-        with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-key'}):
+        mock_model_instance = Mock()
+        mock_model_class.return_value = mock_model_instance
+        
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'test-key'}):
             client = LLMClient(
                 provider=LLMProvider.GEMINI,
+                api_key='test-key',
                 model="custom-model"
             )
             
             assert client.model == "custom-model"
     
-    @patch('services.llm_client.genai')
-    def test_custom_temperature(self, mock_genai):
+    @patch('google.generativeai.configure')
+    @patch('google.generativeai.GenerativeModel')
+    def test_custom_temperature(self, mock_model_class, mock_configure):
         """Test custom temperature can be set."""
-        with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-key'}):
+        mock_model_instance = Mock()
+        mock_model_class.return_value = mock_model_instance
+        
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'test-key'}):
             client = LLMClient(
                 provider=LLMProvider.GEMINI,
+                api_key='test-key',
                 temperature=0.5
             )
             
@@ -72,25 +90,26 @@ class TestLLMClient:
 class TestLLMGeneration:
     """Test LLM text generation."""
     
-    @patch('services.llm_client.genai')
-    def test_gemini_generate(self, mock_genai):
+    @patch('google.generativeai.configure')
+    @patch('google.generativeai.GenerativeModel')
+    def test_gemini_generate(self, mock_model_class, mock_configure):
         """Test text generation with Gemini."""
         # Mock the response
         mock_response = Mock()
         mock_response.text = "Generated response text"
         
-        mock_model = Mock()
-        mock_model.generate_content.return_value = mock_response
-        mock_genai.GenerativeModel.return_value = mock_model
+        mock_model_instance = Mock()
+        mock_model_instance.generate_content.return_value = mock_response
+        mock_model_class.return_value = mock_model_instance
         
-        with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GEMINI)
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'test-key'}):
+            client = LLMClient(provider=LLMProvider.GEMINI, api_key='test-key')
             result = client.generate("Test prompt")
             
             assert result == "Generated response text"
-            mock_model.generate_content.assert_called_once()
+            mock_model_instance.generate_content.assert_called_once()
     
-    @patch('services.llm_client.Groq')
+    @patch('groq.Groq')
     def test_groq_generate(self, mock_groq_class):
         """Test text generation with Groq."""
         # Mock the response
@@ -100,12 +119,12 @@ class TestLLMGeneration:
         mock_response = Mock()
         mock_response.choices = [mock_choice]
         
-        mock_client = Mock()
-        mock_client.chat.completions.create.return_value = mock_response
-        mock_groq_class.return_value = mock_client
+        mock_groq_instance = Mock()
+        mock_groq_instance.chat.completions.create.return_value = mock_response
+        mock_groq_class.return_value = mock_groq_instance
         
-        with patch.dict('os.environ', {'GROQ_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GROQ)
+        with patch.dict(os.environ, {'GROQ_API_KEY': 'test-key'}):
+            client = LLMClient(provider=LLMProvider.GROQ, api_key='test-key')
             result = client.generate("Test prompt")
             
             assert result == "Generated response from Groq"
@@ -114,119 +133,115 @@ class TestLLMGeneration:
 class TestJSONExtraction:
     """Test JSON extraction from LLM responses."""
     
-    @patch('services.llm_client.genai')
-    def test_extract_json_from_raw_array(self, mock_genai):
-        """Test extracting JSON array from raw text."""
-        with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GEMINI)
-            
-            text = '[{"name": "item1"}, {"name": "item2"}]'
-            result = client.extract_json(text)
-            
-            assert len(result) == 2
-            assert result[0]["name"] == "item1"
-            assert result[1]["name"] == "item2"
+    def _create_client_for_json_test(self):
+        """Helper to create client just for JSON extraction tests."""
+        # Create a minimal client instance without full initialization
+        client = Mock(spec=LLMClient)
+        # Bind the extract_json method to the mock
+        client.extract_json = LLMClient.extract_json.__get__(client, LLMClient)
+        return client
     
-    @patch('services.llm_client.genai')
-    def test_extract_json_from_markdown_code_block(self, mock_genai):
+    def test_extract_json_from_raw_array(self):
+        """Test extracting JSON array from raw text."""
+        client = self._create_client_for_json_test()
+        
+        text = '[{"name": "item1"}, {"name": "item2"}]'
+        result = client.extract_json(text)
+        
+        assert len(result) == 2
+        assert result[0]["name"] == "item1"
+        assert result[1]["name"] == "item2"
+    
+    def test_extract_json_from_markdown_code_block(self):
         """Test extracting JSON from markdown code block."""
-        with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GEMINI)
-            
-            text = '''Here are the results:
+        client = self._create_client_for_json_test()
+        
+        text = '''Here are the results:
 ```json
 [{"name": "item1"}, {"name": "item2"}]
 ```
 Hope this helps!'''
-            
-            result = client.extract_json(text)
-            
-            assert len(result) == 2
-            assert result[0]["name"] == "item1"
+        
+        result = client.extract_json(text)
+        
+        assert len(result) == 2
+        assert result[0]["name"] == "item1"
     
-    @patch('services.llm_client.genai')
-    def test_extract_json_from_generic_code_block(self, mock_genai):
+    def test_extract_json_from_generic_code_block(self):
         """Test extracting JSON from generic code block."""
-        with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GEMINI)
-            
-            text = '''```
+        client = self._create_client_for_json_test()
+        
+        text = '''```
 [{"name": "item1"}]
 ```'''
-            
-            result = client.extract_json(text)
-            
-            assert len(result) == 1
+        
+        result = client.extract_json(text)
+        
+        assert len(result) == 1
     
-    @patch('services.llm_client.genai')
-    def test_extract_json_with_surrounding_text(self, mock_genai):
+    def test_extract_json_with_surrounding_text(self):
         """Test extracting JSON when surrounded by other text."""
-        with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GEMINI)
-            
-            text = 'Some text before [{"name": "item1"}] some text after'
-            result = client.extract_json(text)
-            
-            assert len(result) == 1
+        client = self._create_client_for_json_test()
+        
+        text = 'Some text before [{"name": "item1"}] some text after'
+        result = client.extract_json(text)
+        
+        assert len(result) == 1
     
-    @patch('services.llm_client.genai')
-    def test_extract_json_single_object_wrapped_in_array(self, mock_genai):
+    def test_extract_json_single_object_wrapped_in_array(self):
         """Test single JSON object is wrapped in array."""
-        with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GEMINI)
-            
-            text = '{"name": "single item"}'
-            result = client.extract_json(text)
-            
-            assert isinstance(result, list)
-            assert len(result) == 1
-            assert result[0]["name"] == "single item"
+        client = self._create_client_for_json_test()
+        
+        text = '{"name": "single item"}'
+        result = client.extract_json(text)
+        
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0]["name"] == "single item"
     
-    @patch('services.llm_client.genai')
-    def test_extract_json_no_json_raises_error(self, mock_genai):
+    def test_extract_json_no_json_raises_error(self):
         """Test error when no JSON found in text."""
-        with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GEMINI)
-            
-            with pytest.raises(ValueError, match="No JSON found"):
-                client.extract_json("Just some text without JSON")
+        client = self._create_client_for_json_test()
+        
+        with pytest.raises(ValueError, match="No JSON found"):
+            client.extract_json("Just some text without JSON")
     
-    @patch('services.llm_client.genai')
-    def test_extract_json_invalid_json_raises_error(self, mock_genai):
+    def test_extract_json_invalid_json_raises_error(self):
         """Test error when JSON is malformed."""
-        with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GEMINI)
-            
-            with pytest.raises(ValueError, match="Invalid JSON"):
-                client.extract_json('[{"name": "item1",}]')  # Trailing comma
+        client = self._create_client_for_json_test()
+        
+        with pytest.raises(ValueError, match="Invalid JSON"):
+            client.extract_json('[{"name": "item1",}]')  # Trailing comma
 
 
 class TestConnectionTesting:
     """Test connection testing functionality."""
     
-    @patch('services.llm_client.genai')
-    def test_connection_test_success(self, mock_genai):
+    @patch('google.generativeai.configure')
+    @patch('google.generativeai.GenerativeModel')
+    def test_connection_test_success(self, mock_model_class, mock_configure):
         """Test successful connection test."""
         mock_response = Mock()
         mock_response.text = "OK"
         
-        mock_model = Mock()
-        mock_model.generate_content.return_value = mock_response
-        mock_genai.GenerativeModel.return_value = mock_model
+        mock_model_instance = Mock()
+        mock_model_instance.generate_content.return_value = mock_response
+        mock_model_class.return_value = mock_model_instance
         
-        with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GEMINI)
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'test-key'}):
+            client = LLMClient(provider=LLMProvider.GEMINI, api_key='test-key')
             assert client.test_connection() is True
     
-    @patch('services.llm_client.genai')
-    def test_connection_test_failure(self, mock_genai):
+    @patch('google.generativeai.configure')
+    @patch('google.generativeai.GenerativeModel')
+    def test_connection_test_failure(self, mock_model_class, mock_configure):
         """Test failed connection test."""
-        mock_model = Mock()
-        mock_model.generate_content.side_effect = Exception("Connection failed")
-        mock_genai.GenerativeModel.return_value = mock_model
+        mock_model_instance = Mock()
+        mock_model_instance.generate_content.side_effect = Exception("Connection failed")
+        mock_model_class.return_value = mock_model_instance
         
-        with patch.dict('os.environ', {'GEMINI_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GEMINI)
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'test-key'}):
+            client = LLMClient(provider=LLMProvider.GEMINI, api_key='test-key')
             assert client.test_connection() is False
 
 
@@ -272,4 +287,3 @@ class TestClientFactory:
         
         with pytest.raises(RuntimeError, match="Failed to connect to any LLM provider"):
             create_llm_client(fallback=True)
-
