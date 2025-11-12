@@ -125,9 +125,16 @@ class TestAIAssistantModal:
         # Test that page_context parameter is accepted
         # Actual functionality tested via service tests and E2E
         mock_state = {'show_ai_assistant': True, 'requirements': [], 'risks': []}
+        mock_col1 = MagicMock()
+        mock_col2 = MagicMock()
+        mock_col1.__enter__ = Mock(return_value=mock_col1)
+        mock_col1.__exit__ = Mock(return_value=None)
+        mock_col2.__enter__ = Mock(return_value=mock_col2)
+        mock_col2.__exit__ = Mock(return_value=None)
+        
         with patch('streamlit.session_state', mock_state), \
              patch('streamlit.markdown'), \
-             patch('streamlit.columns'), \
+             patch('streamlit.columns', return_value=[mock_col1, mock_col2]), \
              patch('streamlit.divider'), \
              patch('components.ai_assistant.init_ai_assistant') as mock_init, \
              patch('components.ai_assistant.get_current_rfp'), \
@@ -145,16 +152,22 @@ class TestAIAssistantModal:
         """Test close button logic."""
         # Test close button rendering - actual state change tested via E2E
         mock_state = {'show_ai_assistant': True, 'requirements': [], 'risks': []}
+        mock_col1 = MagicMock()
+        mock_col2 = MagicMock()
+        mock_col1.__enter__ = Mock(return_value=mock_col1)
+        mock_col1.__exit__ = Mock(return_value=None)
+        mock_col2.__enter__ = Mock(return_value=mock_col2)
+        mock_col2.__exit__ = Mock(return_value=None)
+        
         with patch('streamlit.session_state', mock_state), \
              patch('streamlit.markdown'), \
-             patch('streamlit.columns') as mock_columns, \
+             patch('streamlit.columns', return_value=[mock_col1, mock_col2]), \
              patch('streamlit.divider'), \
              patch('components.ai_assistant.init_ai_assistant') as mock_init, \
              patch('components.ai_assistant.get_current_rfp'), \
              patch('streamlit.text_input'), \
              patch('streamlit.button') as mock_button, \
              patch('streamlit.rerun'):
-            mock_columns.return_value = [Mock(), Mock()]
             mock_init.return_value = Mock()
             mock_button.return_value = False
             
