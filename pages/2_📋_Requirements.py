@@ -1,40 +1,442 @@
-"""Requirements Page - Coming in Epic 3."""
+"""Requirements Page - Epic 3: LLM Requirement Extraction."""
 
+import logging
 import streamlit as st
+from datetime import datetime
+from typing import List, Optional
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from utils.session import init_session_state
+from models.rfp import RFP
+from models.requirement import Requirement, RequirementCategory, RequirementPriority
+from services.requirement_extractor import RequirementExtractor, extract_requirements_from_rfp
+from services.llm_client import LLMClient, create_llm_client, LLMProvider
+from exceptions import LLMGenerationError, LLMConnectionError
+from utils.session import init_session_state, get_current_rfp
 
+
+def get_category_icon(category: RequirementCategory) -> str:
+    """Get emoji icon for a category."""
+    icons = {
+        RequirementCategory.TECHNICAL: "⚙️",
+        RequirementCategory.FUNCTIONAL: "🎯",
+        RequirementCategory.TIMELINE: "📅",
+        RequirementCategory.BUDGET: "💰",
+        RequirementCategory.COMPLIANCE: "✅",
+    }
+    return icons.get(category, "📋")
+
+logger = logging.getLogger(__name__)
+
+# Page config
 st.set_page_config(
     page_title="Requirements",
     page_icon="📋",
     layout="wide"
 )
 
+# Initialize
 init_session_state()
 
-st.title("📋 Requirements Extraction")
-st.markdown("*Coming soon in Epic 3*")
 
-st.info("""
-**This feature is under development** (Epic 3: LLM Requirement Extraction)
+def display_requirement_table(requirements: List[Requirement], filter_category: Optional[str], filter_priority: Optional[str]):
+    """Display requirements in a sortable table with filters."""
+    
+    # Apply filters
+    filtered = requirements
+    if filter_category and filter_category != "All":
+        filtered = [r for r in filtered if r.category.value == filter_category]
+    if filter_priority and filter_priority != "All":
+        filtered = [r for r in filtered if r.priority.value == filter_priority]
+    
+    if not filtered:
+        st.info("No requirements match the selected filters.")
+        return
+    
+    # Create table data
+    table_data = []
+    for req in filtered:
+        table_data.append({
+            "ID": req.id[:8] + "...",
+            "Category": f"{req.get_category_icon()} {req.category.value.title()}",
+            "Priority": f"<span style='color: {req.get_priority_color()}; font-weight: bold;'>{req.priority.value.upper()}</span>",
+            "Description": req.description[:100] + "..." if len(req.description) > 100 else req.description,
+            "Confidence": f"{req.confidence:.0%}",
+            "Page": req.page_number or "—",
+            "Verified": "✅" if req.verified else "❌",
+            "Actions": req.id  # Store ID for actions
+        })
+    
+    # Display table
+    st.markdown(f"### 📊 Requirements Table ({len(filtered)} of {len(requirements)})")
+    
+    # Create columns for table display
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1, 1.5, 2, 3, 1, 0.8, 0.8, 1.5])
+    
+    with col1:
+        st.markdown("**ID**")
+    with col2:
+        st.markdown("**Category**")
+    with col3:
+        st.markdown("**Priority**")
+    with col4:
+        st.markdown("**Description**")
+    with col5:
+        st.markdown("**Confidence**")
+    with col6:
+        st.markdown("**Page**")
+    with col7:
+        st.markdown("**Verified**")
+    with col8:
+        st.markdown("**Actions**")
+    
+    st.divider()
+    
+    # Display each requirement
+    for i, req in enumerate(filtered):
+        col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1, 1.5, 2, 3, 1, 0.8, 0.8, 1.5])
+        
+        with col1:
+            st.text(req.id[:8])
+        with col2:
+            st.text(f"{req.get_category_icon()} {req.category.value.title()}")
+        with col3:
+            st.markdown(f"<span style='color: {req.get_priority_color()}; font-weight: bold;'>{req.priority.value.upper()}</span>", unsafe_allow_html=True)
+        with col4:
+            with st.expander(req.description[:50] + "..." if len(req.description) > 50 else req.description):
+                st.text(req.description)
+                if req.notes:
+                    st.caption(f"📝 Notes: {req.notes}")
+        with col5:
+            # Color-code confidence
+            if req.confidence >= 0.8:
+                color = "green"
+            elif req.confidence >= 0.6:
+                color = "orange"
+            else:
+                color = "red"
+            st.markdown(f"<span style='color: {color};'>{req.confidence:.0%}</span>", unsafe_allow_html=True)
+        with col6:
+            st.text(str(req.page_number) if req.page_number else "—")
+        with col7:
+            st.text("✅" if req.verified else "❌")
+        with col8:
+            col_edit, col_del, col_verify = st.columns(3)
+            with col_edit:
+                if st.button("✏️", key=f"edit_{req.id}", help="Edit requirement"):
+                    st.session_state[f"editing_{req.id}"] = True
+                    st.rerun()
+            with col_del:
+                if st.button("🗑️", key=f"delete_{req.id}", help="Delete requirement"):
+                    st.session_state.requirements = [r for r in st.session_state.requirements if r.id != req.id]
+                    st.success(f"Deleted requirement: {req.description[:50]}...")
+                    st.rerun()
+            with col_verify:
+                if not req.verified:
+                    if st.button("✓", key=f"verify_{req.id}", help="Mark as verified"):
+                        req.verified = True
+                        req.updated_at = datetime.now()
+                        st.success(f"Verified requirement: {req.description[:50]}...")
+                        st.rerun()
+                else:
+                    if st.button("✗", key=f"unverify_{req.id}", help="Unverify"):
+                        req.verified = False
+                        req.updated_at = datetime.now()
+                        st.rerun()
+        
+        # Edit form (shown when edit button clicked)
+        if st.session_state.get(f"editing_{req.id}", False):
+            with st.expander(f"✏️ Edit Requirement: {req.description[:50]}...", expanded=True):
+                with st.form(f"edit_form_{req.id}"):
+                    new_description = st.text_area("Description", value=req.description, height=100)
+                    new_category = st.selectbox(
+                        "Category",
+                        options=[c.value for c in RequirementCategory],
+                        index=list(RequirementCategory).index(req.category),
+                        format_func=lambda x: get_category_icon(RequirementCategory(x)) + " " + RequirementCategory(x).value.title()
+                    )
+                    new_priority = st.selectbox(
+                        "Priority",
+                        options=[p.value for p in RequirementPriority],
+                        index=list(RequirementPriority).index(req.priority),
+                        format_func=lambda x: RequirementPriority(x).value.upper()
+                    )
+                    new_notes = st.text_area("Notes", value=req.notes or "", height=50)
+                    
+                    col_save, col_cancel = st.columns(2)
+                    with col_save:
+                        if st.form_submit_button("💾 Save", type="primary"):
+                            req.update(
+                                description=new_description,
+                                category=RequirementCategory(new_category),
+                                priority=RequirementPriority(new_priority),
+                                notes=new_notes
+                            )
+                            st.session_state[f"editing_{req.id}"] = False
+                            st.success("Requirement updated!")
+                            st.rerun()
+                    with col_cancel:
+                        if st.form_submit_button("❌ Cancel"):
+                            st.session_state[f"editing_{req.id}"] = False
+                            st.rerun()
 
-Once implemented, this page will:
-- 🤖 Extract requirements using AI
-- 📊 Categorize by type (technical, functional, timeline, budget, compliance)
-- 🎯 Assign confidence scores
-- ✏️ Allow manual editing and verification
-- 📝 Track requirement status
-""")
 
-if st.session_state.get("current_rfp"):
-    rfp = st.session_state.current_rfp
-    st.success(f"✅ Current RFP: **{rfp.title}**")
-    st.info(f"📄 {rfp.total_pages} pages | {len(rfp.extracted_text.split())} words")
-else:
-    st.warning("⚠️ No RFP uploaded yet. Please upload an RFP first.")
-    if st.button("📤 Go to Upload"):
-        st.switch_page("pages/1_📤_Upload_RFP.py")
+def display_add_requirement_form():
+    """Display form to add a new requirement manually."""
+    with st.expander("➕ Add Manual Requirement", expanded=False):
+        with st.form("add_requirement_form"):
+            description = st.text_area("Description *", height=100, help="Enter the requirement description")
+            col1, col2 = st.columns(2)
+            with col1:
+                category = st.selectbox(
+                    "Category *",
+                    options=[c.value for c in RequirementCategory],
+                    format_func=lambda x: RequirementCategory(x).get_category_icon() + " " + RequirementCategory(x).value.title()
+                )
+            with col2:
+                priority = st.selectbox(
+                    "Priority *",
+                    options=[p.value for p in RequirementPriority],
+                    format_func=lambda x: RequirementPriority(x).value.upper()
+                )
+            
+            col3, col4 = st.columns(2)
+            with col3:
+                page_number = st.number_input("Page Number", min_value=1, value=None, step=1)
+            with col4:
+                confidence = st.slider("Confidence", min_value=0.0, max_value=1.0, value=0.8, step=0.1)
+            
+            notes = st.text_area("Notes", height=50)
+            
+            if st.form_submit_button("➕ Add Requirement", type="primary"):
+                if not description.strip():
+                    st.error("Description is required!")
+                else:
+                    rfp = get_current_rfp()
+                    if not rfp:
+                        st.error("No RFP loaded. Please upload an RFP first.")
+                    else:
+                        new_req = Requirement(
+                            rfp_id=rfp.id,
+                            description=description.strip(),
+                            category=RequirementCategory(category),
+                            priority=RequirementPriority(priority),
+                            confidence=confidence,
+                            page_number=int(page_number) if page_number else None,
+                            notes=notes.strip() if notes else "",
+                            verified=False
+                        )
+                        st.session_state.requirements.append(new_req)
+                        st.success(f"Added requirement: {new_req.description[:50]}...")
+                        st.rerun()
 
+
+def display_extraction_controls():
+    """Display controls for extracting requirements."""
+    rfp = get_current_rfp()
+    
+    if not rfp:
+        st.warning("⚠️ No RFP uploaded yet. Please upload an RFP first.")
+        if st.button("📤 Go to Upload"):
+            st.switch_page("pages/1_📤_Upload_RFP.py")
+        return False
+    
+    st.info(f"📄 **Current RFP:** {rfp.title} | {rfp.total_pages} pages | {len(rfp.extracted_text.split()) if rfp.extracted_text else 0} words")
+    
+    # Check if already extracted
+    if st.session_state.requirements:
+        st.success(f"✅ {len(st.session_state.requirements)} requirements already extracted.")
+        if st.button("🔄 Re-extract Requirements", help="Clear existing and extract again"):
+            st.session_state.requirements = []
+            st.rerun()
+    
+    # Extraction settings
+    with st.expander("⚙️ Extraction Settings", expanded=False):
+        col1, col2 = st.columns(2)
+        with col1:
+            llm_provider = st.selectbox(
+                "LLM Provider",
+                options=["gemini", "groq", "ollama"],
+                index=0,
+                help="Select the LLM provider to use for extraction"
+            )
+        with col2:
+            min_confidence = st.slider(
+                "Minimum Confidence",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.3,
+                step=0.1,
+                help="Only include requirements with confidence above this threshold"
+            )
+    
+    # Extract button
+    if st.button("🤖 Extract Requirements with AI", type="primary", use_container_width=True):
+        if not rfp.extracted_text:
+            st.error("❌ RFP has no extracted text. Please re-upload the PDF.")
+            return False
+        
+        with st.spinner("🤖 Extracting requirements... This may take a few moments."):
+            try:
+                # Create LLM client
+                llm_client = create_llm_client(provider=llm_provider, fallback=True)
+                
+                # Extract requirements
+                requirements = extract_requirements_from_rfp(
+                    rfp=rfp,
+                    llm_client=llm_client,
+                    min_confidence=min_confidence
+                )
+                
+                if requirements:
+                    st.session_state.requirements = requirements
+                    st.success(f"✅ Successfully extracted {len(requirements)} requirements!")
+                    st.balloons()
+                else:
+                    st.warning("⚠️ No requirements found. Try lowering the confidence threshold.")
+                    
+            except LLMConnectionError as e:
+                st.error(f"❌ LLM Connection Error: {e}")
+                st.info("💡 **Tip:** Make sure you have configured API keys in your `.env` file:\n"
+                        "- `GEMINI_API_KEY` for Gemini\n"
+                        "- `GROQ_API_KEY` for Groq")
+            except LLMGenerationError as e:
+                st.error(f"❌ LLM Generation Error: {e}")
+                st.info("💡 **Tip:** Try using a different LLM provider or check your API quota.")
+            except Exception as e:
+                logger.error(f"Error extracting requirements: {e}", exc_info=True)
+                st.error(f"❌ Error: {e}")
+    
+    return True
+
+
+def display_statistics(requirements: List[Requirement]):
+    """Display statistics about extracted requirements."""
+    if not requirements:
+        return
+    
+    st.markdown("### 📊 Statistics")
+    
+    col1, col2, col3, col4, col5 = st.columns(5)
+    
+    with col1:
+        st.metric("Total", len(requirements))
+    
+    with col2:
+        verified_count = sum(1 for r in requirements if r.verified)
+        st.metric("Verified", f"{verified_count}/{len(requirements)}")
+    
+    with col3:
+        avg_confidence = sum(r.confidence for r in requirements) / len(requirements) if requirements else 0
+        st.metric("Avg Confidence", f"{avg_confidence:.0%}")
+    
+    with col4:
+        critical_count = sum(1 for r in requirements if r.priority == RequirementPriority.CRITICAL)
+        st.metric("Critical", critical_count)
+    
+    with col5:
+        high_confidence = sum(1 for r in requirements if r.confidence >= 0.8)
+        st.metric("High Confidence", high_confidence)
+    
+    # Category breakdown
+    st.markdown("#### By Category")
+    category_counts = {}
+    for req in requirements:
+        cat = req.category.value
+        category_counts[cat] = category_counts.get(cat, 0) + 1
+    
+    cat_cols = st.columns(len(category_counts))
+    for i, (cat, count) in enumerate(category_counts.items()):
+        with cat_cols[i]:
+            icon = RequirementCategory(cat).get_category_icon()
+            st.metric(f"{icon} {cat.title()}", count)
+
+
+def main():
+    """Main requirements page."""
+    
+    st.title("📋 Requirements Extraction")
+    st.markdown("Extract and manage requirements from your RFP using AI")
+    
+    st.divider()
+    
+    # Check if RFP is loaded
+    rfp = get_current_rfp()
+    if not rfp:
+        st.warning("⚠️ No RFP uploaded yet. Please upload an RFP first.")
+        if st.button("📤 Go to Upload"):
+            st.switch_page("pages/1_📤_Upload_RFP.py")
+        return
+    
+    # Display extraction controls
+    if display_extraction_controls():
+        st.divider()
+        
+        # Display statistics if requirements exist
+        if st.session_state.requirements:
+            display_statistics(st.session_state.requirements)
+            st.divider()
+        
+        # Filters
+        st.markdown("### 🔍 Filters")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            filter_category = st.selectbox(
+                "Filter by Category",
+                options=["All"] + [c.value for c in RequirementCategory],
+                format_func=lambda x: "All" if x == "All" else RequirementCategory(x).get_category_icon() + " " + RequirementCategory(x).value.title()
+            )
+        with col2:
+            filter_priority = st.selectbox(
+                "Filter by Priority",
+                options=["All"] + [p.value for p in RequirementPriority],
+                format_func=lambda x: "All" if x == "All" else RequirementPriority(x).value.upper()
+            )
+        with col3:
+            show_only_unverified = st.checkbox("Show only unverified", value=False)
+        
+        st.divider()
+        
+        # Display requirements table
+        requirements_to_show = st.session_state.requirements
+        if show_only_unverified:
+            requirements_to_show = [r for r in requirements_to_show if not r.verified]
+        
+        display_requirement_table(requirements_to_show, filter_category if filter_category != "All" else None, filter_priority if filter_priority != "All" else None)
+        
+        st.divider()
+        
+        # Add manual requirement
+        display_add_requirement_form()
+        
+        # Export options
+        if st.session_state.requirements:
+            st.divider()
+            st.markdown("### 💾 Export")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("📥 Export to JSON", use_container_width=True):
+                    import json
+                    requirements_dict = [r.to_dict() for r in st.session_state.requirements]
+                    st.download_button(
+                        label="Download JSON",
+                        data=json.dumps(requirements_dict, indent=2),
+                        file_name=f"requirements_{rfp.id[:8]}.json",
+                        mime="application/json"
+                    )
+            with col2:
+                if st.button("📄 Export to CSV", use_container_width=True):
+                    import pandas as pd
+                    df = pd.DataFrame([r.to_dict() for r in st.session_state.requirements])
+                    csv = df.to_csv(index=False)
+                    st.download_button(
+                        label="Download CSV",
+                        data=csv,
+                        file_name=f"requirements_{rfp.id[:8]}.csv",
+                        mime="text/csv"
+                    )
+
+
+if __name__ == "__main__":
+    main()
