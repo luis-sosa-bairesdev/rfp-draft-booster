@@ -2,7 +2,7 @@
 
 import streamlit as st
 from typing import Optional, List, Dict, Any
-from models import RFP, Requirement, Service, ServiceMatch, RiskClause, Draft
+from models import RFP, Requirement, Service, ServiceMatch, Risk, Draft
 
 
 def init_session_state() -> None:
@@ -26,7 +26,7 @@ def init_session_state() -> None:
     
     # Risk clauses
     if "risks" not in st.session_state:
-        st.session_state.risks: List[RiskClause] = []
+        st.session_state.risks: List[Risk] = []
     
     # Draft
     if "draft" not in st.session_state:

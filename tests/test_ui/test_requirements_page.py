@@ -127,6 +127,89 @@ class TestRequirementsPageLogic:
         
         assert category_counts["technical"] == 5
         assert category_counts["functional"] == 5
+    
+    def test_import_requirements_from_json(self):
+        """Test importing requirements from JSON data structure."""
+        import json
+        
+        # Create sample JSON data
+        requirements_json = [
+            {
+                "id": "test-req-1",
+                "rfp_id": "test-rfp-1",
+                "description": "Test requirement",
+                "category": "technical",
+                "priority": "high",
+                "confidence": 0.85,
+                "page_number": 1,
+                "verified": False,
+                "notes": "",
+                "created_at": "2025-11-12T15:09:42.599649",
+                "updated_at": "2025-11-12T15:09:42.599656"
+            }
+        ]
+        
+        # Test conversion from JSON
+        imported_requirements = []
+        for req_dict in requirements_json:
+            req = Requirement.from_dict(req_dict)
+            imported_requirements.append(req)
+        
+        assert len(imported_requirements) == 1
+        assert imported_requirements[0].description == "Test requirement"
+        assert imported_requirements[0].category == RequirementCategory.TECHNICAL
+        assert imported_requirements[0].priority == RequirementPriority.HIGH
+    
+    def test_import_requirements_duplicate_prevention(self):
+        """Test that importing duplicate requirements is prevented."""
+        existing_req = Requirement(
+            rfp_id="test-rfp-1",
+            description="Existing requirement",
+            id="existing-id-123"
+        )
+        
+        existing_requirements = [existing_req]
+        existing_ids = {r.id for r in existing_requirements}
+        
+        # Try to import same requirement
+        new_req = Requirement(
+            rfp_id="test-rfp-1",
+            description="Existing requirement",
+            id="existing-id-123"  # Same ID
+        )
+        
+        # Should be filtered out
+        new_requirements = [r for r in [new_req] if r.id not in existing_ids]
+        assert len(new_requirements) == 0
+        
+        # Try to import different requirement
+        different_req = Requirement(
+            rfp_id="test-rfp-1",
+            description="New requirement",
+            id="new-id-456"
+        )
+        
+        new_requirements = [r for r in [different_req] if r.id not in existing_ids]
+        assert len(new_requirements) == 1
+        assert new_requirements[0].id == "new-id-456"
+    
+    def test_import_requirements_json_validation(self):
+        """Test JSON validation for requirement imports."""
+        import json
+        
+        # Valid JSON
+        valid_json = '[{"id": "test", "rfp_id": "test", "description": "Test", "category": "technical", "priority": "high", "confidence": 0.8}]'
+        try:
+            data = json.loads(valid_json)
+            assert isinstance(data, list)
+            assert len(data) == 1
+        except json.JSONDecodeError:
+            pytest.fail("Valid JSON should not raise JSONDecodeError")
+        
+        # Invalid JSON
+        invalid_json = '[{"id": "test"}'  # Missing closing bracket
+        with pytest.raises(json.JSONDecodeError):
+            json.loads(invalid_json)
 
 
 class TestRequirementsPageIntegration:

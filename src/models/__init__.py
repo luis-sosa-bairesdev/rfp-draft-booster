@@ -3,7 +3,7 @@
 from models.rfp import RFP, RFPStatus
 from models.requirement import Requirement, RequirementCategory, RequirementPriority
 from models.service import Service, ServiceMatch, ServiceCategory
-from models.risk import RiskClause, RiskType, RiskSeverity
+from models.risk import Risk, RiskCategory, RiskSeverity
 from models.draft import Draft, DraftStatus, DraftSection
 
 __all__ = [
@@ -15,8 +15,8 @@ __all__ = [
     "Service",
     "ServiceMatch",
     "ServiceCategory",
-    "RiskClause",
-    "RiskType",
+    "Risk",
+    "RiskCategory",
     "RiskSeverity",
     "Draft",
     "DraftStatus",

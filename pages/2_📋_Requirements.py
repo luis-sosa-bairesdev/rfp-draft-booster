@@ -238,7 +238,7 @@ def display_extraction_controls():
     
     if not rfp:
         st.warning("⚠️ No RFP uploaded yet. Please upload an RFP first.")
-        if st.button("📤 Go to Upload"):
+        if st.button("📤 Go to Upload", key="btn_go_to_upload"):
             st.switch_page("pages/1_📤_Upload_RFP.py")
         return False
     
@@ -247,7 +247,7 @@ def display_extraction_controls():
     # Check if already extracted
     if st.session_state.requirements:
         st.success(f"✅ {len(st.session_state.requirements)} requirements already extracted.")
-        if st.button("🔄 Re-extract Requirements", help="Clear existing and extract again"):
+        if st.button("🔄 Re-extract Requirements", key="btn_re_extract", help="Clear existing and extract again"):
             st.session_state.requirements = []
             st.rerun()
     
@@ -259,6 +259,7 @@ def display_extraction_controls():
                 "LLM Provider",
                 options=["gemini", "groq", "ollama"],
                 index=0,
+                key="llm_provider_extract",
                 help="Select the LLM provider to use for extraction"
             )
         with col2:
@@ -268,11 +269,12 @@ def display_extraction_controls():
                 max_value=1.0,
                 value=0.3,
                 step=0.1,
+                key="min_confidence_extract",
                 help="Only include requirements with confidence above this threshold"
             )
     
     # Extract button
-    if st.button("🤖 Extract Requirements with AI", type="primary", use_container_width=True):
+    if st.button("🤖 Extract Requirements with AI", type="primary", key="btn_extract_requirements", use_container_width=True):
         if not rfp.extracted_text:
             st.error("❌ RFP has no extracted text. Please re-upload the PDF.")
             return False
@@ -392,7 +394,7 @@ def main():
     rfp = get_current_rfp()
     if not rfp:
         st.warning("⚠️ No RFP uploaded yet. Please upload an RFP first.")
-        if st.button("📤 Go to Upload"):
+        if st.button("📤 Go to Upload", key="btn_go_to_upload_main"):
             st.switch_page("pages/1_📤_Upload_RFP.py")
         return
     
@@ -412,16 +414,18 @@ def main():
             filter_category = st.selectbox(
                 "Filter by Category",
                 options=["All"] + [c.value for c in RequirementCategory],
-                format_func=lambda x: "All" if x == "All" else get_category_icon(RequirementCategory(x)) + " " + RequirementCategory(x).value.title()
+                format_func=lambda x: "All" if x == "All" else get_category_icon(RequirementCategory(x)) + " " + RequirementCategory(x).value.title(),
+                key="filter_category_requirements"
             )
         with col2:
             filter_priority = st.selectbox(
                 "Filter by Priority",
                 options=["All"] + [p.value for p in RequirementPriority],
-                format_func=lambda x: "All" if x == "All" else RequirementPriority(x).value.upper()
+                format_func=lambda x: "All" if x == "All" else RequirementPriority(x).value.upper(),
+                key="filter_priority_requirements"
             )
         with col3:
-            show_only_unverified = st.checkbox("Show only unverified", value=False)
+            show_only_unverified = st.checkbox("Show only unverified", value=False, key="show_only_unverified")
         
         st.divider()
         
@@ -437,13 +441,59 @@ def main():
         # Add manual requirement
         display_add_requirement_form()
         
-        # Export options
+        # Import/Export options
         if st.session_state.requirements:
             st.divider()
-            st.markdown("### 💾 Export")
-            col1, col2 = st.columns(2)
+            st.markdown("### 💾 Import / Export Requirements")
+            col1, col2, col3 = st.columns(3)
+            
             with col1:
-                if st.button("📥 Export to JSON", use_container_width=True):
+                st.markdown("#### 📤 Import Requirements")
+                uploaded_file = st.file_uploader(
+                    "Upload JSON file with requirements",
+                    type=['json'],
+                    key="import_requirements_file",
+                    help="Upload a previously exported requirements JSON file"
+                )
+                
+                if uploaded_file is not None:
+                    try:
+                        import json
+                        requirements_data = json.load(uploaded_file)
+                        
+                        # Validate and convert to Requirement objects
+                        imported_requirements = []
+                        for req_dict in requirements_data:
+                            try:
+                                req = Requirement.from_dict(req_dict)
+                                imported_requirements.append(req)
+                            except Exception as e:
+                                logger.warning(f"Failed to import requirement: {e}")
+                                continue
+                        
+                        if imported_requirements:
+                            # Merge with existing requirements (avoid duplicates)
+                            existing_ids = {r.id for r in st.session_state.requirements}
+                            new_requirements = [r for r in imported_requirements if r.id not in existing_ids]
+                            
+                            if new_requirements:
+                                st.session_state.requirements.extend(new_requirements)
+                                st.success(f"✅ Imported {len(new_requirements)} requirements from file")
+                                st.rerun()
+                            else:
+                                st.warning("⚠️ All requirements from file already exist")
+                        else:
+                            st.error("❌ No valid requirements found in file")
+                            
+                    except json.JSONDecodeError:
+                        st.error("❌ Invalid JSON file format")
+                    except Exception as e:
+                        logger.error(f"Error importing requirements: {e}", exc_info=True)
+                        st.error(f"❌ Error importing requirements: {str(e)}")
+            
+            with col2:
+                st.markdown("#### 📥 Export to JSON")
+                if st.button("📥 Export to JSON", key="btn_export_json", use_container_width=True):
                     import json
                     requirements_dict = [r.to_dict() for r in st.session_state.requirements]
                     st.download_button(
@@ -452,8 +502,10 @@ def main():
                         file_name=f"requirements_{rfp.id[:8]}.json",
                         mime="application/json"
                     )
-            with col2:
-                if st.button("📄 Export to CSV", use_container_width=True):
+            
+            with col3:
+                st.markdown("#### 📄 Export to CSV")
+                if st.button("📄 Export to CSV", key="btn_export_csv", use_container_width=True):
                     import pandas as pd
                     df = pd.DataFrame([r.to_dict() for r in st.session_state.requirements])
                     csv = df.to_csv(index=False)
