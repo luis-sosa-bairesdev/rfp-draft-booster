@@ -16,9 +16,10 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
-from services.file_validator import FileValidator, ValidationError
+from services.file_validator import FileValidator
 from services.pdf_processor import PDFProcessor
-from services.storage_manager import StorageManager, StorageError
+from services.storage_manager import StorageManager
+from exceptions import ValidationError, StorageError
 from models import RFP, RFPStatus
 
 
@@ -187,7 +188,7 @@ class TestStorageManager:
                 source_path = f.name
             
             try:
-                rfp = RFP(id="test-rfp", filename="test.pdf")
+                rfp = RFP(id="test-rfp", file_name="test.pdf")
                 saved_path = storage.save_uploaded_file(source_path, rfp)
                 
                 assert Path(saved_path).exists()
@@ -205,7 +206,7 @@ class TestStorageManager:
         with tempfile.TemporaryDirectory() as temp_dir:
             storage = StorageManager(base_path=temp_dir)
             
-            rfp = RFP(id="test-rfp", filename="test.pdf")
+            rfp = RFP(id="test-rfp", file_name="test.pdf")
             rfp.extracted_text = "Extracted text content"
             
             text_path = storage.save_extracted_text(rfp)
@@ -221,7 +222,7 @@ class TestStorageManager:
         with tempfile.TemporaryDirectory() as temp_dir:
             storage = StorageManager(base_path=temp_dir)
             
-            rfp = RFP(id="test-rfp", filename="document.pdf")
+            rfp = RFP(id="test-rfp", file_name="document.pdf")
             path = storage.get_file_path(rfp)
             
             assert "uploads" in str(path)
@@ -233,7 +234,7 @@ class TestStorageManager:
         with tempfile.TemporaryDirectory() as temp_dir:
             storage = StorageManager(base_path=temp_dir)
             
-            rfp = RFP(id="test-rfp", filename="test.pdf")
+            rfp = RFP(id="test-rfp", file_name="test.pdf")
             
             # File doesn't exist yet
             assert storage.file_exists(rfp) is False
@@ -282,7 +283,7 @@ class TestPDFProcessingIntegration:
                 
                 # Step 3: Save
                 storage = StorageManager(base_path=temp_dir)
-                rfp = RFP(id="test-rfp", filename="test.pdf")
+                rfp = RFP(id="test-rfp", file_name="test.pdf")
                 rfp.extracted_text = text
                 
                 saved_path = storage.save_uploaded_file(pdf_path, rfp)

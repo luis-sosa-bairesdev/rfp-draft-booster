@@ -46,7 +46,7 @@ class TestRequirementExtractor:
         mock_client = Mock()
         extractor = RequirementExtractor(llm_client=mock_client)
         
-        rfp = RFP(id="test", filename="test.pdf")
+        rfp = RFP(id="test", file_name="test.pdf")
         rfp.extracted_text = None
         
         with pytest.raises(ValueError, match="RFP must have extracted_text"):
@@ -76,7 +76,7 @@ class TestRequirementExtractor:
         
         extractor = RequirementExtractor(llm_client=mock_client, min_confidence=0.5)
         
-        rfp = RFP(id="test-rfp", filename="test.pdf")
+        rfp = RFP(id="test-rfp", file_name="test.pdf")
         rfp.extracted_text = "System requirements: 99.9% uptime. Timeline: 60 days."
         
         requirements = extractor.extract_from_rfp(rfp)
@@ -103,7 +103,7 @@ class TestRequirementExtractor:
         
         extractor = RequirementExtractor(llm_client=mock_client, min_confidence=0.5)
         
-        rfp = RFP(id="test", filename="test.pdf")
+        rfp = RFP(id="test", file_name="test.pdf")
         rfp.extracted_text = "Test requirements"
         
         requirements = extractor.extract_from_rfp(rfp)
@@ -125,7 +125,7 @@ class TestRequirementExtractor:
         
         extractor = RequirementExtractor(llm_client=mock_client)
         
-        rfp = RFP(id="test", filename="test.pdf")
+        rfp = RFP(id="test", file_name="test.pdf")
         rfp.extracted_text_by_page = {
             1: "Page 1 content with requirements",
             2: "Page 2 content with different requirements"
@@ -150,7 +150,7 @@ class TestRequirementExtractor:
         
         extractor = RequirementExtractor(llm_client=mock_client)
         
-        rfp = RFP(id="test", filename="test.pdf")
+        rfp = RFP(id="test", file_name="test.pdf")
         rfp.extracted_text_by_page = {
             1: "Page 1 content",
             2: "Page 2 content"
@@ -280,7 +280,7 @@ class TestRequirementExtractor:
         
         extractor = RequirementExtractor(llm_client=mock_client)
         
-        rfp = RFP(id="test", filename="test.pdf")
+        rfp = RFP(id="test", file_name="test.pdf")
         rfp.extracted_text_by_page = {
             1: "Page 1 with content",
             2: "   ",  # Empty page (only whitespace)
@@ -304,7 +304,7 @@ class TestConvenienceFunction:
             mock_extractor.extract_from_rfp.return_value = mock_requirements
             mock_extractor_class.return_value = mock_extractor
             
-            rfp = RFP(id="test", filename="test.pdf")
+            rfp = RFP(id="test", file_name="test.pdf")
             rfp.extracted_text = "Test content"
             
             result = extract_requirements_from_rfp(rfp, min_confidence=0.7)

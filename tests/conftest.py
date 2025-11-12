@@ -16,7 +16,7 @@ def sample_rfp() -> RFP:
     """Provide sample RFP for testing."""
     return RFP(
         id="rfp-test-001",
-        filename="test_rfp.pdf",
+        file_name="test_rfp.pdf",
         file_size=1024000,
         uploaded_at=datetime(2025, 11, 1)
     )
@@ -27,7 +27,7 @@ def sample_rfp_with_text() -> RFP:
     """Provide sample RFP with extracted text for testing."""
     rfp = RFP(
         id="rfp-test-002",
-        filename="sample_with_text.pdf",
+        file_name="sample_with_text.pdf",
         file_size=2048000,
         uploaded_at=datetime(2025, 11, 1)
     )

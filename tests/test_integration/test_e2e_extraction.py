@@ -54,7 +54,7 @@ class TestEndToEndRequirementExtraction:
                 # Step 1: Create RFP
                 rfp = RFP(
                     id="test-rfp-001",
-                    filename="sample_rfp.pdf",
+                    file_name="sample_rfp.pdf",
                     uploaded_at=datetime.now()
                 )
                 assert rfp.status == RFPStatus.UPLOADED
@@ -237,7 +237,7 @@ class TestEndToEndRequirementExtraction:
                 mock_pdf_reader.return_value.pages = [mock_page1, mock_page2, mock_page3]
                 
                 processor = PDFProcessor()
-                rfp = RFP(id="multi-page-test", filename="multi.pdf")
+                rfp = RFP(id="multi-page-test", file_name="multi.pdf")
                 
                 text, pages = processor.extract_text(pdf_path)
                 rfp.extracted_text = text
@@ -290,7 +290,7 @@ class TestEndToEndRequirementExtraction:
         mock_client = Mock()
         extractor = RequirementExtractor(llm_client=mock_client)
         
-        rfp_no_text = RFP(id="test", filename="test.pdf")
+        rfp_no_text = RFP(id="test", file_name="test.pdf")
         rfp_no_text.extracted_text = None
         
         with pytest.raises(ValueError, match="RFP must have extracted_text"):
