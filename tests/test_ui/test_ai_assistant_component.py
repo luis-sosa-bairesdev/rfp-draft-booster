@@ -132,21 +132,24 @@ class TestAIAssistantModal:
         mock_col2.__enter__ = Mock(return_value=mock_col2)
         mock_col2.__exit__ = Mock(return_value=None)
         
+        mock_assistant = Mock()
+        mock_assistant.get_history.return_value = []  # Empty history to avoid slicing issues
+        
         with patch('streamlit.session_state', mock_state), \
              patch('streamlit.markdown'), \
              patch('streamlit.columns', return_value=[mock_col1, mock_col2]), \
              patch('streamlit.divider'), \
-             patch('components.ai_assistant.init_ai_assistant') as mock_init, \
-             patch('components.ai_assistant.get_current_rfp'), \
-             patch('streamlit.text_input'), \
-             patch('streamlit.button'):
-            mock_init.return_value = Mock()
+             patch('components.ai_assistant.init_ai_assistant', return_value=mock_assistant), \
+             patch('components.ai_assistant.get_current_rfp', return_value=None), \
+             patch('streamlit.text_input', return_value=""), \
+             patch('streamlit.button', return_value=False), \
+             patch('streamlit.chat_message'):
             # Should not raise error with page_context
             try:
                 render_ai_assistant_modal(key_suffix="test", page_context="requirements")
                 assert True  # No error means parameter is accepted
-            except TypeError:
-                assert False, "page_context parameter not accepted"
+            except TypeError as e:
+                assert False, f"page_context parameter not accepted: {e}"
     
     def test_close_button_closes_modal(self):
         """Test close button logic."""
@@ -159,18 +162,19 @@ class TestAIAssistantModal:
         mock_col2.__enter__ = Mock(return_value=mock_col2)
         mock_col2.__exit__ = Mock(return_value=None)
         
+        mock_assistant = Mock()
+        mock_assistant.get_history.return_value = []  # Empty history to avoid slicing issues
+        
         with patch('streamlit.session_state', mock_state), \
              patch('streamlit.markdown'), \
              patch('streamlit.columns', return_value=[mock_col1, mock_col2]), \
              patch('streamlit.divider'), \
-             patch('components.ai_assistant.init_ai_assistant') as mock_init, \
-             patch('components.ai_assistant.get_current_rfp'), \
-             patch('streamlit.text_input'), \
-             patch('streamlit.button') as mock_button, \
-             patch('streamlit.rerun'):
-            mock_init.return_value = Mock()
-            mock_button.return_value = False
-            
+             patch('components.ai_assistant.init_ai_assistant', return_value=mock_assistant), \
+             patch('components.ai_assistant.get_current_rfp', return_value=None), \
+             patch('streamlit.text_input', return_value=""), \
+             patch('streamlit.button', return_value=False) as mock_button, \
+             patch('streamlit.rerun'), \
+             patch('streamlit.chat_message'):
             # Should render close button
             render_ai_assistant_modal(key_suffix="test")
             # Verify button is called (includes close button)
