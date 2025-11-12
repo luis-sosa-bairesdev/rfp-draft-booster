@@ -192,7 +192,7 @@ def display_add_requirement_form():
                 category = st.selectbox(
                     "Category *",
                     options=[c.value for c in RequirementCategory],
-                    format_func=lambda x: RequirementCategory(x).get_category_icon() + " " + RequirementCategory(x).value.title()
+                    format_func=lambda x: get_category_icon(RequirementCategory(x)) + " " + RequirementCategory(x).value.title()
                 )
             with col2:
                 priority = st.selectbox(
@@ -349,7 +349,7 @@ def display_statistics(requirements: List[Requirement]):
     cat_cols = st.columns(len(category_counts))
     for i, (cat, count) in enumerate(category_counts.items()):
         with cat_cols[i]:
-            icon = RequirementCategory(cat).get_category_icon()
+            icon = get_category_icon(RequirementCategory(cat))
             st.metric(f"{icon} {cat.title()}", count)
 
 
@@ -385,7 +385,7 @@ def main():
             filter_category = st.selectbox(
                 "Filter by Category",
                 options=["All"] + [c.value for c in RequirementCategory],
-                format_func=lambda x: "All" if x == "All" else RequirementCategory(x).get_category_icon() + " " + RequirementCategory(x).value.title()
+                format_func=lambda x: "All" if x == "All" else get_category_icon(RequirementCategory(x)) + " " + RequirementCategory(x).value.title()
             )
         with col2:
             filter_priority = st.selectbox(
