@@ -304,9 +304,36 @@ def display_extraction_controls():
             except LLMGenerationError as e:
                 st.error(f"❌ LLM Generation Error: {e}")
                 st.info("💡 **Tip:** Try using a different LLM provider or check your API quota.")
+            except RuntimeError as e:
+                # This is the error from create_llm_client when no providers are available
+                error_msg = str(e)
+                st.error("❌ **No LLM Providers Available**")
+                st.markdown("### Configuration Required")
+                st.markdown(error_msg)
+                st.markdown("""
+                ### Quick Setup Guide:
+                
+                1. **Create a `.env` file** in the project root (if it doesn't exist)
+                2. **Add your API key** for at least one provider:
+                
+                ```env
+                # For Gemini (recommended - free tier available)
+                GEMINI_API_KEY=your_api_key_here
+                
+                # OR for Groq (fast inference)
+                GROQ_API_KEY=your_api_key_here
+                ```
+                
+                3. **Get API keys:**
+                   - **Gemini**: https://makersuite.google.com/app/apikey
+                   - **Groq**: https://console.groq.com/keys
+                
+                4. **Restart Streamlit** after adding the API key
+                """)
             except Exception as e:
                 logger.error(f"Error extracting requirements: {e}", exc_info=True)
                 st.error(f"❌ Error: {e}")
+                st.info("💡 Check the logs for more details or try a different LLM provider.")
     
     return True
 
