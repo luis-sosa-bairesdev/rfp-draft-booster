@@ -40,11 +40,11 @@ class TestAIAssistantButton:
     
     def test_button_click_sets_state(self):
         """Test button click sets show_ai_assistant state."""
+        mock_state = {}
         with patch('streamlit.button') as mock_button, \
-             patch('streamlit.session_state', new_callable=dict) as mock_state, \
+             patch('streamlit.session_state', mock_state), \
              patch('streamlit.rerun') as mock_rerun:
             mock_button.return_value = True
-            mock_state.show_ai_assistant = False
             
             render_ai_assistant_button(key_suffix="test")
             
@@ -101,14 +101,18 @@ class TestAIAssistantModal:
     
     def test_modal_not_rendered_when_closed(self):
         """Test modal doesn't render when show_ai_assistant is False."""
-        with patch('streamlit.session_state', {'show_ai_assistant': False}), \
+        mock_state = {'show_ai_assistant': False}
+        with patch('streamlit.session_state', mock_state), \
              patch('streamlit.markdown') as mock_markdown:
             render_ai_assistant_modal(key_suffix="test")
-            mock_markdown.assert_not_called()
+            # Modal should return early, so markdown should not be called
+            # But it might be called for the script, so we check it's minimal
+            assert mock_markdown.call_count == 0
     
     def test_modal_rendered_when_open(self):
         """Test modal renders when show_ai_assistant is True."""
-        with patch('streamlit.session_state', {'show_ai_assistant': True}), \
+        mock_state = {'show_ai_assistant': True, 'requirements': [], 'risks': []}
+        with patch('streamlit.session_state', mock_state), \
              patch('streamlit.markdown') as mock_markdown, \
              patch('streamlit.columns') as mock_columns, \
              patch('streamlit.divider') as mock_divider, \
@@ -118,33 +122,46 @@ class TestAIAssistantModal:
              patch('streamlit.button') as mock_button:
             
             mock_columns.return_value = [Mock(), Mock()]
-            mock_init.return_value = Mock()
+            mock_assistant = Mock()
+            mock_assistant.get_history.return_value = []
+            mock_init.return_value = mock_assistant
             mock_rfp.return_value = None
             mock_input.return_value = ""
             mock_button.return_value = False
             
             render_ai_assistant_modal(key_suffix="test", page_context="test")
             
-            # Should render modal elements
+            # Should render modal elements (markdown for script and content)
             assert mock_markdown.called
     
     def test_modal_with_page_context(self):
         """Test modal passes page_context to assistant."""
-        with patch('streamlit.session_state', {'show_ai_assistant': True}), \
+        mock_state = {'show_ai_assistant': True, 'requirements': [], 'risks': []}
+        with patch('streamlit.session_state', mock_state), \
              patch('streamlit.markdown'), \
              patch('streamlit.columns') as mock_columns, \
              patch('streamlit.divider'), \
              patch('components.ai_assistant.init_ai_assistant') as mock_init, \
              patch('components.ai_assistant.get_current_rfp') as mock_rfp, \
              patch('streamlit.text_input') as mock_input, \
-             patch('streamlit.button') as mock_button:
+             patch('streamlit.button') as mock_button, \
+             patch('streamlit.rerun'):
             
             mock_columns.return_value = [Mock(), Mock()]
             mock_assistant = Mock()
+            mock_assistant.get_history.return_value = []
+            mock_assistant.ask.return_value = "Test response"
             mock_init.return_value = mock_assistant
             mock_rfp.return_value = None
             mock_input.return_value = "test question"
-            mock_button.return_value = True
+            
+            # Simulate send button click
+            def button_side_effect(*args, **kwargs):
+                if kwargs.get('key') == 'btn_send_question_test':
+                    return True
+                return False
+            
+            mock_button.side_effect = button_side_effect
             
             render_ai_assistant_modal(key_suffix="test", page_context="requirements")
             
@@ -153,7 +170,7 @@ class TestAIAssistantModal:
     
     def test_close_button_closes_modal(self):
         """Test close button sets show_ai_assistant to False."""
-        mock_state = {'show_ai_assistant': True}
+        mock_state = {'show_ai_assistant': True, 'requirements': [], 'risks': []}
         
         with patch('streamlit.session_state', mock_state), \
              patch('streamlit.markdown'), \
@@ -166,7 +183,9 @@ class TestAIAssistantModal:
              patch('streamlit.rerun') as mock_rerun:
             
             mock_columns.return_value = [Mock(), Mock()]
-            mock_init.return_value = Mock()
+            mock_assistant = Mock()
+            mock_assistant.get_history.return_value = []
+            mock_init.return_value = mock_assistant
             mock_rfp.return_value = None
             mock_input.return_value = ""
             
@@ -192,7 +211,7 @@ class TestAIAssistantInit:
         """Test init creates assistant if not in session state."""
         mock_state = {}
         
-        with patch('streamlit.session_state', mock_state), \
+        with patch('components.ai_assistant.st.session_state', mock_state), \
              patch('services.llm_client.create_llm_client') as mock_create:
             mock_client = Mock()
             mock_create.return_value = mock_client
@@ -207,7 +226,7 @@ class TestAIAssistantInit:
         existing_assistant = Mock()
         mock_state = {'ai_assistant': existing_assistant}
         
-        with patch('streamlit.session_state', mock_state):
+        with patch('components.ai_assistant.st.session_state', mock_state):
             assistant = init_ai_assistant()
             
             assert assistant == existing_assistant
