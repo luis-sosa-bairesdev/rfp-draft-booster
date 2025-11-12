@@ -8,7 +8,7 @@ This module provides a unified interface for interacting with different LLM prov
 import json
 import logging
 import os
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from enum import Enum
 
 logger = logging.getLogger(__name__)
@@ -263,6 +263,43 @@ class LLMClient:
             return False
 
 
+def _is_provider_available(provider: LLMProvider) -> Tuple[bool, Optional[str]]:
+    """
+    Check if a provider is available (installed and configured).
+    
+    Returns:
+        Tuple of (is_available, error_message)
+    """
+    if provider == LLMProvider.GEMINI:
+        try:
+            import google.generativeai
+            api_key = os.getenv("GEMINI_API_KEY")
+            if not api_key:
+                return False, "GEMINI_API_KEY not found in environment"
+            return True, None
+        except ImportError:
+            return False, "google-generativeai not installed"
+    
+    elif provider == LLMProvider.GROQ:
+        try:
+            import groq
+            api_key = os.getenv("GROQ_API_KEY")
+            if not api_key:
+                return False, "GROQ_API_KEY not found in environment"
+            return True, None
+        except ImportError:
+            return False, "groq not installed"
+    
+    elif provider == LLMProvider.OLLAMA:
+        try:
+            import ollama
+            return True, None
+        except ImportError:
+            return False, "ollama not installed"
+    
+    return False, "Unknown provider"
+
+
 def create_llm_client(
     provider: Optional[str] = None,
     fallback: bool = True
@@ -273,10 +310,10 @@ def create_llm_client(
     Args:
         provider: Preferred provider (gemini, groq, ollama)
         fallback: Whether to try fallback providers
-        
+    
     Returns:
         Initialized LLM client
-        
+    
     Raises:
         RuntimeError: If all providers fail
     """
@@ -284,15 +321,41 @@ def create_llm_client(
     providers_to_try = []
     
     if provider:
-        providers_to_try.append(LLMProvider(provider))
+        try:
+            providers_to_try.append(LLMProvider(provider))
+        except ValueError:
+            logger.warning(f"Invalid provider '{provider}', will try fallbacks")
     
     if fallback:
-        # Add all providers as fallbacks
+        # Add all providers as fallbacks, but only if available
         for p in [LLMProvider.GEMINI, LLMProvider.GROQ, LLMProvider.OLLAMA]:
             if p not in providers_to_try:
-                providers_to_try.append(p)
+                is_available, error_msg = _is_provider_available(p)
+                if is_available:
+                    providers_to_try.append(p)
+                else:
+                    logger.debug(f"Skipping {p}: {error_msg}")
+    
+    if not providers_to_try:
+        # No providers available
+        available_providers = []
+        errors = []
+        for p in [LLMProvider.GEMINI, LLMProvider.GROQ, LLMProvider.OLLAMA]:
+            is_avail, error_msg = _is_provider_available(p)
+            if not is_avail:
+                errors.append(f"- {p.value}: {error_msg}")
+        
+        error_message = (
+            "No LLM providers are available. Please configure at least one:\n\n"
+            + "\n".join(errors) + "\n\n"
+            + "To use Gemini: Set GEMINI_API_KEY in your .env file\n"
+            + "To use Groq: Set GROQ_API_KEY in your .env file\n"
+            + "To use Ollama: Install with 'pip install ollama' and ensure Ollama is running"
+        )
+        raise RuntimeError(error_message)
     
     last_error = None
+    last_provider = None
     for prov in providers_to_try:
         try:
             client = LLMClient(provider=prov)
@@ -301,14 +364,23 @@ def create_llm_client(
                 return client
             else:
                 logger.warning(f"Connection test failed for {prov}")
+                last_error = "Connection test failed"
+                last_provider = prov
         except Exception as e:
             logger.warning(f"Failed to initialize {prov}: {e}")
-            last_error = e
+            last_error = str(e)
+            last_provider = prov
             continue
     
     # All providers failed
-    raise RuntimeError(
-        f"Failed to connect to any LLM provider. Last error: {last_error}. "
-        "Please check your API keys and network connection."
+    error_message = (
+        f"Failed to connect to any LLM provider.\n\n"
+        f"Last attempted: {last_provider}\n"
+        f"Last error: {last_error}\n\n"
+        "Please check:\n"
+        "- Your API keys are correctly set in .env file\n"
+        "- Your network connection\n"
+        "- The LLM service is available"
     )
+    raise RuntimeError(error_message)
 
