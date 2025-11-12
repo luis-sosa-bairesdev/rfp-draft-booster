@@ -79,11 +79,11 @@ class LLMClient:
     def _get_default_model(self) -> str:
         """Get default model for provider."""
         defaults = {
-            LLMProvider.GEMINI: "gemini-pro",
+            LLMProvider.GEMINI: "gemini-2.5-flash",  # Fast and efficient model
             LLMProvider.GROQ: "mixtral-8x7b-32768",
             LLMProvider.OLLAMA: "llama2",
         }
-        return defaults.get(self.provider, "gemini-pro")
+        return defaults.get(self.provider, "gemini-2.5-flash")
     
     def _initialize_client(self):
         """Initialize provider-specific client."""
