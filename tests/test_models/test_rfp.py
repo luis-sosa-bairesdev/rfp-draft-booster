@@ -105,3 +105,5 @@ class TestRFPModel:
         
         assert rfp.can_process() is True
 
+
+

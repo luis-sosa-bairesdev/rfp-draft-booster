@@ -39,6 +39,10 @@ def init_session_state() -> None:
     if "processing" not in st.session_state:
         st.session_state.processing: bool = False
     
+    # AI Assistant state
+    if "show_ai_assistant" not in st.session_state:
+        st.session_state.show_ai_assistant: bool = False
+    
     # Config
     if "config" not in st.session_state:
         st.session_state.config: Dict[str, Any] = {

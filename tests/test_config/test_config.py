@@ -27,3 +27,5 @@ class TestConfig:
             # Settings should have the key
             assert hasattr(config.settings, 'GEMINI_API_KEY') or hasattr(config.settings, 'gemini_api_key')
 
+
+

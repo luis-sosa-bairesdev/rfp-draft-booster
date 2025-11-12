@@ -15,6 +15,7 @@ from services.file_validator import FileValidator
 from services.storage_manager import StorageManager
 from exceptions import PDFProcessingError
 from utils.session import init_session_state
+from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +32,18 @@ init_session_state()
 
 def main():
     """Main upload page."""
+    # Render AI Assistant modal FIRST if open (so it's visible at top)
+    if st.session_state.get("show_ai_assistant", False):
+        render_ai_assistant_modal(key_suffix="upload", page_context="upload")
+        st.markdown("---")
     
-    st.title("📤 Upload RFP Document")
-    st.markdown("Upload your RFP PDF to begin automated processing")
+    # Header with AI Assistant button
+    col1, col2 = st.columns([5, 1])
+    with col1:
+        st.title("📤 Upload RFP Document")
+        st.markdown("Upload your RFP PDF to begin automated processing")
+    with col2:
+        render_ai_assistant_button(key_suffix="upload")
     
     st.divider()
     

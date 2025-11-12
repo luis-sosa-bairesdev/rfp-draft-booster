@@ -11,9 +11,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from models.rfp import RFP
 from models.requirement import Requirement, RequirementCategory, RequirementPriority
 from services.requirement_extractor import RequirementExtractor, extract_requirements_from_rfp
-from services.llm_client import LLMClient, create_llm_client, LLMProvider
+from services.llm_client import LLMClient, create_llm_client, LLMProvider, get_available_provider_names
 from exceptions import LLMGenerationError, LLMConnectionError
 from utils.session import init_session_state, get_current_rfp
+from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 
 
 def get_category_icon(category: RequirementCategory) -> str:
@@ -255,12 +256,30 @@ def display_extraction_controls():
     with st.expander("⚙️ Extraction Settings", expanded=False):
         col1, col2 = st.columns(2)
         with col1:
+            # Get available providers
+            available_providers = get_available_provider_names()
+            
+            if not available_providers:
+                st.error("❌ **No LLM Providers Configured**")
+                st.info("""
+                Please configure at least one LLM provider in your `.env` file:
+                
+                - **Gemini**: Set `GEMINI_API_KEY=your_api_key`
+                  Get key at: https://makersuite.google.com/app/apikey
+                
+                - **Groq**: Set `GROQ_API_KEY=your_api_key`
+                  Get key at: https://console.groq.com/keys
+                
+                - **Ollama**: Install with `pip install ollama` and ensure Ollama is running locally
+                """)
+                return False
+            
             llm_provider = st.selectbox(
                 "LLM Provider",
-                options=["gemini", "groq", "ollama"],
+                options=available_providers,
                 index=0,
                 key="llm_provider_extract",
-                help="Select the LLM provider to use for extraction"
+                help=f"Select the LLM provider to use for extraction ({len(available_providers)} available)"
             )
         with col2:
             min_confidence = st.slider(
@@ -384,9 +403,18 @@ def display_statistics(requirements: List[Requirement]):
 
 def main():
     """Main requirements page."""
+    # Render AI Assistant modal FIRST if open (so it's visible at top)
+    if st.session_state.get("show_ai_assistant", False):
+        render_ai_assistant_modal(key_suffix="requirements", page_context="requirements")
+        st.markdown("---")
     
-    st.title("📋 Requirements Extraction")
-    st.markdown("Extract and manage requirements from your RFP using AI")
+    # Header with AI Assistant button
+    col1, col2 = st.columns([5, 1])
+    with col1:
+        st.title("📋 Requirements Extraction")
+        st.markdown("Extract and manage requirements from your RFP using AI")
+    with col2:
+        render_ai_assistant_button(key_suffix="requirements")
     
     st.divider()
     

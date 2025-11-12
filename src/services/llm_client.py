@@ -146,13 +146,14 @@ class LLMClient:
                 "Install with: pip install ollama"
             )
     
-    def generate(self, prompt: str, max_tokens: int = 4096) -> str:
+    def generate(self, prompt: str, max_tokens: int = 4096, temperature: Optional[float] = None) -> str:
         """
         Generate text using the LLM.
         
         Args:
             prompt: Input prompt
             max_tokens: Maximum tokens to generate
+            temperature: Generation temperature (uses instance temperature if not provided)
             
         Returns:
             Generated text response
@@ -160,13 +161,16 @@ class LLMClient:
         Raises:
             Exception: If generation fails
         """
+        # Use provided temperature or fall back to instance temperature
+        temp = temperature if temperature is not None else self.temperature
+        
         try:
             if self.provider == LLMProvider.GEMINI:
-                return self._generate_gemini(prompt)
+                return self._generate_gemini(prompt, temp)
             elif self.provider == LLMProvider.GROQ:
-                return self._generate_groq(prompt, max_tokens)
+                return self._generate_groq(prompt, max_tokens, temp)
             elif self.provider == LLMProvider.OLLAMA:
-                return self._generate_ollama(prompt)
+                return self._generate_ollama(prompt, temp)
             else:
                 raise ValueError(f"Unsupported provider: {self.provider}")
                 
@@ -174,33 +178,33 @@ class LLMClient:
             logger.error(f"LLM generation failed: {e}")
             raise
     
-    def _generate_gemini(self, prompt: str) -> str:
+    def _generate_gemini(self, prompt: str, temperature: float) -> str:
         """Generate with Gemini."""
         response = self._client.generate_content(
             prompt,
             generation_config={
-                "temperature": self.temperature,
+                "temperature": temperature,
                 "max_output_tokens": 4096,
             }
         )
         return response.text
     
-    def _generate_groq(self, prompt: str, max_tokens: int) -> str:
+    def _generate_groq(self, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with Groq."""
         response = self._client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
-            temperature=self.temperature,
+            temperature=temperature,
             max_tokens=max_tokens,
         )
         return response.choices[0].message.content
     
-    def _generate_ollama(self, prompt: str) -> str:
+    def _generate_ollama(self, prompt: str, temperature: float) -> str:
         """Generate with Ollama (local)."""
         response = self._client.generate(
             model=self.model,
             prompt=prompt,
-            options={"temperature": self.temperature}
+            options={"temperature": temperature}
         )
         return response["response"]
     
@@ -306,6 +310,31 @@ def _is_provider_available(provider: LLMProvider) -> Tuple[bool, Optional[str]]:
             return False, "ollama not installed"
     
     return False, "Unknown provider"
+
+
+def get_available_providers() -> List[LLMProvider]:
+    """
+    Get list of available (configured) LLM providers.
+    
+    Returns:
+        List of available LLMProvider enums
+    """
+    available = []
+    for provider in [LLMProvider.GEMINI, LLMProvider.GROQ, LLMProvider.OLLAMA]:
+        is_avail, _ = _is_provider_available(provider)
+        if is_avail:
+            available.append(provider)
+    return available
+
+
+def get_available_provider_names() -> List[str]:
+    """
+    Get list of available provider names as strings.
+    
+    Returns:
+        List of provider names (e.g., ["gemini", "groq"])
+    """
+    return [p.value for p in get_available_providers()]
 
 
 def create_llm_client(

@@ -35,6 +35,25 @@ class DraftSection:
     generated_by: str = "ai"
     user_edited: bool = False
     status: str = "complete"
+    
+    def to_dict(self) -> dict:
+        """Convert section to dictionary for serialization."""
+        return {
+            "id": self.id,
+            "section_type": self.section_type,
+            "title": self.title,
+            "content": self.content,
+            "word_count": self.word_count,
+            "order": self.order,
+            "generated_by": self.generated_by,
+            "user_edited": self.user_edited,
+            "status": self.status,
+        }
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> "DraftSection":
+        """Create section from dictionary."""
+        return cls(**data)
 
 
 @dataclass
@@ -121,4 +140,46 @@ class Draft:
         self.last_modified = datetime.now()
         if self.generated_by == GenerationMethod.AI:
             self.generated_by = GenerationMethod.HYBRID
+    
+    def to_dict(self) -> dict:
+        """Convert draft to dictionary for serialization."""
+        return {
+            "id": self.id,
+            "rfp_id": self.rfp_id,
+            "version": self.version,
+            "content": self.content,
+            "sections": [s.to_dict() for s in self.sections],
+            "title": self.title,
+            "generated_by": self.generated_by.value if hasattr(self.generated_by, 'value') else str(self.generated_by),
+            "llm_provider": self.llm_provider,
+            "generation_time": self.generation_time,
+            "generated_date": self.generated_date.isoformat(),
+            "status": self.status.value if hasattr(self.status, 'value') else str(self.status),
+            "editing_mode": self.editing_mode,
+            "word_count": self.word_count,
+            "section_count": self.section_count,
+            "completeness_score": self.completeness_score,
+            "created_date": self.created_date.isoformat(),
+            "last_modified": self.last_modified.isoformat(),
+        }
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> "Draft":
+        """Create draft from dictionary."""
+        # Parse datetime fields
+        for date_field in ["generated_date", "created_date", "last_modified", "export_date", "approval_date"]:
+            if isinstance(data.get(date_field), str):
+                data[date_field] = datetime.fromisoformat(data[date_field])
+        
+        # Parse sections
+        if "sections" in data and isinstance(data["sections"], list):
+            data["sections"] = [DraftSection.from_dict(s) if isinstance(s, dict) else s for s in data["sections"]]
+        
+        # Parse enums
+        if isinstance(data.get("generated_by"), str):
+            data["generated_by"] = GenerationMethod(data["generated_by"])
+        if isinstance(data.get("status"), str):
+            data["status"] = DraftStatus(data["status"])
+        
+        return cls(**data)
 

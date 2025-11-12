@@ -11,9 +11,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from models.rfp import RFP
 from models.risk import Risk, RiskCategory, RiskSeverity, get_category_display_names, get_severity_display_names
 from services.risk_detector import RiskDetector, detect_risks_from_rfp
-from services.llm_client import LLMClient, create_llm_client, LLMProvider
+from services.llm_client import LLMClient, create_llm_client, LLMProvider, get_available_provider_names
 from exceptions import LLMGenerationError, LLMConnectionError
 from utils.session import init_session_state, get_current_rfp
+from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 
 
 def get_category_icon(category: RiskCategory) -> str:
@@ -43,6 +44,7 @@ init_session_state()
 # Initialize risks in session state if not present
 if "risks" not in st.session_state:
     st.session_state.risks = []
+# show_ai_assistant is initialized in init_session_state()
 
 
 def display_risk_table(risks: List[Risk], filter_category: Optional[str], filter_severity: Optional[str], show_acknowledged: bool):
@@ -215,8 +217,18 @@ def display_statistics(risks: List[Risk]):
 
 def main():
     """Main page content."""
-    st.title("⚠️ Risk Detection & Analysis")
-    st.markdown("Identify and analyze potentially problematic clauses in RFPs")
+    # Render AI Assistant modal FIRST if open (so it's visible at top)
+    if st.session_state.get("show_ai_assistant", False):
+        render_ai_assistant_modal(key_suffix="risks", page_context="risks")
+        st.markdown("---")
+    
+    # Header with AI Assistant button
+    col1, col2 = st.columns([5, 1])
+    with col1:
+        st.title("⚠️ Risk Detection & Analysis")
+        st.markdown("Identify and analyze potentially problematic clauses in RFPs")
+    with col2:
+        render_ai_assistant_button(key_suffix="risks")
     
     # Get current RFP
     rfp = get_current_rfp()
@@ -258,13 +270,29 @@ def main():
         )
     
     with col3:
-        llm_provider = st.selectbox(
-            "LLM Provider",
-            options=[p.value for p in LLMProvider],
-            index=0,
-            key="llm_provider",
-            help="Select LLM provider for AI detection"
-        )
+        # Get available providers
+        available_providers = get_available_provider_names()
+        
+        if not available_providers:
+            st.warning("⚠️ **No LLM Providers Configured**")
+            st.info("""
+            AI-powered risk detection requires a configured LLM provider.
+            
+            Please configure at least one in your `.env` file:
+            - **Gemini**: `GEMINI_API_KEY=your_key` (https://makersuite.google.com/app/apikey)
+            - **Groq**: `GROQ_API_KEY=your_key` (https://console.groq.com/keys)
+            - **Ollama**: Install with `pip install ollama` and run locally
+            """)
+            st.info("💡 You can still use pattern-based detection (toggle above)")
+            llm_provider = None
+        else:
+            llm_provider = st.selectbox(
+                "LLM Provider",
+                options=available_providers,
+                index=0,
+                key="llm_provider",
+                help=f"Select LLM provider for AI detection ({len(available_providers)} available)"
+            )
     
     # Detection button
     if st.button("🚀 Detect Risks", type="primary", key="btn_detect_risks", use_container_width=True):
@@ -277,6 +305,9 @@ def main():
                 llm_client = None
                 if use_ai:
                     try:
+                        if not llm_provider:
+                            st.error("Please configure an LLM provider to use AI detection")
+                            return
                         llm_client = create_llm_client(provider=LLMProvider(llm_provider), fallback=True)
                     except Exception as e:
                         st.error(f"Failed to initialize LLM client: {e}")

@@ -4,7 +4,7 @@ from models.rfp import RFP, RFPStatus
 from models.requirement import Requirement, RequirementCategory, RequirementPriority
 from models.service import Service, ServiceMatch, ServiceCategory
 from models.risk import Risk, RiskCategory, RiskSeverity
-from models.draft import Draft, DraftStatus, DraftSection
+from models.draft import Draft, DraftStatus, DraftSection, GenerationMethod
 
 __all__ = [
     "RFP",
@@ -21,5 +21,6 @@ __all__ = [
     "Draft",
     "DraftStatus",
     "DraftSection",
+    "GenerationMethod",
 ]
 

@@ -320,3 +320,304 @@ def get_risk_detection_prompt(rfp_text: str, page_number: int = None) -> str:
         page_info=page_info
     )
 
+
+# AI Assistant Prompts
+
+AI_ASSISTANT_PROMPT_TEMPLATE = """You are a helpful AI assistant for an RFP (Request for Proposal) management tool. Your role is to provide contextual help and insights about RFP content, requirements, risks, and best practices.
+
+## Current Context:
+
+{context_summary}
+
+## Conversation History:
+
+{conversation_history}
+
+## User Question:
+
+{question}
+
+## Instructions:
+
+Provide a helpful, accurate, and contextual answer to the user's question. Use the context provided above to give specific, relevant information. If the question is about:
+- **RFP content**: Reference specific parts of the RFP when possible
+- **Requirements**: Explain what they mean, how many there are, or provide summaries
+- **Risks**: Explain the risks, their severity, and recommendations
+- **Best practices**: Provide actionable advice for RFP responses
+- **How to use features**: Explain how to use the application features
+
+Be conversational, clear, and helpful. If you don't have enough context to answer, say so and suggest what information might be needed.
+
+## Response Guidelines:
+
+- Be concise but complete (2-4 paragraphs typically)
+- Use bullet points for lists
+- Reference specific numbers or facts from the context when available
+- Provide actionable advice when appropriate
+- Be professional but friendly
+- If asked about something not in context, acknowledge it and provide general guidance
+
+Now provide your response:"""
+
+
+def get_ai_assistant_prompt(
+    question: str,
+    context: dict,
+    conversation_history: list = None,
+    page_context: str = ""
+) -> str:
+    """
+    Generate AI Assistant prompt with context and conversation history.
+    
+    Args:
+        question: User's question
+        context: Context dictionary with RFP, requirements, risks info
+        conversation_history: List of previous messages (optional)
+        
+    Returns:
+        Formatted prompt ready for LLM
+    """
+    # Build context summary
+    context_parts = []
+    
+    if context.get("rfp_summary"):
+        context_parts.append(f"**RFP:** {context['rfp_summary']}")
+        if context.get("rfp_text_preview"):
+            context_parts.append(f"**RFP Preview:** {context['rfp_text_preview'][:500]}...")
+    
+    if context.get("requirements_count", 0) > 0:
+        context_parts.append(
+            f"**Requirements:** {context['requirements_count']} total "
+            f"({context.get('requirements_summary', 'various categories')})"
+        )
+    
+    if context.get("risks_count", 0) > 0:
+        context_parts.append(
+            f"**Risks:** {context['risks_count']} total "
+            f"({context.get('risks_summary', 'various severities')})"
+        )
+        if context.get("critical_risks"):
+            context_parts.append("\n**Critical Risks:**")
+            for risk in context["critical_risks"]:
+                context_parts.append(
+                    f"- {risk['clause']}... ({risk['category']}): {risk['recommendation']}"
+                )
+    
+    # Add page-specific help if available
+    if context.get("page_help"):
+        context_parts.append(f"\n**Current Page Help:**\n{context['page_help']}")
+    
+    context_summary = "\n".join(context_parts) if context_parts else "No RFP context available."
+    
+    # Format conversation history
+    if conversation_history:
+        history_lines = []
+        for msg in conversation_history[-5:]:  # Last 5 messages
+            role = msg.role if isinstance(msg, dict) else msg.role
+            content = msg["content"] if isinstance(msg, dict) else msg.content
+            history_lines.append(f"{role.capitalize()}: {content[:200]}")
+        conversation_str = "\n".join(history_lines)
+    else:
+        conversation_str = "No previous conversation."
+    
+    return AI_ASSISTANT_PROMPT_TEMPLATE.format(
+        question=question,
+        context_summary=context_summary,
+        conversation_history=conversation_str
+    )
+
+
+# Draft Generation Prompts
+
+DRAFT_GENERATION_PROMPT_TEMPLATE = """You are an expert proposal writer specializing in B2B RFP responses. Your task is to generate a comprehensive, professional proposal draft based on the provided RFP, requirements, and service matches.
+
+## RFP Information:
+{rfp_info}
+
+## Requirements Summary:
+{requirements_summary}
+
+## Service Matches:
+{service_matches}
+
+## Detected Risks:
+{risks_summary}
+
+## Generation Instructions:
+{instructions}
+
+## Required Sections:
+
+Generate a complete proposal with the following sections (in order):
+
+1. **Executive Summary** (150-300 words)
+   - Overview of your understanding of the RFP
+   - Key value propositions
+   - Why you're the right partner
+
+2. **Approach** (300-500 words)
+   - Your methodology and approach to the project
+   - Key phases and milestones
+   - How you'll deliver value
+
+3. **Services & Solutions** (400-600 words)
+   - Detailed description of services that match requirements
+   - How each service addresses specific requirements
+   - Technical capabilities and differentiators
+
+4. **Timeline** (150-250 words)
+   - Project timeline with key milestones
+   - Delivery schedule
+   - Dependencies and assumptions
+
+5. **Pricing** (200-300 words)
+   - Pricing structure and model
+   - Cost breakdown (if appropriate)
+   - Payment terms
+
+6. **Risk Mitigation** (200-400 words)
+   - Address detected risks from the RFP
+   - Your approach to mitigating concerns
+   - Alternative language or terms where appropriate
+
+## Writing Guidelines:
+
+- **Tone:** {tone}
+- **Audience:** {audience}
+- **Word Count:** Target {word_count} words total (distribute across sections)
+- **Style:** Professional, clear, persuasive but not salesy
+- **Format:** Use Markdown formatting (headings, lists, bold for emphasis)
+- **Specificity:** Be specific about how you'll meet requirements
+- **Risk Awareness:** Address risks proactively and professionally
+
+## Important:
+
+- Reference specific requirements when describing services
+- Address all critical risks identified
+- Use the service matches to structure the Services section
+- Ensure the proposal is complete and ready for review
+- Maintain consistency in tone and style throughout
+
+Now generate the complete proposal draft:"""
+
+
+def get_draft_generation_prompt(
+    rfp_info: str,
+    requirements_summary: str,
+    service_matches: str,
+    risks_summary: str,
+    instructions: str = "",
+    tone: str = "professional",
+    audience: str = "enterprise",
+    word_count: int = 2000
+) -> str:
+    """
+    Generate draft generation prompt.
+    
+    Args:
+        rfp_info: RFP title and summary
+        requirements_summary: Summary of requirements
+        service_matches: Description of matched services
+        risks_summary: Summary of detected risks
+        instructions: Custom instructions from user
+        tone: Writing tone (professional, friendly, formal)
+        audience: Target audience (enterprise, SMB, etc.)
+        word_count: Target word count
+        
+    Returns:
+        Formatted prompt ready for LLM
+    """
+    # Default instructions if not provided
+    if not instructions:
+        instructions = "Write comprehensive answers with professional tone and voice for an enterprise audience."
+    
+    return DRAFT_GENERATION_PROMPT_TEMPLATE.format(
+        rfp_info=rfp_info,
+        requirements_summary=requirements_summary,
+        service_matches=service_matches,
+        risks_summary=risks_summary,
+        instructions=instructions,
+        tone=tone,
+        audience=audience,
+        word_count=word_count
+    )
+
+
+def get_section_regeneration_prompt(
+    section_type: str,
+    section_title: str,
+    rfp_info: str,
+    requirements_summary: str,
+    service_matches: str,
+    risks_summary: str,
+    other_sections: str,
+    instructions: str = "",
+    tone: str = "professional",
+    audience: str = "enterprise",
+    word_count: int = 300
+) -> str:
+    """
+    Generate prompt for regenerating a specific section.
+    
+    Args:
+        section_type: Type of section (executive_summary, approach, etc.)
+        section_title: Title of the section
+        rfp_info: RFP information
+        requirements_summary: Requirements summary
+        service_matches: Service matches
+        risks_summary: Risks summary
+        other_sections: Content of other sections for context
+        instructions: Custom instructions
+        tone: Writing tone
+        audience: Target audience
+        word_count: Target word count for this section
+        
+    Returns:
+        Formatted prompt ready for LLM
+    """
+    section_guidelines = {
+        "executive_summary": "Provide a high-level overview, key value propositions, and why you're the right partner.",
+        "approach": "Describe your methodology, key phases, milestones, and how you'll deliver value.",
+        "services": "Detail services that match requirements, how each addresses specific needs, and technical capabilities.",
+        "timeline": "Provide project timeline with milestones, delivery schedule, and dependencies.",
+        "pricing": "Present pricing structure, cost breakdown, and payment terms.",
+        "risk_mitigation": "Address detected risks, your mitigation approach, and alternative terms."
+    }
+    
+    guideline = section_guidelines.get(section_type, "Provide relevant content for this section.")
+    
+    prompt = f"""You are an expert proposal writer. Regenerate the "{section_title}" section of a B2B RFP proposal.
+
+## RFP Information:
+{rfp_info}
+
+## Requirements Summary:
+{requirements_summary}
+
+## Service Matches:
+{service_matches}
+
+## Detected Risks:
+{risks_summary}
+
+## Other Sections (for context):
+{other_sections}
+
+## Section Guidelines:
+{guideline}
+
+## Generation Instructions:
+{instructions or 'Write comprehensive content with professional tone and voice for an enterprise audience.'}
+
+## Requirements:
+- **Tone:** {tone}
+- **Audience:** {audience}
+- **Word Count:** Target {word_count} words
+- **Format:** Use Markdown formatting
+- **Consistency:** Match the style and tone of other sections
+- **Specificity:** Be specific and reference requirements when relevant
+
+Generate ONLY the {section_title} section content:"""
+    
+    return prompt
+

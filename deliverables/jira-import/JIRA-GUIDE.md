@@ -190,3 +190,5 @@ Tenemos varios scripts de automatización:
 3. Ver reportes específicos
 4. Cualquier otra configuración de Jira
 
+
+

@@ -13,7 +13,10 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from config import settings
 from utils.logging_config import setup_logging
-from utils.session import init_session_state
+from utils.session import init_session_state, get_current_rfp
+from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
+from components.progress_dashboard import render_progress_dashboard
+from components.global_search import render_global_search
 
 
 # Page configuration
@@ -32,16 +35,36 @@ st.set_page_config(
 # Initialize
 setup_logging()
 init_session_state()
+# show_ai_assistant is now initialized in init_session_state()
 
 
 def main() -> None:
     """Main application entry point."""
     
-    # Header
-    st.title("🚀 RFP Draft Booster")
-    st.markdown("**Accelerate your RFP responses by 80%**")
+    # Header with AI Assistant button
+    col1, col2 = st.columns([5, 1])
+    with col1:
+        st.title("🚀 RFP Draft Booster")
+        st.markdown("**Accelerate your RFP responses by 80%**")
+    with col2:
+        render_ai_assistant_button(key_suffix="main")
     
     st.divider()
+    
+    # Global Search
+    rfp = get_current_rfp()
+    requirements = st.session_state.get("requirements", [])
+    risks = st.session_state.get("risks", [])
+    
+    with st.expander("🔍 Global Search", expanded=False):
+        render_global_search(rfp=rfp, requirements=requirements, risks=risks)
+    
+    st.divider()
+    
+    # Progress Dashboard (if RFP exists)
+    if rfp:
+        render_progress_dashboard(requirements=requirements, risks=risks)
+        st.divider()
     
     # Welcome message
     st.markdown("""

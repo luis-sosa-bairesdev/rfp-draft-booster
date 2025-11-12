@@ -359,3 +359,5 @@ def extract_requirements_from_rfp(
     extractor = RequirementExtractor(llm_client, min_confidence)
     return extractor.extract_from_rfp(rfp)
 
+
+

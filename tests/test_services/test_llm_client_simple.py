@@ -80,3 +80,5 @@ class TestLLMClientSimple:
             with pytest.raises(ValueError, match="No JSON found"):
                 client.extract_json("No JSON here")
 
+
+

@@ -62,3 +62,5 @@ if response.status_code == 200:
         parent = issue['fields'].get('parent', {})
         print(f"  {key} ({issue_type}): {summary[:50]}... | Parent: {parent.get('key', 'None')} | Status: {status}")
 
+
+

@@ -49,3 +49,5 @@ if response.status_code == 200:
     for issue in issues:
         print(f"  {issue['key']}: {issue['fields']['summary']}")
 
+
+
