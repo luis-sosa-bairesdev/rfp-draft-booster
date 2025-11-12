@@ -11,6 +11,14 @@ import os
 from typing import Optional, List, Dict, Any, Tuple
 from enum import Enum
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # python-dotenv not installed, but that's okay if env vars are set another way
+    pass
+
 logger = logging.getLogger(__name__)
 
 
