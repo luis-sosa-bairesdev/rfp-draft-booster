@@ -36,6 +36,21 @@ class LLMException(RFPDraftBoosterException):
     pass
 
 
+class LLMConnectionError(LLMException):
+    """Raised when LLM connection fails."""
+    pass
+
+
+class LLMGenerationError(LLMException):
+    """Raised when LLM text generation fails."""
+    pass
+
+
+class LLMJsonExtractionError(LLMException):
+    """Raised when JSON extraction from LLM response fails."""
+    pass
+
+
 class RequirementExtractionError(LLMException):
     """Raised when requirement extraction fails."""
     pass
