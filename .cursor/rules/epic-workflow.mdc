@@ -1,0 +1,368 @@
+---
+title: Epic Workflow & Jira Integration
+description: Standard process for creating, implementing, and closing Epics with Jira integration
+tags: [workflow, jira, epics, process]
+---
+
+# Epic Workflow & Jira Integration
+
+## 📋 Overview
+
+This document defines the **standard workflow** for managing Epics in the RFP Draft Booster project, including Jira integration, documentation, and completion tracking.
+
+---
+
+## 🚀 Epic Lifecycle
+
+### Phase 1: Planning
+
+**Create Epic Documentation:**
+1. Create ONE file: `deliverables/epic-XX-name.md`
+2. Include sections:
+   - Executive Summary
+   - Problem Statement
+   - Architecture & Design
+   - Implementation Plan
+   - Risks & Mitigations
+   - Success Criteria
+
+**❌ DON'T:**
+- Create separate SPIKE files
+- Create separate COMPLETION-SUMMARY files
+- Create multiple files for the same epic
+
+**✅ DO:**
+- Use ONE file per epic
+- Update the same file throughout the lifecycle
+- Add completion summary at the END of the same file
+
+---
+
+### Phase 2: Jira Setup
+
+**Use Templates from `deliverables/jira-import/`:**
+
+1. **Copy the create template:**
+```bash
+cp deliverables/jira-import/create_epic_template.py deliverables/jira-import/create_epicX.py
+```
+
+2. **Edit configuration:**
+```python
+EPIC_SUMMARY = "[EPIC] Your Epic Name"
+SPRINT_NAME = "Sprint X - Your Sprint Name"
+USER_STORIES = [
+    {
+        "summary": "Story 1",
+        "description": "As a user...",
+        "points": 5,
+        "priority": "High"
+    },
+    # Add all stories...
+]
+```
+
+3. **Run the script:**
+```bash
+python3 deliverables/jira-import/create_epicX.py
+```
+
+4. **Note the Epic Key (e.g., RDBP-78) for later**
+
+5. **Delete the script after use:**
+```bash
+rm deliverables/jira-import/create_epicX.py
+```
+
+**❌ DON'T:**
+- Keep epic-specific scripts after use
+- Commit epic-specific scripts (create_epic7.py, etc.)
+- Modify the templates directly
+
+**✅ DO:**
+- Copy templates for each new epic
+- Delete copies after successful creation
+- Only commit changes to template files if improving them
+
+---
+
+### Phase 3: Implementation
+
+**During implementation:**
+1. Follow the implementation plan in `deliverables/epic-XX-name.md`
+2. Update the SAME file as you complete tasks
+3. Mark checklist items as complete
+4. Document any deviations or learnings
+
+**❌ DON'T:**
+- Create new files for updates
+- Leave stale information in the epic file
+
+**✅ DO:**
+- Update the epic file continuously
+- Add notes about challenges/solutions
+- Keep ONE source of truth
+
+---
+
+### Phase 4: Completion
+
+**When Epic is done:**
+
+1. **Update the SAME epic file** with completion summary:
+```markdown
+---
+
+## ✅ Completion Summary
+
+**Status:** ✅ COMPLETE  
+**Epic Key:** [RDBP-XX](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-XX)  
+**Completion Date:** YYYY-MM-DD
+
+### Features Implemented
+- Feature 1
+- Feature 2
+
+### Testing
+- Coverage: X%
+- Tests: X passing
+
+### GitHub Commits
+- Commit hash 1
+- Commit hash 2
+
+---
+```
+
+2. **Close Jira Epic and Stories:**
+
+```bash
+# Copy the close template
+cp deliverables/jira-import/close_epic_template.py deliverables/jira-import/close_epicX.py
+
+# Edit configuration
+EPIC_KEY = "RDBP-XX"
+STORY_KEYS = [
+    "RDBP-79",
+    "RDBP-80",
+    # ... all story keys from Epic page
+]
+
+# Run the script
+python3 deliverables/jira-import/close_epicX.py
+
+# Delete the script
+rm deliverables/jira-import/close_epicX.py
+```
+
+3. **Upload to Confluence (optional):**
+
+```bash
+# Copy the upload template
+cp deliverables/jira-import/upload_confluence_template.py deliverables/jira-import/upload_epicX.py
+
+# Edit configuration
+PAGE_TITLE = "Epic X: Name - Technical Documentation"
+MARKDOWN_FILE = "deliverables/epic-XX-name.md"
+
+# Run the script
+python3 deliverables/jira-import/upload_epicX.py
+
+# Delete the script
+rm deliverables/jira-import/upload_epicX.py
+```
+
+**❌ DON'T:**
+- Create `EPIC-X-COMPLETION-SUMMARY.md` files
+- Create separate completion documentation
+- Keep epic-specific scripts
+
+**✅ DO:**
+- Update the SAME epic-XX-name.md file
+- Add completion summary at the END
+- Delete temporary scripts after use
+
+---
+
+## 📂 File Structure Rules
+
+### Epic Documentation
+
+**Correct Structure:**
+```
+deliverables/
+├── epic-01-project-setup.md          ✅ ONE file per epic
+├── epic-02-pdf-upload.md             ✅ Updated throughout lifecycle
+├── epic-03-requirement-extraction.md ✅ Includes completion at end
+├── epic-04-risk-detection.md         ✅ All info in one place
+├── epic-05-draft-generation.md       ✅ Easy to find and update
+└── epic-06-service-matching.md       ✅ Single source of truth
+```
+
+**❌ WRONG Structure:**
+```
+deliverables/
+├── EPIC-6-SPIKE.md              ❌ Don't create SPIKE files
+├── EPIC-6-IMPLEMENTATION.md     ❌ Don't create separate implementation docs
+├── EPIC-6-COMPLETION-SUMMARY.md ❌ Don't create separate completion files
+└── epic-06-FINAL.md             ❌ Don't create multiple versions
+```
+
+### Jira Import Scripts
+
+**Correct Structure:**
+```
+deliverables/jira-import/
+├── README.md                    ✅ Guide on how to use templates
+├── create_epic_template.py      ✅ Reusable template
+├── close_epic_template.py       ✅ Reusable template
+└── upload_confluence_template.py ✅ Reusable template
+```
+
+**❌ WRONG Structure:**
+```
+deliverables/jira-import/
+├── create_epic7.py              ❌ Don't commit epic-specific copies
+├── close_epic7.py               ❌ Delete after use
+├── setup_epic4_rdbp.py          ❌ Old scripts should be deleted
+└── close_all_epic6_stories.py   ❌ Clean up old scripts
+```
+
+---
+
+## 🔄 Update Process for Epic Files
+
+**When adding completion summary:**
+
+1. **Open the existing epic file**
+```bash
+# Example: epic-06-service-matching.md
+```
+
+2. **Scroll to the END of the file**
+
+3. **Add a separator:**
+```markdown
+---
+
+## ✅ Completion Summary
+```
+
+4. **Add completion details:**
+```markdown
+**Status:** ✅ COMPLETE  
+**Epic Key:** [RDBP-XX](link)  
+**Completion Date:** YYYY-MM-DD  
+
+### Features Implemented
+...
+
+### Testing
+...
+
+### GitHub Commits
+...
+```
+
+5. **Save the SAME file**
+
+**❌ DON'T:**
+- Create a new file for completion
+- Duplicate content in multiple files
+
+**✅ DO:**
+- Append to the existing file
+- Keep all epic info in one place
+
+---
+
+## 💡 Rationale
+
+### Why ONE file per epic?
+
+1. **Single Source of Truth:** All epic info in one place
+2. **Easy to Find:** No searching through multiple files
+3. **Complete History:** Planning → Implementation → Completion
+4. **Less Clutter:** Clean deliverables directory
+5. **Better for Future Reference:** Full context in one document
+
+### Why delete epic-specific scripts?
+
+1. **Templates are reusable:** No need to keep copies
+2. **Reduces clutter:** jira-import/ stays clean
+3. **Prevents confusion:** Only templates should exist
+4. **Git history:** Can recover if needed
+
+### Why update instead of create new?
+
+1. **Traceability:** See the evolution of the epic
+2. **Consistency:** Same structure for all epics
+3. **Efficiency:** No duplicate content
+4. **Maintainability:** Easier to update one file
+
+---
+
+## ✅ Checklist for AI Assistant
+
+Before creating any epic-related files, check:
+
+- [ ] Is this a NEW epic? → Create `epic-XX-name.md`
+- [ ] Is this an UPDATE to existing epic? → Update the SAME file
+- [ ] Am I creating a Jira script? → Copy template, use, then DELETE
+- [ ] Am I adding completion summary? → Append to existing epic file
+- [ ] Am I creating a COMPLETION-SUMMARY file? → ❌ NO! Update epic file instead
+
+---
+
+## 🚫 Common Anti-Patterns to AVOID
+
+### ❌ Anti-Pattern 1: Multiple files per epic
+```
+EPIC-6-SPIKE.md
+EPIC-6-IMPLEMENTATION.md
+EPIC-6-COMPLETION-SUMMARY.md
+```
+**Fix:** Use ONE file: `epic-06-name.md`
+
+### ❌ Anti-Pattern 2: Keeping epic-specific scripts
+```
+deliverables/jira-import/
+├── create_epic7.py
+├── close_epic7.py
+└── upload_epic7.py
+```
+**Fix:** Delete after use, keep only templates
+
+### ❌ Anti-Pattern 3: Creating completion files
+```
+EPIC-7-COMPLETION-SUMMARY.md
+```
+**Fix:** Append completion to `epic-07-name.md`
+
+---
+
+## 📚 Related Rules
+
+- `.cursor/rules/domain-guidelines.mdc` - Business entities
+- `.cursor/rules/prd-guidelines.mdc` - Requirements standards
+- `.cursor/rules/user-story-guidelines.mdc` - Story writing
+- `deliverables/jira-import/README.md` - Jira scripts guide
+
+---
+
+## 🔍 Quick Reference
+
+| Task | Command | File |
+|------|---------|------|
+| **Plan Epic** | Create file | `deliverables/epic-XX-name.md` |
+| **Create in Jira** | Copy template, edit, run, delete | `create_epic_template.py` |
+| **Implement** | Update same file | `deliverables/epic-XX-name.md` |
+| **Complete** | Append to same file | `deliverables/epic-XX-name.md` |
+| **Close Jira** | Copy template, edit, run, delete | `close_epic_template.py` |
+| **Upload Confluence** | Copy template, edit, run, delete | `upload_confluence_template.py` |
+
+---
+
+**Last Updated:** November 15, 2025  
+**Version:** 1.0  
+**Status:** ✅ Active
