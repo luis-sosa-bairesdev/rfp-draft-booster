@@ -8,179 +8,1233 @@ tags: [workflow, jira, epics, process]
 
 ## 📋 Overview
 
-This document defines the **standard workflow** for managing Epics in the RFP Draft Booster project, including Jira integration, documentation, and completion tracking.
+This document defines the **COMPLETE, STEP-BY-STEP workflow** for managing Epics in the RFP Draft Booster project.
+
+**What this covers:**
+- ✅ **Phase 1:** Planning & Jira Setup (Epic + Sprint + Stories)
+- ✅ **Phase 2:** Implementation (Code + Regression Tests + New Tests + 80% Coverage)
+- ✅ **Phase 3:** Completion (Commit + Close Jira + Confluence Upload)
+
+**Related Guidelines:**
+- `.cursor/rules/jira-guidelines.md` - Jira conventions, story points, labels
+- `.cursor/rules/user-story-guidelines.mdc` - Story writing standards
+- `deliverables/jira-import/README.md` - Jira scripts guide
 
 ---
 
-## 🚀 Epic Lifecycle
+## 🚀 Complete Epic Lifecycle (All Phases)
 
-### Phase 1: Planning
+---
 
-**Create Epic Documentation:**
+## Phase 1: Planning & Design 📋
+
+**TRIGGER:** User says "Let's work on Epic X" or "Create a new epic for [feature]" or "Vamos a manejar una nueva épica"
+
+---
+
+### Step 1.1: Create Epic Documentation
+
+**Action:**
 1. Create ONE file: `deliverables/epic-XX-name.md`
 2. Include sections:
-   - Executive Summary
-   - Problem Statement
-   - Architecture & Design
-   - Implementation Plan
-   - Risks & Mitigations
-   - Success Criteria
+   - Executive Summary (goal, value proposition)
+   - Problem Statement (current pain, desired state)
+   - Architecture & Design (data flow, UI, algorithms)
+   - Implementation Plan (phases, tasks, estimations)
+   - Risks & Mitigations (technical, UX, integration risks)
+   - Success Criteria (functional, performance, quality requirements)
 
-**❌ DON'T:**
-- Create separate SPIKE files
-- Create separate COMPLETION-SUMMARY files
-- Create multiple files for the same epic
+**Example:**
+```bash
+# Create file
+deliverables/epic-07-google-docs-export.md
+```
 
-**✅ DO:**
-- Use ONE file per epic
-- Update the same file throughout the lifecycle
-- Add completion summary at the END of the same file
+**Content Structure:**
+```markdown
+# Epic 7: Google Docs Export - Technical Spike
+
+**Date:** 2025-11-XX
+**Epic Key:** RDBP-XX (To be assigned)
+**Type:** Discovery / Implementation
+**Status:** 📋 Planning
 
 ---
 
-### Phase 2: Jira Setup
+## 🎯 Executive Summary
 
-**Use Templates from `deliverables/jira-import/`:**
+**Goal:** [What we're building]
 
-1. **Copy the create template:**
-```bash
-cp deliverables/jira-import/create_epic_template.py deliverables/jira-import/create_epicX.py
+**Approach:** [How we'll build it]
+
+**Value Proposition:**
+- **Speed:** [Benefit 1]
+- **Accuracy:** [Benefit 2]
+- **Integration:** [Benefit 3]
+
+---
+
+## 📊 Problem Statement
+
+### Current Pain Point
+[Describe the problem]
+
+### Desired State
+[Describe the solution]
+
+---
+
+## 🏗️ Architecture & Design
+
+[Data flow diagrams, UI mockups, etc.]
+
+---
+
+## 📋 Implementation Plan
+
+### Phase 1: Data Setup (X hours)
+### Phase 2: Service Logic (X hours)
+### Phase 3: UI Implementation (X hours)
+### Phase 4: Integration (X hours)
+### Phase 5: Testing (X hours)
+### Phase 6: Documentation (X hours)
+
+**Total Estimated Effort:** XX hours (~X days)
+
+---
+
+## ⚠️ Risks & Mitigations
+
+[Risk table]
+
+---
+
+## 🎯 Success Criteria
+
+[Functional, performance, quality requirements]
+
+---
+
+## ✅ Acceptance Checklist
+
+- [ ] Feature 1 complete
+- [ ] Feature 2 complete
+- [ ] Tests pass with >80% coverage
+- [ ] Documentation updated
 ```
 
-2. **Edit configuration:**
+---
+
+### Step 1.2: Create Sprint in Jira
+
+**Action:**
+1. Copy create template:
+```bash
+cp deliverables/jira-import/create_epic_template.py deliverables/jira-import/create_epic7.py
+```
+
+2. Edit configuration in `create_epic7.py`:
+
+**Epic Details:**
 ```python
-EPIC_SUMMARY = "[EPIC] Your Epic Name"
-SPRINT_NAME = "Sprint X - Your Sprint Name"
+EPIC_SUMMARY = "[EPIC] Google Docs Export"  # Follow jira-guidelines.md naming
+EPIC_DESCRIPTION = """Export draft responses to Google Docs with formatting.
+
+Key Features:
+- Google Docs API integration
+- Markdown to Docs formatting
+- Fallback to .docx download
+
+Value: Reduce manual export time by 80%
+"""
+```
+
+**Sprint Details:**
+```python
+SPRINT_NAME = "Sprint 6 - Docs Export"  # Keep short (<30 chars)
+SPRINT_DURATION_DAYS = 14  # Always 2 weeks
+SPRINT_GOAL = "Implement Google Docs export functionality"
+```
+
+**User Stories** (Follow jira-guidelines.md template):
+```python
 USER_STORIES = [
+    # === BACKEND STORIES (6 stories) ===
     {
-        "summary": "Story 1",
-        "description": "As a user...",
+        "summary": "Create Google Docs service class",
+        "description": """## User Story
+As a developer, I want a service to interact with Google Docs API, so that the app can create and format documents.
+
+## Acceptance Criteria
+- [ ] Service authenticates with service account
+- [ ] Can create new documents
+- [ ] Can format text (headings, bold, lists)
+- [ ] Handles auth errors gracefully
+
+## Technical Notes
+- Use gspread and google-auth libraries
+- Store credentials in st.secrets
+- Follow src/services/ patterns
+
+## Definition of Done
+- [ ] Code complete and reviewed
+- [ ] Unit tests written (80%+ coverage)
+- [ ] Integration tests passing
+- [ ] Documentation updated""",
+        "points": 5,  # Use Fibonacci: 1, 2, 3, 5, 8, 13
+        "priority": "High"  # Blocker, High, Medium, Low
+    },
+    {
+        "summary": "Implement Markdown to Docs conversion",
+        "description": """## User Story
+As a user, I want my Markdown draft converted to Google Docs format, so that headings and formatting are preserved.
+
+## Acceptance Criteria
+- [ ] ## converts to Heading 1
+- [ ] ### converts to Heading 2
+- [ ] **bold** converts to bold text
+- [ ] Lists converted correctly
+
+## Technical Notes
+- Use Google Docs API batchUpdate
+- Handle special characters
+- Test with complex Markdown
+
+## Definition of Done
+- [ ] Code complete and reviewed
+- [ ] Unit tests written (80%+ coverage)
+- [ ] Tested with sample drafts""",
+        "points": 8,
+        "priority": "High"
+    },
+    {
+        "summary": "Add .docx fallback export",
+        "description": """...""",
+        "points": 3,
+        "priority": "Medium"
+    },
+    {
+        "summary": "Implement error handling for Docs API",
+        "description": """...""",
+        "points": 3,
+        "priority": "High"
+    },
+    {
+        "summary": "Add service matcher integration",
+        "description": """...""",
+        "points": 5,
+        "priority": "Medium"
+    },
+    {
+        "summary": "Create export progress spinner",
+        "description": """...""",
+        "points": 2,
+        "priority": "Low"
+    },
+    
+    # === UI STORIES (4 stories) ===
+    {
+        "summary": "Add 'Export to Google Docs' button",
+        "description": """...""",
+        "points": 3,
+        "priority": "High"
+    },
+    {
+        "summary": "Create export confirmation dialog",
+        "description": """...""",
+        "points": 2,
+        "priority": "Medium"
+    },
+    {
+        "summary": "Display export success with link",
+        "description": """...""",
+        "points": 2,
+        "priority": "High"
+    },
+    {
+        "summary": "Add email sharing input",
+        "description": """...""",
+        "points": 3,
+        "priority": "Low"
+    },
+    
+    # === TESTING STORIES (3 stories) ===
+    {
+        "summary": "Write unit tests for Google Docs service",
+        "description": """## User Story
+As a developer, I want comprehensive tests for the Docs service, so that export functionality is reliable.
+
+## Acceptance Criteria
+- [ ] Test authentication success/failure
+- [ ] Test document creation
+- [ ] Test formatting conversion
+- [ ] Test error handling
+- [ ] Coverage >80%
+
+## Technical Notes
+- Mock Google API calls
+- Test with various input formats
+- Follow tests/test_services/ patterns
+
+## Definition of Done
+- [ ] All tests passing
+- [ ] Coverage >80%
+- [ ] No flaky tests""",
         "points": 5,
         "priority": "High"
     },
-    # Add all stories...
+    {
+        "summary": "Write UI tests for export button",
+        "description": """...""",
+        "points": 3,
+        "priority": "Medium"
+    },
+    {
+        "summary": "Write E2E test for complete export flow",
+        "description": """## User Story
+As a QA engineer, I want an E2E test for the export flow, so that the complete user journey is validated.
+
+## Acceptance Criteria
+- [ ] Test Upload → Extract → Draft → Export
+- [ ] Test with mock Google Docs
+- [ ] Test fallback to .docx
+- [ ] Test error scenarios
+
+## Technical Notes
+- Use Playwright
+- Mock external APIs
+- Follow tests/test_e2e/ patterns
+
+## Definition of Done
+- [ ] E2E test passing
+- [ ] Covers happy path and errors
+- [ ] Runs in CI/CD""",
+        "points": 5,
+        "priority": "High"
+    }
 ]
 ```
 
+**Story Breakdown (ALWAYS):**
+- **6 Backend stories** (models, services, business logic)
+- **4 UI stories** (pages, components, interactions)
+- **3 Testing stories** (unit, UI, E2E)
+- **Total: 13 stories** (typical epic size)
+
+**Story Points:**
+- Use **Fibonacci scale** (from jira-guidelines.md):
+  - 1 point: 1-2 hours (very simple)
+  - 2 points: 2-4 hours (simple)
+  - 3 points: 4-8 hours (moderate)
+  - 5 points: 1-2 days (complex)
+  - 8 points: 2-3 days (very complex)
+  - 13 points: 3-5 days (needs breakdown)
+
 3. **Run the script:**
 ```bash
-python3 deliverables/jira-import/create_epicX.py
+python3 deliverables/jira-import/create_epic7.py
 ```
 
-4. **Note the Epic Key (e.g., RDBP-78) for later**
+**Expected Output:**
+```
+✅ Created Epic: RDBP-92 - [EPIC] Google Docs Export
+✅ Created Sprint: Sprint 6 - Docs Export (ID: 7)
+✅ Created 13 stories:
+   - RDBP-93: Create Google Docs service class (5 points)
+   - RDBP-94: Implement Markdown to Docs conversion (8 points)
+   - ... (11 more)
+✅ Moved 13 stories to Sprint 6
 
-5. **Delete the script after use:**
+🔗 Links:
+   Epic: https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-92
+   Board: https://luis-sosa-bairesdev.atlassian.net/jira/software/projects/RDBP/boards/1
+```
+
+4. **IMPORTANT:** Note the Epic Key (e.g., `RDBP-92`) for later
+
+5. **Update epic file** with Epic Key:
 ```bash
-rm deliverables/jira-import/create_epicX.py
+# Update deliverables/epic-07-google-docs-export.md
+# Change "Epic Key: RDBP-XX (To be assigned)" → "Epic Key: RDBP-92"
+```
+
+6. **Delete the script:**
+```bash
+rm deliverables/jira-import/create_epic7.py
 ```
 
 **❌ DON'T:**
 - Keep epic-specific scripts after use
-- Commit epic-specific scripts (create_epic7.py, etc.)
-- Modify the templates directly
+- Commit epic-specific scripts to Git
+- Modify templates directly
+- Create stories without acceptance criteria
 
 **✅ DO:**
-- Copy templates for each new epic
-- Delete copies after successful creation
-- Only commit changes to template files if improving them
+- Copy template, edit, run, delete
+- Note the Epic Key immediately
+- Update epic file with Epic Key
+- Only commit template improvements
+- Follow story point fibonacci scale
+- Include Definition of Done in each story
 
 ---
 
-### Phase 3: Implementation
+## Phase 2: Implementation 🛠️
 
-**During implementation:**
-1. Follow the implementation plan in `deliverables/epic-XX-name.md`
-2. Update the SAME file as you complete tasks
-3. Mark checklist items as complete
-4. Document any deviations or learnings
+**TRIGGER:** User says "Let's start implementing" or "Begin implementation" or "Pasemos a la fase de implementación"
+
+---
+
+### Step 2.1: Run Regression Tests FIRST (CRITICAL)
+
+**WHY THIS IS CRITICAL:**
+- Ensures nothing is broken BEFORE you start
+- Catches pre-existing issues early
+- Establishes baseline for new work
+
+**Action:** Run ALL existing tests to ensure nothing is broken
+
+```bash
+# 1. Run backend unit tests
+pytest tests/test_models/ tests/test_services/ tests/test_utils/ -v
+
+# 2. Run UI tests
+pytest tests/test_ui/ -v
+
+# 3. Run integration tests
+pytest tests/test_integration/ -v
+
+# 4. Run E2E tests
+pytest tests/test_e2e/ -v
+
+# 5. Check coverage
+pytest --cov=src --cov-report=term-missing --cov-report=html
+```
+
+**Expected Output:**
+```
+===== 398 passed in 45.2s =====
+Coverage: 83%
+```
+
+**If tests fail:**
+- ❌ **STOP IMMEDIATELY**
+- ✅ **Fix the broken tests BEFORE continuing**
+- ✅ **Update tests if requirements changed**
+- ✅ **DO NOT ignore failing tests**
+- ✅ **Do NOT implement new features until ALL tests pass**
+
+**Regression Test Status:**
+- ✅ **ALL PASS:** Proceed to Step 2.2
+- ❌ **ANY FAIL:** Fix immediately, do not proceed
+
+---
+
+### Step 2.2: Implement User Stories
+
+**Action:**
+1. Read the implementation plan in `deliverables/epic-XX-name.md`
+2. Implement features following **layered approach**:
+
+**Layered Implementation Order (ALWAYS):**
+```
+1. Models/Data structures first
+   └─> src/models/new_model.py
+   
+2. Services/Business logic second
+   └─> src/services/new_service.py
+   
+3. UI components third
+   └─> pages/X_🔗_New_Page.py
+   
+4. Integration last
+   └─> Update existing pages/services
+```
+
+**Example Order for Google Docs Export:**
+```
+Phase 1: Models
+├─ Define Document model (if needed)
+└─ Define ExportResult dataclass
+
+Phase 2: Services
+├─ Create GoogleDocsService class
+├─ Implement authentication
+├─ Implement document creation
+├─ Implement Markdown to Docs conversion
+└─ Implement error handling
+
+Phase 3: UI
+├─ Add "Export to Google Docs" button in Draft page
+├─ Create export progress spinner
+├─ Display success message with link
+└─ Add email sharing input
+
+Phase 4: Integration
+├─ Integrate with DraftGenerator
+├─ Pass approved service matches
+├─ Update session state
+└─ Add AI Assistant help text
+```
+
+**During Implementation:**
+- Update `deliverables/epic-XX-name.md` with progress
+- Commit frequently (after each working unit)
+- Follow existing code patterns
+- Use type hints and docstrings
+- Handle errors gracefully
+
+---
+
+### Step 2.3: Run Regression Tests AGAIN (After Implementation)
+
+**Action:** Run ALL existing tests to ensure you didn't break anything
+
+```bash
+# Run complete test suite
+pytest tests/ -v
+
+# Check coverage
+pytest --cov=src --cov-report=term
+```
+
+**Expected Output:**
+```
+===== 398 passed in 45.2s =====
+```
+
+**If tests fail:**
+- ❌ **STOP IMMEDIATELY**
+- ✅ **Fix the broken code**
+- ✅ **Do NOT proceed until ALL tests pass**
+
+**Common Causes of Regression Failures:**
+1. Changed function signatures without updating tests
+2. Modified session state keys
+3. Changed data model fields
+4. Updated UI component keys
+
+---
+
+### Step 2.4: Create New Unit Tests
+
+**Action:** Write tests for all new code
+
+**Backend Tests:**
+```bash
+# Create test files
+tests/test_models/test_new_model.py
+tests/test_services/test_new_service.py
+```
+
+**Test Structure (Follow existing patterns):**
+```python
+# tests/test_services/test_google_docs_service.py
+
+import pytest
+from unittest.mock import Mock, patch, MagicMock
+from src.services.google_docs_service import GoogleDocsService
+from src.models.draft import Draft
+
+class TestGoogleDocsService:
+    """Test Google Docs service."""
+    
+    @pytest.fixture
+    def mock_credentials(self):
+        """Mock Google credentials."""
+        return {"type": "service_account", "project_id": "test"}
+    
+    @pytest.fixture
+    def service(self, mock_credentials):
+        """Create service instance."""
+        with patch('src.services.google_docs_service.service_account'):
+            return GoogleDocsService(mock_credentials)
+    
+    def test_create_document(self, service):
+        """Test document creation."""
+        # Arrange
+        draft = Draft(...)
+        
+        # Act
+        result = service.create_document(draft)
+        
+        # Assert
+        assert result.success
+        assert result.document_id is not None
+    
+    def test_create_document_auth_error(self, service):
+        """Test authentication error handling."""
+        # Arrange
+        service._client = None
+        
+        # Act & Assert
+        with pytest.raises(AuthenticationError):
+            service.create_document(draft)
+    
+    # ... more tests (aim for >80% coverage)
+```
+
+**UI Tests:**
+```bash
+# Create test files
+tests/test_ui/test_new_page.py
+```
+
+**Test Structure:**
+```python
+# tests/test_ui/test_draft_page_export.py
+
+import pytest
+import streamlit as st
+from unittest.mock import Mock, patch
+
+def test_export_button_appears(mock_st):
+    """Test export button is rendered."""
+    # Test implementation
+    pass
+
+def test_export_success_message(mock_st):
+    """Test success message with link."""
+    # Test implementation
+    pass
+
+def test_export_error_fallback(mock_st):
+    """Test fallback to .docx on error."""
+    # Test implementation
+    pass
+```
+
+**Requirements:**
+- Test all public methods
+- Test edge cases (empty inputs, None, errors)
+- Test data validation
+- Mock external dependencies (LLM, APIs, file I/O)
+- Follow AAA pattern (Arrange, Act, Assert)
+
+---
+
+### Step 2.5: Create New E2E Tests
+
+**Action:** Write end-to-end tests for new features
+
+```bash
+# Create E2E test
+tests/test_e2e/test_google_docs_export_flow.py
+```
+
+**E2E Test Structure:**
+```python
+# tests/test_e2e/test_google_docs_export_flow.py
+
+import pytest
+from playwright.sync_api import Page, expect
+
+@pytest.mark.asyncio
+async def test_complete_export_flow(page: Page):
+    """Test complete flow: Upload → Extract → Draft → Export."""
+    
+    # 1. Navigate to app
+    await page.goto("http://localhost:8501")
+    
+    # 2. Upload RFP
+    # ... implementation
+    
+    # 3. Extract requirements
+    # ... implementation
+    
+    # 4. Generate draft
+    # ... implementation
+    
+    # 5. Export to Google Docs
+    await page.get_by_role("button", name="Export to Google Docs").click()
+    
+    # 6. Verify success message
+    expect(page.get_by_text("Document created successfully")).to_be_visible()
+    
+    # 7. Verify document link
+    expect(page.get_by_role("link", name="Open in Google Docs")).to_be_visible()
+
+@pytest.mark.asyncio
+async def test_export_fallback_to_docx(page: Page):
+    """Test fallback to .docx when Google Docs fails."""
+    # Test implementation
+    pass
+```
+
+**E2E Test Coverage:**
+- Test complete user flow (happy path)
+- Test error scenarios
+- Test fallback behavior
+- Test data persistence across pages
+- Use real UI interactions (clicks, inputs)
+
+---
+
+### Step 2.6: Verify Code Coverage
+
+**Action:** Ensure coverage stays above 80%
+
+```bash
+# Run coverage
+pytest --cov=src --cov-report=term-missing --cov-report=html
+
+# Open HTML report
+open htmlcov/index.html
+```
+
+**Expected Output:**
+```
+Name                              Stmts   Miss  Cover   Missing
+---------------------------------------------------------------
+src/models/document.py               45      2    96%   78-79
+src/services/google_docs.py         120      8    93%   145-152
+src/utils/markdown_converter.py      60      4    93%   89-92
+---------------------------------------------------------------
+TOTAL                              1250     50    83%
+```
+
+**Coverage Targets (MANDATORY):**
+- **Backend (src/models, src/services, src/utils): >80%**
+- **Frontend (pages/, src/components/): >70%** (unit + E2E combined)
+
+**If coverage < 80%:**
+- ✅ Add more unit tests for uncovered lines
+- ✅ Focus on critical paths first (happy path, error handling)
+- ✅ Use E2E tests if unit tests are not feasible (UI interactions)
+- ✅ Check `htmlcov/index.html` for specific uncovered lines
+
+**Lines Allowed to Skip:**
+- Import statements
+- Type checking blocks (`if TYPE_CHECKING:`)
+- Abstract methods
+- Defensive programming (should never happen cases)
+
+---
+
+### Step 2.7: Update Epic Documentation (Continuous)
+
+**Action:** Update `deliverables/epic-XX-name.md` as you complete tasks
+
+**Add Progress Section:**
+```markdown
+## Implementation Progress (Updated: 2025-11-XX)
+
+### Completed:
+- [x] Create data models (Document, ExportResult)
+- [x] Implement GoogleDocsService (authentication, creation)
+- [x] Markdown to Docs conversion
+- [x] Error handling and fallback
+
+### In Progress:
+- [in-progress] Create export button UI
+- [ ] Integration with Draft Generation
+
+### Blocked:
+- None
+
+### Challenges & Solutions:
+- **Challenge:** Low match scores (47%)
+  - **Solution:** Added category bonus (+15%)
+  - **Commit:** abc123
+
+- **Challenge:** Google Docs API rate limiting
+  - **Solution:** Implemented exponential backoff
+  - **Commit:** def456
+```
 
 **❌ DON'T:**
+- Skip regression tests
+- Commit code with failing tests
+- Ignore code coverage
 - Create new files for updates
-- Leave stale information in the epic file
+- Implement without tests
 
 **✅ DO:**
-- Update the epic file continuously
-- Add notes about challenges/solutions
-- Keep ONE source of truth
+- Run regression tests FIRST and AFTER implementation
+- Fix broken tests immediately
+- Maintain >80% coverage (backend), >70% (frontend)
+- Update the SAME epic file continuously
+- Commit working code frequently
+- Follow layered implementation order
 
 ---
 
-### Phase 4: Completion
+## Phase 3: Completion & Closure ✅
 
-**When Epic is done:**
+**TRIGGER:** User says "Everything is done, let's close this epic" or "Approve everything" or "Te apruebo todo"
 
-1. **Update the SAME epic file** with completion summary:
+---
+
+### Step 3.1: Final Testing & Validation
+
+**Action:** Run complete test suite one last time
+
+```bash
+# Run ALL tests with coverage
+pytest tests/ -v --cov=src --cov-report=term
+
+# Expected output:
+# ===== 433 passed in 52.1s =====  (398 old + 35 new)
+# Coverage: 83%
+```
+
+**Validation Checklist:**
+- [ ] ALL regression tests pass (398 old tests)
+- [ ] ALL new tests pass (35 new tests)
+- [ ] Code coverage >80% (backend), >70% (frontend)
+- [ ] No linter errors
+- [ ] All acceptance criteria met
+- [ ] Manual testing completed
+
+**If any failures:**
+- ❌ **DO NOT PROCEED**
+- ✅ Fix all failures first
+- ✅ Re-run tests until ALL pass
+
+---
+
+### Step 3.2: Commit Changes
+
+**Action:** Commit all changes with descriptive message
+
+```bash
+# Review changes
+git add -A
+git status
+
+# Commit with detailed message (reference jira-guidelines.md)
+git commit -m "feat(epic-7): implement Google Docs export
+
+Features:
+- Google Docs API integration with service account
+- Markdown to Docs formatting (headings, bold, lists)
+- Fallback to .docx download on error
+- Export progress spinner and success message
+- Email sharing functionality
+
+Testing:
+- 35 new tests (20 unit, 10 UI, 5 E2E)
+- Coverage: 83% (backend), 75% (frontend)
+- All 433 tests passing
+- Regression tests: ALL PASS
+
+Integration:
+- Integrated with DraftGenerator
+- Passes approved service matches
+- Updated AI Assistant help text
+
+Documentation:
+- Updated epic-07-google-docs-export.md
+- Added README-GOOGLE-DOCS-SETUP.md
+
+Closes RDBP-92"
+
+# Push to main
+git push origin main
+```
+
+**Commit Message Format (Follow jira-guidelines.md):**
+```
+feat(epic-X): brief summary
+
+Features:
+- Feature 1
+- Feature 2
+
+Testing:
+- X new tests
+- Coverage: Y%
+- All tests passing
+
+Closes RDBP-XX
+```
+
+---
+
+### Step 3.3: Update Epic File with Completion Summary
+
+**Action:** Add completion summary to END of epic file
+
+Open `deliverables/epic-XX-name.md` and add at the END:
+
 ```markdown
 ---
 
 ## ✅ Completion Summary
 
 **Status:** ✅ COMPLETE  
-**Epic Key:** [RDBP-XX](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-XX)  
-**Completion Date:** YYYY-MM-DD
-
-### Features Implemented
-- Feature 1
-- Feature 2
-
-### Testing
-- Coverage: X%
-- Tests: X passing
-
-### GitHub Commits
-- Commit hash 1
-- Commit hash 2
+**Epic Key:** [RDBP-92](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-92)  
+**Completion Date:** November 16, 2025  
+**Sprint:** Sprint 6 - Google Docs Export
 
 ---
-```
 
-2. **Close Jira Epic and Stories:**
+### 📊 Implementation Results
 
-```bash
-# Copy the close template
-cp deliverables/jira-import/close_epic_template.py deliverables/jira-import/close_epicX.py
+**Test Coverage:** 83% (433 tests passing)  
+**GitHub Commits:**
+- `abc123`: Epic 7 implementation (68 files, 8,234 insertions)
+- `def456`: Documentation and setup guide
+- `ghi789`: Final refinements and bug fixes
 
-# Edit configuration
-EPIC_KEY = "RDBP-XX"
-STORY_KEYS = [
-    "RDBP-79",
-    "RDBP-80",
-    # ... all story keys from Epic page
-]
+---
 
-# Run the script
-python3 deliverables/jira-import/close_epicX.py
+### 🎯 Features Delivered
 
-# Delete the script
-rm deliverables/jira-import/close_epicX.py
-```
+1. ✅ **Google Docs API Integration**
+   - Service account authentication
+   - Document creation and formatting
+   - Error handling with retry logic
 
-3. **Upload to Confluence (optional):**
+2. ✅ **Markdown to Docs Conversion**
+   - Headings (##, ###) to Heading 1, 2
+   - Bold, italic, lists preserved
+   - Special characters handled
 
-```bash
-# Copy the upload template
-cp deliverables/jira-import/upload_confluence_template.py deliverables/jira-import/upload_epicX.py
+3. ✅ **Fallback to .docx Export**
+   - Auto-fallback on auth failure
+   - Same formatting as Google Docs
+   - Download via st.download_button
 
-# Edit configuration
-PAGE_TITLE = "Epic X: Name - Technical Documentation"
-MARKDOWN_FILE = "deliverables/epic-XX-name.md"
+4. ✅ **UI Components**
+   - Export button in Draft page
+   - Progress spinner during export
+   - Success message with direct link
+   - Email sharing input (optional)
 
-# Run the script
-python3 deliverables/jira-import/upload_epicX.py
+5. ✅ **Integration**
+   - Service matches included in exported docs
+   - RFP metadata in document header
+   - AI Assistant help text updated
 
-# Delete the script
-rm deliverables/jira-import/upload_epicX.py
+---
+
+### 🧪 Testing Summary
+
+**Unit Tests:** 20 tests
+- test_google_docs_service.py: 12 tests (auth, create, format, error)
+- test_markdown_converter.py: 8 tests (headings, bold, lists, special chars)
+
+**UI Tests:** 10 tests
+- test_export_button.py: 6 tests (button render, click, spinner, success)
+- test_email_sharing.py: 4 tests (input validation, sharing logic)
+
+**E2E Tests:** 5 tests
+- test_export_flow.py: Complete flow (upload → extract → draft → export)
+- test_export_fallback.py: Fallback to .docx on error
+
+**Total:** 35 new tests | **Coverage:** 83% | **Status:** ✅ All passing
+
+---
+
+### 📚 Documentation Delivered
+
+1. ✅ **Technical Documentation**
+   - epic-07-google-docs-export.md (1100+ lines)
+   - Complete planning + implementation + completion
+
+2. ✅ **Setup Guides**
+   - README-GOOGLE-DOCS-SETUP.md (304 lines)
+   - Google Cloud service account setup
+   - API enablement steps
+   - Credentials configuration
+
+---
+
+### 🚀 Impact & Value
+
+**Before Epic 7:**
+- Manual copy-paste to Google Docs (15-30 minutes)
+- Formatting lost in transfer
+- No service match integration
+
+**After Epic 7:**
+- Automated export (<5 seconds)
+- Formatting preserved automatically
+- Service matches included
+- **Expected time savings:** 90% (15-30 min → 5 seconds)
+
+---
+
+### 🔗 Related Links
+
+- **Jira Epic:** [RDBP-92](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-92) ✅ Done
+- **GitHub:** [luis-sosa-bairesdev/rfp-draft-booster](https://github.com/luis-sosa-bairesdev/rfp-draft-booster)
+- **Commits:** abc123, def456, ghi789
+
+---
+
+**Completion Date:** November 16, 2025  
+**Status:** ✅ COMPLETE  
+**Ready for Production:** YES
 ```
 
 **❌ DON'T:**
-- Create `EPIC-X-COMPLETION-SUMMARY.md` files
-- Create separate completion documentation
-- Keep epic-specific scripts
+- Create `EPIC-7-COMPLETION-SUMMARY.md` (separate file)
+- Create multiple completion files
 
 **✅ DO:**
-- Update the SAME epic-XX-name.md file
-- Add completion summary at the END
-- Delete temporary scripts after use
+- Append to the existing epic file
+- Keep all epic info in one place
+- Include all key metrics and links
+
+---
+
+### Step 3.4: Close Jira Epic and Stories
+
+**Action:** Close all 13 stories and epic in Jira
+
+```bash
+# 1. Go to Epic page in Jira
+https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-92
+
+# 2. Get ALL story keys (13 stories)
+# Click on "Child Issues" or "Issues" tab
+# Copy all story keys:
+RDBP-93, RDBP-94, RDBP-95, RDBP-96, RDBP-97, RDBP-98,
+RDBP-99, RDBP-100, RDBP-101, RDBP-102, RDBP-103, RDBP-104, RDBP-105
+
+# 3. Copy close template
+cp deliverables/jira-import/close_epic_template.py deliverables/jira-import/close_epic7.py
+
+# 4. Edit configuration
+EPIC_KEY = "RDBP-92"
+STORY_KEYS = [
+    "RDBP-93",
+    "RDBP-94",
+    "RDBP-95",
+    "RDBP-96",
+    "RDBP-97",
+    "RDBP-98",
+    "RDBP-99",
+    "RDBP-100",
+    "RDBP-101",
+    "RDBP-102",
+    "RDBP-103",
+    "RDBP-104",
+    "RDBP-105"
+]
+
+# Customize completion comment
+COMPLETION_COMMENT = """Story completed successfully! ✅
+
+Features implemented:
+- Google Docs export with authentication
+- Markdown to Docs formatting
+- Fallback to .docx download
+- Email sharing functionality
+
+Test Coverage: 83%
+GitHub Commit: abc123
+Status: COMPLETE
+
+Completed: November 16, 2025"""
+
+EPIC_COMPLETION_COMMENT = """Epic completed successfully! ✅
+
+All 13 stories implemented and tested.
+
+Summary:
+- Google Docs API integration complete
+- Markdown to Docs conversion working
+- Fallback to .docx implemented
+- 35 tests added, 83% coverage
+- All acceptance criteria met
+- Documentation complete
+
+Status: Ready for Production
+Completed: November 16, 2025"""
+
+# 5. Run the script
+python3 deliverables/jira-import/close_epic7.py
+
+# Expected output:
+# ✅ Closed 13 stories
+# ✅ Closed Epic RDBP-92
+# 🎉 SUCCESS!
+
+# 6. Delete the script
+rm deliverables/jira-import/close_epic7.py
+```
+
+**What the script does:**
+1. Adds completion comment to each of 13 stories
+2. Transitions each story to "Done"
+3. Adds completion comment to Epic
+4. Transitions Epic to "Done"
+
+---
+
+### Step 3.5: Upload to Confluence (Optional)
+
+**Action:** Upload epic documentation to Confluence
+
+```bash
+# 1. Copy upload template
+cp deliverables/jira-import/upload_confluence_template.py deliverables/jira-import/upload_epic7.py
+
+# 2. Edit configuration
+PAGE_TITLE = "Epic 7: Google Docs Export - Technical Documentation"
+MARKDOWN_FILE = "deliverables/epic-07-google-docs-export.md"
+
+# 3. Run the script
+python3 deliverables/jira-import/upload_epic7.py
+
+# Expected output:
+# ✅ Page uploaded to Confluence
+#    URL: https://luis-sosa-bairesdev.atlassian.net/wiki/spaces/~712020.../pages/...
+
+# 4. Delete the script
+rm deliverables/jira-import/upload_epic7.py
+```
+
+**Note:** Confluence upload may fail due to permissions. If it fails:
+- The epic file (`deliverables/epic-07-google-docs-export.md`) already has all documentation
+- You can manually upload or skip this step
+- The epic is still complete without Confluence
+
+---
+
+### Step 3.6: Final Commit (Completion Summary)
+
+**Action:** Commit the completion summary
+
+```bash
+git add deliverables/epic-07-google-docs-export.md
+git commit -m "docs: add Epic 7 completion summary
+
+- Complete completion summary appended to epic file
+- Test coverage: 83%
+- All 13 stories closed in Jira (RDBP-93 to RDBP-105)
+- Epic RDBP-92 complete and closed
+- Confluence documentation uploaded
+
+Ready for production deployment"
+
+git push origin main
+```
+
+---
+
+## 📊 Phase Summary
+
+| Phase | Duration | Key Actions | Output |
+|---|---|---|---|
+| **1. Planning** | 2-4 hours | Create epic file, create sprint + stories in Jira | Epic file + 13 Jira stories |
+| **2. Implementation** | 3-5 days | Implement code, regression tests, new tests, 80% coverage | Working code + tests |
+| **3. Completion** | 1-2 hours | Final tests, commit, update epic, close Jira, Confluence | Complete + closed |
+
+**Total Time:** 4-6 days for typical epic (13 stories, 30-40 story points)
+
+---
+
+## 🎯 Complete Process Checklist
+
+**When user says "Vamos a manejar una nueva épica" (Phase 1):**
+
+- [ ] Create `deliverables/epic-XX-name.md` (ONE file, follow template)
+- [ ] Copy `create_epic_template.py` → `create_epicX.py`
+- [ ] Edit epic details (summary, description, following `[EPIC]` format)
+- [ ] Edit sprint name (<30 chars), duration (14 days), goal
+- [ ] Create 13 user stories (6 backend, 4 UI, 3 testing)
+- [ ] Use Fibonacci story points (1, 2, 3, 5, 8, 13)
+- [ ] Add acceptance criteria to each story
+- [ ] Add Definition of Done to each story
+- [ ] Run script to create Epic + Sprint + Stories in Jira
+- [ ] Note Epic Key (e.g., RDBP-92)
+- [ ] Update epic file with Epic Key
+- [ ] Delete `create_epicX.py`
+
+**When user says "Pasemos a la fase de implementación" (Phase 2):**
+
+- [ ] **Step 1: RUN REGRESSION TESTS FIRST (CRITICAL)**
+  - [ ] Run backend tests: `pytest tests/test_models/ tests/test_services/ tests/test_utils/ -v`
+  - [ ] Run UI tests: `pytest tests/test_ui/ -v`
+  - [ ] Run integration tests: `pytest tests/test_integration/ -v`
+  - [ ] Run E2E tests: `pytest tests/test_e2e/ -v`
+  - [ ] ✅ If ALL PASS → Proceed to Step 2
+  - [ ] ❌ If ANY FAIL → STOP, fix immediately, do not proceed
+
+- [ ] **Step 2: Implement features (layered approach)**
+  - [ ] Phase 1: Models/Data structures
+  - [ ] Phase 2: Services/Business logic
+  - [ ] Phase 3: UI components
+  - [ ] Phase 4: Integration
+  - [ ] Update epic file with progress continuously
+
+- [ ] **Step 3: RUN REGRESSION TESTS AGAIN (After implementation)**
+  - [ ] Run complete test suite: `pytest tests/ -v`
+  - [ ] ✅ If ALL PASS → Proceed to Step 4
+  - [ ] ❌ If ANY FAIL → STOP, fix broken code, do not proceed
+
+- [ ] **Step 4: Create new unit tests**
+  - [ ] Write backend tests (models, services)
+  - [ ] Write UI tests (pages, components)
+  - [ ] Follow AAA pattern (Arrange, Act, Assert)
+  - [ ] Mock external dependencies
+  - [ ] Test edge cases and errors
+
+- [ ] **Step 5: Create new E2E tests**
+  - [ ] Write E2E test for complete flow
+  - [ ] Test happy path
+  - [ ] Test error scenarios
+  - [ ] Use Playwright for browser automation
+
+- [ ] **Step 6: Verify code coverage >80%**
+  - [ ] Run coverage: `pytest --cov=src --cov-report=term-missing --cov-report=html`
+  - [ ] Backend (src/models, src/services, src/utils): >80%
+  - [ ] Frontend (pages/, src/components/): >70%
+  - [ ] Add tests for uncovered lines
+  - [ ] Open `htmlcov/index.html` to see details
+
+- [ ] **Step 7: Update epic file**
+  - [ ] Add implementation progress section
+  - [ ] Document challenges and solutions
+  - [ ] Update checklist
+
+**When user says "Te apruebo todo" or "Everything is done" (Phase 3):**
+
+- [ ] **Step 1: Final testing**
+  - [ ] Run complete test suite: `pytest tests/ -v --cov=src --cov-report=term`
+  - [ ] Verify ALL tests pass (old + new)
+  - [ ] Verify coverage >80%
+  - [ ] Manual testing complete
+
+- [ ] **Step 2: Commit changes**
+  - [ ] Review changes: `git add -A && git status`
+  - [ ] Commit with detailed message (reference RDBP-XX)
+  - [ ] Push to main: `git push origin main`
+
+- [ ] **Step 3: Add completion summary to epic file**
+  - [ ] Open `deliverables/epic-XX-name.md`
+  - [ ] Scroll to END of file
+  - [ ] Add separator: `---` and `## ✅ Completion Summary`
+  - [ ] Add status, dates, features, testing, documentation, impact
+  - [ ] Save the SAME file
+
+- [ ] **Step 4: Close Jira Epic and Stories**
+  - [ ] Go to Epic page in Jira, get all story keys
+  - [ ] Copy `close_epic_template.py` → `close_epicX.py`
+  - [ ] Edit Epic Key and Story Keys (all 13 stories)
+  - [ ] Edit completion comments
+  - [ ] Run script: `python3 deliverables/jira-import/close_epicX.py`
+  - [ ] Verify all stories moved to Done
+  - [ ] Verify epic moved to Done
+  - [ ] Delete `close_epicX.py`
+
+- [ ] **Step 5: Upload to Confluence (optional)**
+  - [ ] Copy `upload_confluence_template.py` → `upload_epicX.py`
+  - [ ] Edit page title and markdown file path
+  - [ ] Run script: `python3 deliverables/jira-import/upload_epicX.py`
+  - [ ] Delete `upload_epicX.py`
+  - [ ] *(If fails due to permissions, skip this step)*
+
+- [ ] **Step 6: Final commit**
+  - [ ] Commit completion summary: `git add deliverables/epic-XX-name.md`
+  - [ ] Commit: `git commit -m "docs: add Epic X completion summary"`
+  - [ ] Push: `git push origin main`
+
+**Total:** 32 steps | **Time:** 4-6 days | **Output:** Complete, tested, documented epic
 
 ---
 
@@ -196,16 +1250,18 @@ deliverables/
 ├── epic-03-requirement-extraction.md ✅ Includes completion at end
 ├── epic-04-risk-detection.md         ✅ All info in one place
 ├── epic-05-draft-generation.md       ✅ Easy to find and update
-└── epic-06-service-matching.md       ✅ Single source of truth
+├── epic-06-service-matching.md       ✅ Single source of truth
+└── epic-07-google-docs-export.md     ✅ Complete lifecycle documented
 ```
 
 **❌ WRONG Structure:**
 ```
 deliverables/
-├── EPIC-6-SPIKE.md              ❌ Don't create SPIKE files
-├── EPIC-6-IMPLEMENTATION.md     ❌ Don't create separate implementation docs
-├── EPIC-6-COMPLETION-SUMMARY.md ❌ Don't create separate completion files
-└── epic-06-FINAL.md             ❌ Don't create multiple versions
+├── EPIC-7-SPIKE.md              ❌ Don't create SPIKE files
+├── EPIC-7-IMPLEMENTATION.md     ❌ Don't create separate implementation docs
+├── EPIC-7-COMPLETION-SUMMARY.md ❌ Don't create separate completion files
+├── epic-07-FINAL.md             ❌ Don't create multiple versions
+└── epic-07-v2.md                ❌ Don't version epic files
 ```
 
 ### Jira Import Scripts
@@ -224,55 +1280,9 @@ deliverables/jira-import/
 deliverables/jira-import/
 ├── create_epic7.py              ❌ Don't commit epic-specific copies
 ├── close_epic7.py               ❌ Delete after use
-├── setup_epic4_rdbp.py          ❌ Old scripts should be deleted
-└── close_all_epic6_stories.py   ❌ Clean up old scripts
+├── upload_epic7.py              ❌ Don't keep old scripts
+└── setup_epic4_rdbp.py          ❌ Clean up old scripts
 ```
-
----
-
-## 🔄 Update Process for Epic Files
-
-**When adding completion summary:**
-
-1. **Open the existing epic file**
-```bash
-# Example: epic-06-service-matching.md
-```
-
-2. **Scroll to the END of the file**
-
-3. **Add a separator:**
-```markdown
----
-
-## ✅ Completion Summary
-```
-
-4. **Add completion details:**
-```markdown
-**Status:** ✅ COMPLETE  
-**Epic Key:** [RDBP-XX](link)  
-**Completion Date:** YYYY-MM-DD  
-
-### Features Implemented
-...
-
-### Testing
-...
-
-### GitHub Commits
-...
-```
-
-5. **Save the SAME file**
-
-**❌ DON'T:**
-- Create a new file for completion
-- Duplicate content in multiple files
-
-**✅ DO:**
-- Append to the existing file
-- Keep all epic info in one place
 
 ---
 
@@ -282,35 +1292,30 @@ deliverables/jira-import/
 
 1. **Single Source of Truth:** All epic info in one place
 2. **Easy to Find:** No searching through multiple files
-3. **Complete History:** Planning → Implementation → Completion
+3. **Complete History:** Planning → Implementation → Completion in one document
 4. **Less Clutter:** Clean deliverables directory
-5. **Better for Future Reference:** Full context in one document
+5. **Better for Future Reference:** Full context in one file
 
 ### Why delete epic-specific scripts?
 
 1. **Templates are reusable:** No need to keep copies
-2. **Reduces clutter:** jira-import/ stays clean
+2. **Reduces clutter:** jira-import/ stays clean (only 4 files)
 3. **Prevents confusion:** Only templates should exist
-4. **Git history:** Can recover if needed
+4. **Git history:** Can recover deleted scripts if needed
 
-### Why update instead of create new?
+### Why regression tests FIRST?
 
-1. **Traceability:** See the evolution of the epic
-2. **Consistency:** Same structure for all epics
-3. **Efficiency:** No duplicate content
-4. **Maintainability:** Easier to update one file
+1. **Catch pre-existing issues:** Know baseline before starting
+2. **Prevent blame:** Not your fault if tests already fail
+3. **Safe refactoring:** Ensure changes don't break existing features
+4. **Confidence:** Proceed knowing everything works
 
----
+### Why 80% coverage?
 
-## ✅ Checklist for AI Assistant
-
-Before creating any epic-related files, check:
-
-- [ ] Is this a NEW epic? → Create `epic-XX-name.md`
-- [ ] Is this an UPDATE to existing epic? → Update the SAME file
-- [ ] Am I creating a Jira script? → Copy template, use, then DELETE
-- [ ] Am I adding completion summary? → Append to existing epic file
-- [ ] Am I creating a COMPLETION-SUMMARY file? → ❌ NO! Update epic file instead
+1. **Quality assurance:** High confidence in code correctness
+2. **Maintainability:** Easier to refactor with tests
+3. **Documentation:** Tests document expected behavior
+4. **Industry standard:** 80% is widely accepted minimum
 
 ---
 
@@ -318,11 +1323,11 @@ Before creating any epic-related files, check:
 
 ### ❌ Anti-Pattern 1: Multiple files per epic
 ```
-EPIC-6-SPIKE.md
-EPIC-6-IMPLEMENTATION.md
-EPIC-6-COMPLETION-SUMMARY.md
+EPIC-7-SPIKE.md
+EPIC-7-IMPLEMENTATION.md
+EPIC-7-COMPLETION-SUMMARY.md
 ```
-**Fix:** Use ONE file: `epic-06-name.md`
+**Fix:** Use ONE file: `epic-07-google-docs-export.md`
 
 ### ❌ Anti-Pattern 2: Keeping epic-specific scripts
 ```
@@ -337,32 +1342,64 @@ deliverables/jira-import/
 ```
 EPIC-7-COMPLETION-SUMMARY.md
 ```
-**Fix:** Append completion to `epic-07-name.md`
+**Fix:** Append completion to `epic-07-google-docs-export.md`
+
+### ❌ Anti-Pattern 4: Skipping regression tests
+```
+# User: "Start implementation"
+# AI: *Immediately starts coding without running tests*
+```
+**Fix:** ALWAYS run regression tests FIRST before any implementation
+
+### ❌ Anti-Pattern 5: Implementing without tests
+```
+# User: "Implement feature X"
+# AI: *Implements feature, commits, done*
+# No unit tests, no E2E tests, no coverage check
+```
+**Fix:** ALWAYS create tests for new code, verify >80% coverage
+
+### ❌ Anti-Pattern 6: Ignoring failing tests
+```
+# pytest output: 5 failed, 393 passed
+# AI: "There are some failures but let's proceed..."
+```
+**Fix:** STOP immediately, fix ALL failures before proceeding
 
 ---
 
 ## 📚 Related Rules
 
-- `.cursor/rules/domain-guidelines.mdc` - Business entities
-- `.cursor/rules/prd-guidelines.mdc` - Requirements standards
-- `.cursor/rules/user-story-guidelines.mdc` - Story writing
-- `deliverables/jira-import/README.md` - Jira scripts guide
+- `.cursor/rules/jira-guidelines.md` - Jira conventions, story points, labels, workflows
+- `.cursor/rules/user-story-guidelines.mdc` - Story writing standards, acceptance criteria
+- `.cursor/rules/basic-guidelines.mdc` - General coding standards
+- `.cursor/rules/python-practices.mdc` - Python-specific best practices
+- `deliverables/jira-import/README.md` - Detailed Jira scripts guide
 
 ---
 
 ## 🔍 Quick Reference
 
+| User Says | AI Does | Phase |
+|---|---|---|
+| "Vamos a manejar una nueva épica" | Create epic file + Jira setup (Sprint + 13 stories) | Phase 1 |
+| "Pasemos a la fase de implementación" | Run regression tests → Implement → New tests → 80% coverage | Phase 2 |
+| "Te apruebo todo" | Final tests → Commit → Update epic → Close Jira → Confluence | Phase 3 |
+
 | Task | Command | File |
-|------|---------|------|
+|---|---|---|
 | **Plan Epic** | Create file | `deliverables/epic-XX-name.md` |
 | **Create in Jira** | Copy template, edit, run, delete | `create_epic_template.py` |
-| **Implement** | Update same file | `deliverables/epic-XX-name.md` |
+| **Run Regression** | `pytest tests/ -v` | ALL existing tests |
+| **Implement** | Layered: models → services → UI → integration | Various files |
+| **New Tests** | Create unit + E2E tests | `tests/test_*/test_*.py` |
+| **Coverage** | `pytest --cov=src --cov-report=term` | >80% backend, >70% frontend |
 | **Complete** | Append to same file | `deliverables/epic-XX-name.md` |
 | **Close Jira** | Copy template, edit, run, delete | `close_epic_template.py` |
-| **Upload Confluence** | Copy template, edit, run, delete | `upload_confluence_template.py` |
+| **Confluence** | Copy template, edit, run, delete | `upload_confluence_template.py` |
 
 ---
 
 **Last Updated:** November 15, 2025  
-**Version:** 1.0  
+**Version:** 2.0 (Complete Process with Regression Tests)  
 **Status:** ✅ Active
