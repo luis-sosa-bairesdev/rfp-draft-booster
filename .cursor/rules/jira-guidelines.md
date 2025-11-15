@@ -8,10 +8,11 @@ This document defines how to integrate Jira with the RFP Draft Booster developme
 
 ### Project Details
 
-- **Project Key:** `RFP`
+- **Project Key:** `RDBP` (RFP Draft Booster Project)
 - **Project Name:** RFP Draft Booster
 - **Project Type:** Software Development
-- **Atlassian URL:** `https://bairesdev.atlassian.net`
+- **Atlassian URL:** `https://luis-sosa-bairesdev.atlassian.net`
+- **Email:** `luis.sosa@bairesdev.com`
 
 ## Issue Types
 
@@ -77,11 +78,11 @@ Format: User story template
 
 Examples:
 ```
-RFP-1: Upload RFP PDF with validation
-RFP-5: Extract requirements using LLM
-RFP-12: Detect risk clauses in RFP
-RFP-18: Generate draft response
-RFP-25: Export draft to Google Docs
+RDBP-1: Upload RFP PDF with validation
+RDBP-5: Extract requirements using LLM
+RDBP-12: Detect risk clauses in RFP
+RDBP-18: Generate draft response
+RDBP-25: Export draft to Google Docs
 ```
 
 ### Tasks
@@ -90,10 +91,10 @@ Format: Action + Component
 
 Examples:
 ```
-RFP-2: Setup Streamlit app structure
-RFP-6: Configure Gemini API integration
-RFP-13: Implement regex patterns for risk detection
-RFP-19: Create draft template engine
+RDBP-2: Setup Streamlit app structure
+RDBP-6: Configure Gemini API integration
+RDBP-13: Implement regex patterns for risk detection
+RDBP-19: Create draft template engine
 ```
 
 ### Bugs
@@ -102,9 +103,9 @@ Format: `[BUG] Brief description`
 
 Examples:
 ```
-RFP-30: [BUG] File upload fails for PDFs over 40MB
-RFP-31: [BUG] LLM extraction timeout for large documents
-RFP-32: [BUG] Google Docs export loses formatting
+RDBP-30: [BUG] File upload fails for PDFs over 40MB
+RDBP-31: [BUG] LLM extraction timeout for large documents
+RDBP-32: [BUG] Google Docs export loses formatting
 ```
 
 ## Story Description Template
@@ -207,7 +208,7 @@ Open → In Progress → Testing → Verified → Closed
 # In Cursor chat, you can ask:
 "Show me all open stories in RFP project"
 "List all high priority bugs"
-"Get details for RFP-15"
+"Get details for RDBP-15"
 "Show stories assigned to me"
 ```
 
@@ -221,22 +222,22 @@ Open → In Progress → Testing → Verified → Closed
 The AI will:
 1. Format the story properly
 2. Add to Jira
-3. Return the issue key (e.g., RFP-45)
+3. Return the issue key (e.g., RDBP-45)
 
 ### Update Issues
 
 ```python
 # Update issue status:
-"Move RFP-15 to In Progress"
-"Add comment to RFP-20: Implemented PDF validation"
-"Update RFP-25 status to Done"
+"Move RDBP-15 to In Progress"
+"Add comment to RDBP-20: Implemented PDF validation"
+"Update RDBP-25 status to Done"
 ```
 
 ### Search and Filter
 
 ```python
 # JQL queries via AI:
-"Show all stories in Epic RFP-5"
+"Show all stories in Epic RDBP-5"
 "List all bugs created this week"
 "Find all unassigned high-priority tasks"
 ```
@@ -278,24 +279,24 @@ Use Fibonacci sequence for estimation:
 
 **Blocks / Is Blocked By**
 ```
-RFP-5 blocks RFP-12
+RDBP-5 blocks RDBP-12
 (Requirement extraction must complete before risk detection)
 ```
 
 **Relates To**
 ```
-RFP-18 relates to RFP-25
+RDBP-18 relates to RDBP-25
 (Draft generation relates to export)
 ```
 
 **Duplicate**
 ```
-RFP-30 duplicates RFP-28
+RDBP-30 duplicates RDBP-28
 ```
 
 **Epic Link**
 ```
-RFP-5, RFP-6, RFP-7 → RFP-1 [EPIC]
+RDBP-5, RDBP-6, RDBP-7 → RDBP-1 [EPIC]
 ```
 
 ## Comments
@@ -324,7 +325,7 @@ or only PDFs with extractable text?
 **Code References:**
 ```
 Implemented in PR #45
-Branch: feature/pdf-upload-RFP-123
+Branch: feature/pdf-upload-RDBP-123
 Commit: a1b2c3d
 ```
 
@@ -337,33 +338,33 @@ git commit -m "feat(upload): add PDF file validation
 
 Implements file size and type validation for uploads.
 
-RFP-123"
+RDBP-123"
 ```
 
 ### Branch Names Include Ticket
 
 ```bash
-git checkout -b feature/pdf-upload-RFP-123
-git checkout -b fix/export-error-RFP-156
+git checkout -b feature/pdf-upload-RDBP-123
+git checkout -b fix/export-error-RDBP-156
 ```
 
 ### PR Description References Jira
 
 ```markdown
 ## Related Tickets
-- RFP-123 (primary)
-- RFP-124 (related)
+- RDBP-123 (primary)
+- RDBP-124 (related)
 
 ## Description
-Implements PDF upload with validation as specified in RFP-123.
+Implements PDF upload with validation as specified in RDBP-123.
 ```
 
 ## Automation Rules
 
 ### Auto-transition on PR
 
-**When:** PR is created for branch with RFP-XXX
-**Then:** Move RFP-XXX to "In Review"
+**When:** PR is created for branch with RDBP-XXX
+**Then:** Move RDBP-XXX to "In Review"
 
 ### Auto-transition on Merge
 
@@ -372,8 +373,8 @@ Implements PDF upload with validation as specified in RFP-123.
 
 ### Auto-comment on Commit
 
-**When:** Commit message contains RFP-XXX
-**Then:** Add commit message as comment to RFP-XXX
+**When:** Commit message contains RDBP-XXX
+**Then:** Add commit message as comment to RDBP-XXX
 
 ## Reporting
 
@@ -381,7 +382,7 @@ Implements PDF upload with validation as specified in RFP-123.
 
 **My Current Work:**
 ```jql
-project = RFP 
+project = RDBP 
 AND assignee = currentUser() 
 AND status != Done
 ORDER BY priority DESC
@@ -389,14 +390,14 @@ ORDER BY priority DESC
 
 **Sprint Progress:**
 ```jql
-project = RFP 
+project = RDBP 
 AND sprint in openSprints()
 ORDER BY status ASC
 ```
 
 **High Priority Bugs:**
 ```jql
-project = RFP 
+project = RDBP 
 AND type = Bug 
 AND priority in (Blocker, High)
 AND status != Done
@@ -405,7 +406,7 @@ ORDER BY created DESC
 
 **Overdue Tasks:**
 ```jql
-project = RFP 
+project = RDBP 
 AND dueDate < now() 
 AND status != Done
 ORDER BY dueDate ASC
@@ -455,17 +456,17 @@ ORDER BY dueDate ASC
 
 ```
 # Show open stories
-mcp_atlassian_jira_search("project = RFP AND type = Story AND status != Done")
+mcp_atlassian_jira_search("project = RDBP AND type = Story AND status != Done")
 
 # Show my issues
-mcp_atlassian_jira_search("project = RFP AND assignee = currentUser()")
+mcp_atlassian_jira_search("project = RDBP AND assignee = currentUser()")
 ```
 
 ### Get Issue Details
 
 ```
 # Get specific issue
-mcp_atlassian_jira_get_issue("RFP-123")
+mcp_atlassian_jira_get_issue("RDBP-123")
 ```
 
 ### Create Issue
@@ -473,7 +474,7 @@ mcp_atlassian_jira_get_issue("RFP-123")
 ```
 # Create story
 mcp_atlassian_jira_create_issue({
-  "project": "RFP",
+  "project": "RDBP",
   "issuetype": "Story",
   "summary": "Upload RFP PDF with validation",
   "description": "As a sales rep...",
@@ -485,10 +486,10 @@ mcp_atlassian_jira_create_issue({
 
 ```
 # Update status
-mcp_atlassian_jira_transition_issue("RFP-123", "In Progress")
+mcp_atlassian_jira_transition_issue("RDBP-123", "In Progress")
 
 # Add comment
-mcp_atlassian_jira_add_comment("RFP-123", "Implementation complete, ready for review")
+mcp_atlassian_jira_add_comment("RDBP-123", "Implementation complete, ready for review")
 ```
 
 ## Related Guidelines

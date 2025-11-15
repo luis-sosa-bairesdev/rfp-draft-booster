@@ -17,10 +17,10 @@ from pathlib import Path
 # CONFIGURATION - UPDATE THIS
 # ============================================================================
 
-CONFLUENCE_URL = "https://luis-sosa-bairesdev.atlassian.net"
+CONFLUENCE_URL = "https://luis-sosa-bairesdev.atlassian.net"  # CORRECT URL - don't change
 EMAIL = "luis.sosa@bairesdev.com"
 API_TOKEN = "ATATT3xFfGF0sSVc0RTQhwj6YNxUmVNcEVQAM4OWpmI-E553Bsc46avo_OI-Hlvf_IrYjf0_FBtsCgKBbIJ1KNM2gdrHvfsijPku4fIR9BrLCnm9WcpSKVr_EDeBG1te_aNUatYT5b9w6JSdNt7sgtl6ZdH32IgnTYWLCOh3VEGhnDF6mvWj1g0=0882E324"
-SPACE_KEY = "~712020bfc89abf8f5841728f3bd48d6a60043a"  # Personal space
+SPACE_KEY = "~712020bfc89abf8f5841728f3bd48d6a60043a"  # Personal space - don't change
 
 # Page details
 PAGE_TITLE = "Your Page Title Here"
