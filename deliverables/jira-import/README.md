@@ -1,191 +1,241 @@
-# JIRA Import Files for Epic 1
+# Jira & Confluence Import Scripts
 
-This directory contains all the files needed to import **Epic 1: Project Setup & Infrastructure** into JIRA and create the corresponding Confluence documentation.
+This directory contains **reusable templates** for managing Epics and documentation in Jira and Confluence.
+
+---
 
 ## 📁 Files
 
-### 1. `epic-01-jira.json`
-JSON structure for the Epic with complete description, acceptance criteria, and metadata.
-
-### 2. `user-stories-epic-01.json`
-JSON structures for all 10 user stories with:
-- Complete descriptions
-- Acceptance criteria
-- Story points
-- Priorities
-- Labels
-- Dependencies
-
-### 3. `confluence-epic-01.md`
-Complete Confluence documentation in Markdown format, including:
-- Executive summary
-- Business value
-- All user stories with details
-- Technical architecture
-- Timeline and milestones
-- Progress tracking
-- Risk analysis
-
-### 4. `IMPORT-GUIDE.md`
-Step-by-step guide for manually importing to JIRA with three options:
-- Manual creation (recommended)
-- CSV import
-- REST API
-
-### 5. `import_to_jira.py`
-Python script for automated import using JIRA REST API.
+### Core Templates
+1. **`create_epic_template.py`** - Create new Epic + Sprint + Stories
+2. **`close_epic_template.py`** - Close Epic and all Stories with comments
+3. **`upload_confluence_template.py`** - Upload markdown to Confluence
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start Guide
 
-### Option 1: Manual Import (Easiest)
+### 1. Create a New Epic
 
-1. Read `IMPORT-GUIDE.md`
-2. Follow Step 1 to create the Epic
-3. Follow Step 2 to create all 10 user stories
-4. Copy `confluence-epic-01.md` to Confluence
-
-**Time Required:** ~20-30 minutes
-
----
-
-### Option 2: Automated Import (Fastest)
-
-#### Prerequisites
+**Step 1:** Copy the template
 ```bash
-pip install requests
+cp create_epic_template.py create_epic7.py
 ```
 
-#### Setup
-1. Get your JIRA API token from: https://id.atlassian.com/manage-profile/security/api-tokens
+**Step 2:** Edit the configuration section
+```python
+# Update these variables:
+EPIC_SUMMARY = "[EPIC] Your Epic Name"
+EPIC_DESCRIPTION = "Your description..."
+SPRINT_NAME = "Sprint 7 - Your Sprint"
+SPRINT_DURATION_DAYS = 14
 
-2. Set environment variable:
-```bash
-export JIRA_API_TOKEN='your-api-token-here'
+USER_STORIES = [
+    {
+        "summary": "Story 1",
+        "description": "As a user...",
+        "points": 5,
+        "priority": "High"
+    },
+    # Add more stories...
+]
 ```
 
-Or create a `.env` file:
+**Step 3:** Run the script
 ```bash
-JIRA_API_TOKEN=your-api-token-here
-JIRA_URL=https://luis-sosa-bairesdev.atlassian.net
-JIRA_EMAIL=luis.sosa@bairesdev.com
-JIRA_PROJECT_KEY=SCRUM
+python3 create_epic7.py
 ```
 
-#### Run Import
-```bash
-cd /Users/luisfelipesosa/git/rfp-draft-booster/deliverables/jira-import
-python import_to_jira.py
+**Output:**
+```
+✅ Created Epic: RDBP-XX
+✅ Created Sprint: 7
+✅ Created 10 stories
+✅ Moved stories to sprint
 ```
 
-**Time Required:** ~2-3 minutes
+---
+
+### 2. Close an Epic
+
+**Step 1:** Copy the template
+```bash
+cp close_epic_template.py close_epic7.py
+```
+
+**Step 2:** Get the Epic and Story keys from Jira
+- Go to your Epic page (e.g., `https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-XX`)
+- Note the Epic key and all Story keys
+
+**Step 3:** Edit the configuration
+```python
+EPIC_KEY = "RDBP-XX"
+STORY_KEYS = [
+    "RDBP-79",
+    "RDBP-80",
+    # ... all story keys
+]
+
+# Customize comments if needed
+COMPLETION_COMMENT = "Story completed! Features: ..."
+EPIC_COMPLETION_COMMENT = "Epic completed! Summary: ..."
+```
+
+**Step 4:** Run the script
+```bash
+python3 close_epic7.py
+```
+
+**Output:**
+```
+✅ Closed 10 stories
+✅ Closed Epic RDBP-XX
+🎉 SUCCESS!
+```
 
 ---
 
-## 📊 What Will Be Created
+### 3. Upload to Confluence
 
-### Epic
-- **Key:** RFP-1 (or SCRUM-X depending on your project)
-- **Title:** [EPIC] Project Setup & Infrastructure
-- **Priority:** High
-- **Points:** 40
-- **Stories:** 10
+**Step 1:** Copy the template
+```bash
+cp upload_confluence_template.py upload_epic7_confluence.py
+```
 
-### User Stories
+**Step 2:** Edit the configuration
+```python
+PAGE_TITLE = "Epic 7: Your Epic - Completion Report"
+MARKDOWN_FILE = "deliverables/EPIC-7-COMPLETION-SUMMARY.md"
+```
 
-| Key | Title | Points | Priority |
-|-----|-------|--------|----------|
-| RFP-2 | Setup project repository and folder structure | 5 | Highest |
-| RFP-3 | Configure Python virtual environment and dependencies | 5 | Highest |
-| RFP-4 | Create basic Streamlit app with navigation | 8 | Highest |
-| RFP-5 | Implement code quality tools (Black, pylint, mypy) | 3 | High |
-| RFP-6 | Setup pytest and test infrastructure | 5 | High |
-| RFP-7 | Create .env configuration for API keys | 3 | High |
-| RFP-8 | Setup Git hooks and pre-commit checks | 3 | Medium |
-| RFP-9 | Create README with setup instructions | 3 | Medium |
-| RFP-10 | Setup CI/CD pipeline (GitHub Actions) | 5 | Medium |
-| RFP-11 | Configure logging infrastructure | 3 | Medium |
+**Step 3:** Run the script
+```bash
+python3 upload_epic7_confluence.py
+```
 
-**Total:** 40 story points
+**Output:**
+```
+✅ Page uploaded to Confluence
+   URL: https://luis-sosa-bairesdev.atlassian.net/wiki/...
+```
 
 ---
 
-## 📝 Confluence Documentation
+## 🔧 Configuration
 
-After creating the JIRA issues, create the Confluence page:
+### API Token
 
-1. Go to: https://luis-sosa-bairesdev.atlassian.net/wiki/spaces/~712020bfc89abf8f5841728f3bd48d6a60043a
-2. Click **Create** → **Blank page**
-3. Title: **Epic 1: Project Setup & Infrastructure**
-4. Copy content from `confluence-epic-01.md`
-5. Format using Confluence editor (or use Markdown import)
-6. Add link to JIRA epic
-7. Publish
+All scripts use the same API token. To update it:
 
----
+1. Generate a new token: https://id.atlassian.com/manage-profile/security/api-tokens
+2. Update the `API_TOKEN` variable in each script
 
-## ✅ Verification Checklist
+```python
+API_TOKEN = "YOUR_NEW_TOKEN_HERE"
+```
 
-After import, verify:
+### Jira Configuration
 
-- [ ] Epic RFP-1 created successfully
-- [ ] All 10 user stories created
-- [ ] All stories linked to Epic RFP-1
-- [ ] Story points assigned correctly (total = 40)
-- [ ] All stories assigned to luis.sosa@bairesdev.com
-- [ ] Labels applied correctly
-- [ ] Priorities set correctly
-- [ ] Descriptions formatted properly
-- [ ] Confluence page created and linked
+```python
+JIRA_URL = "https://luis-sosa-bairesdev.atlassian.net"
+EMAIL = "luis.sosa@bairesdev.com"
+PROJECT_KEY = "RDBP"
+BOARD_ID = 1
+ASSIGNEE = "luis.sosa@bairesdev.com"
+```
 
----
+### Confluence Configuration
 
-## 🔧 Troubleshooting
-
-### Import Script Fails
-
-**Problem:** Authentication error
-**Solution:** Verify your API token is correct and has not expired
-
-**Problem:** "Could not find user"
-**Solution:** User email may not match JIRA account. Check JIRA user profile.
-
-**Problem:** "Field 'customfield_10016' does not exist"
-**Solution:** Story points custom field ID varies by JIRA instance. Update the script with your custom field ID.
-
-### Manual Import Issues
-
-**Problem:** Epic issue type not available
-**Solution:** Check project settings → Issue types → Enable Epic
-
-**Problem:** Can't link stories to Epic
-**Solution:** Ensure you have the correct Epic key (RFP-1 or SCRUM-X)
+```python
+CONFLUENCE_URL = "https://luis-sosa-bairesdev.atlassian.net"
+SPACE_KEY = "~712020bfc89abf8f5841728f3bd48d6a60043a"  # Personal space
+```
 
 ---
 
-## 📞 Support
+## 📋 Complete Workflow Example
 
-If you encounter issues:
-- Check JIRA permissions
-- Verify project key is correct (SCRUM)
-- Ensure you have create issue permissions
-- Contact JIRA admin if needed
+### Epic 7: Example Feature
+
+```bash
+# 1. Create Epic 7
+cp create_epic_template.py create_epic7.py
+# Edit create_epic7.py with your details
+python3 create_epic7.py
+
+# ... implement the feature ...
+
+# 2. Close Epic 7
+cp close_epic_template.py close_epic7.py
+# Edit close_epic7.py with Epic and Story keys
+python3 close_epic7.py
+
+# 3. Upload to Confluence
+cp upload_confluence_template.py upload_epic7_confluence.py
+# Edit upload_epic7_confluence.py with page title and file
+python3 upload_epic7_confluence.py
+
+# 4. Cleanup (optional)
+rm create_epic7.py close_epic7.py upload_epic7_confluence.py
+```
 
 ---
 
-## 🔗 Related Links
+## 🛠️ Troubleshooting
 
-- **JIRA Project:** https://luis-sosa-bairesdev.atlassian.net/jira/software/projects/SCRUM
-- **Confluence Space:** https://luis-sosa-bairesdev.atlassian.net/wiki/spaces/~712020bfc89abf8f5841728f3bd48d6a60043a
-- **Epic Document:** [../epic-01-project-setup.md](../epic-01-project-setup.md)
-- **PRD:** [../prd-rfp-draft-booster.md](../prd-rfp-draft-booster.md)
+### "HTTP 401: Unauthorized"
+- Your API token expired
+- Generate a new one and update all scripts
+
+### "HTTP 404: Issue does not exist"
+- Check the Epic/Story key is correct
+- Ensure you have permission to access the issue
+
+### "HTTP 410: API endpoint removed"
+- The search endpoint has changed
+- Use the hardcoded keys approach instead
+
+### "Could not find 'Done' transition"
+- Check available transitions in Jira
+- Update the transition name list in the script
 
 ---
 
-**Generated:** 2025-11-07
-**Version:** 1.0
-**Project:** RFP Draft Booster
+## 📝 Notes
 
+### Story Keys
+- Always get story keys from the Epic page in Jira
+- Don't assume sequential numbering (gaps are normal)
 
+### Comments
+- Customize completion comments for each Epic
+- Include relevant links (GitHub commits, docs, etc.)
 
+### Confluence
+- Markdown conversion is basic (headings, lists, code blocks)
+- For complex formatting, edit directly in Confluence
+
+---
+
+## 🗑️ Cleanup Policy
+
+**Keep:**
+- The 3 template files (create/close/upload)
+- This README
+
+**Delete after use:**
+- Epic-specific copies (e.g., `create_epic7.py`)
+- Old scripts from completed epics
+
+---
+
+## 📚 Additional Resources
+
+- [Jira REST API Docs](https://developer.atlassian.com/cloud/jira/platform/rest/v3/)
+- [Confluence REST API Docs](https://developer.atlassian.com/cloud/confluence/rest/v2/)
+- [Jira Agile API Docs](https://developer.atlassian.com/cloud/jira/software/rest/)
+
+---
+
+**Last Updated:** November 15, 2025  
+**Maintained By:** AI Assistant + Luis Sosa
