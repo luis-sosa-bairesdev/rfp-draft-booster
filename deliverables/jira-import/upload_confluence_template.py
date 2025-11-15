@@ -38,46 +38,151 @@ HEADERS = {
 
 
 def markdown_to_confluence(md_text):
-    """Convert markdown to Confluence storage format (basic)."""
+    """
+    Convert markdown to clean Confluence HTML.
+    This version produces cleaner, more readable HTML.
+    """
+    import re
+    
     lines = md_text.split('\n')
-    result = []
-    in_code = False
-    code_lang = ""
+    html_lines = []
+    in_code_block = False
+    code_language = ""
+    code_buffer = []
+    in_list = False
     
     for line in lines:
+        # Handle code blocks
         if line.startswith('```'):
-            if in_code:
-                result.append('</ac:plain-text-body></ac:structured-macro>')
-                in_code = False
+            if in_code_block:
+                # End code block
+                code_content = '\n'.join(code_buffer)
+                code_content = code_content.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                html_lines.append(f'<ac:structured-macro ac:name="code">')
+                if code_language:
+                    html_lines.append(f'<ac:parameter ac:name="language">{code_language}</ac:parameter>')
+                html_lines.append('<ac:plain-text-body><![CDATA[')
+                html_lines.append(code_content)
+                html_lines.append(']]></ac:plain-text-body>')
+                html_lines.append('</ac:structured-macro>')
+                in_code_block = False
+                code_buffer = []
+                code_language = ""
             else:
-                code_lang = line[3:].strip() or 'none'
-                result.append(f'<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">{code_lang}</ac:parameter><ac:plain-text-body><![CDATA[')
-                in_code = True
+                # Start code block
+                code_language = line[3:].strip() or "none"
+                in_code_block = True
             continue
         
-        if in_code:
-            result.append(line)
+        if in_code_block:
+            code_buffer.append(line)
             continue
         
+        # Handle headers
         if line.startswith('# '):
-            result.append(f'<h1>{line[2:]}</h1>')
+            if in_list:
+                html_lines.append('</ul>')
+                in_list = False
+            html_lines.append(f'<h1>{escape_html(line[2:])}</h1>')
         elif line.startswith('## '):
-            result.append(f'<h2>{line[3:]}</h2>')
+            if in_list:
+                html_lines.append('</ul>')
+                in_list = False
+            html_lines.append(f'<h2>{escape_html(line[3:])}</h2>')
         elif line.startswith('### '):
-            result.append(f'<h3>{line[4:]}</h3>')
+            if in_list:
+                html_lines.append('</ul>')
+                in_list = False
+            html_lines.append(f'<h3>{escape_html(line[4:])}</h3>')
         elif line.startswith('#### '):
-            result.append(f'<h4>{line[5:]}</h4>')
-        elif line.startswith('- '):
-            result.append(f'<li>{line[2:]}</li>')
-        elif '**' in line:
-            line = line.replace('**', '<strong>', 1).replace('**', '</strong>', 1)
-            result.append(f'<p>{line}</p>')
+            if in_list:
+                html_lines.append('</ul>')
+                in_list = False
+            html_lines.append(f'<h4>{escape_html(line[5:])}</h4>')
+        
+        # Handle lists
+        elif line.startswith('- ') or line.startswith('* '):
+            if not in_list:
+                html_lines.append('<ul>')
+                in_list = True
+            content = line[2:].strip()
+            content = process_inline_formatting(content)
+            html_lines.append(f'<li>{content}</li>')
+        
+        # Handle horizontal rules
+        elif line.strip() == '---' or line.strip() == '***':
+            if in_list:
+                html_lines.append('</ul>')
+                in_list = False
+            html_lines.append('<hr />')
+        
+        # Handle empty lines
         elif not line.strip():
-            result.append('<p></p>')
+            if in_list:
+                html_lines.append('</ul>')
+                in_list = False
+            # Don't add empty paragraphs
+            continue
+        
+        # Handle tables (basic support)
+        elif '|' in line and not line.startswith('   '):
+            if in_list:
+                html_lines.append('</ul>')
+                in_list = False
+            # Simple table row
+            cells = [c.strip() for c in line.split('|') if c.strip()]
+            if cells and not all(c.startswith('-') for c in cells):
+                row_html = '<tr>' + ''.join(f'<td>{process_inline_formatting(c)}</td>' for c in cells) + '</tr>'
+                html_lines.append(row_html)
+        
+        # Handle regular paragraphs
         else:
-            result.append(f'<p>{line}</p>')
+            if in_list:
+                html_lines.append('</ul>')
+                in_list = False
+            content = process_inline_formatting(line)
+            if content.strip():
+                html_lines.append(f'<p>{content}</p>')
     
-    return '\n'.join(result)
+    # Close any open list
+    if in_list:
+        html_lines.append('</ul>')
+    
+    return '\n'.join(html_lines)
+
+
+def escape_html(text):
+    """Escape HTML special characters."""
+    return (text
+        .replace('&', '&amp;')
+        .replace('<', '&lt;')
+        .replace('>', '&gt;')
+        .replace('"', '&quot;')
+        .replace("'", '&#39;'))
+
+
+def process_inline_formatting(text):
+    """Process inline markdown formatting (bold, italic, code, links)."""
+    import re
+    
+    # Escape HTML first
+    text = escape_html(text)
+    
+    # Bold: **text** or __text__
+    text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
+    text = re.sub(r'__(.+?)__', r'<strong>\1</strong>', text)
+    
+    # Italic: *text* or _text_
+    text = re.sub(r'\*(.+?)\*', r'<em>\1</em>', text)
+    text = re.sub(r'_(.+?)_', r'<em>\1</em>', text)
+    
+    # Inline code: `code`
+    text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
+    
+    # Links: [text](url)
+    text = re.sub(r'\[([^\]]+)\]\(([^\)]+)\)', r'<a href="\2">\1</a>', text)
+    
+    return text
 
 
 def make_request(url: str, method: str = "GET", data: dict = None):
