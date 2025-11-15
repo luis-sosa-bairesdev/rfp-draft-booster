@@ -315,11 +315,12 @@ As a QA engineer, I want an E2E test for the export flow, so that the complete u
 ]
 ```
 
-**Story Breakdown (ALWAYS):**
-- **6 Backend stories** (models, services, business logic)
-- **4 UI stories** (pages, components, interactions)
-- **3 Testing stories** (unit, UI, E2E)
-- **Total: 13 stories** (typical epic size)
+**Story Breakdown (Flexible, adjust per epic):**
+- **Backend stories** (models, services, business logic) - as many as needed
+- **UI stories** (pages, components, interactions) - as many as needed
+- **Testing stories** (unit, UI, E2E) - typically 20-30% of total stories
+- **Total:** Varies by epic size (small: 5-8, medium: 10-15, large: 20+)
+- **Example:** Epic with 13 stories might have 6 backend + 4 UI + 3 testing (not a fixed rule)
 
 **Story Points:**
 - Use **Fibonacci scale** (from jira-guidelines.md):
@@ -339,11 +340,11 @@ python3 deliverables/jira-import/create_epic7.py
 ```
 ✅ Created Epic: RDBP-92 - [EPIC] Google Docs Export
 ✅ Created Sprint: Sprint 6 - Docs Export (ID: 7)
-✅ Created 13 stories:
+✅ Created X stories (adjust based on epic size):
    - RDBP-93: Create Google Docs service class (5 points)
    - RDBP-94: Implement Markdown to Docs conversion (8 points)
-   - ... (11 more)
-✅ Moved 13 stories to Sprint 6
+   - ... (remaining stories)
+✅ Moved X stories to Sprint 6
 
 🔗 Links:
    Epic: https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-92
@@ -982,17 +983,18 @@ Open `deliverables/epic-XX-name.md` and add at the END:
 
 ### Step 3.4: Close Jira Epic and Stories
 
-**Action:** Close all 13 stories and epic in Jira
+**Action:** Close all stories and epic in Jira
 
 ```bash
 # 1. Go to Epic page in Jira
 https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-92
 
-# 2. Get ALL story keys (13 stories)
+# 2. Get ALL story keys (number varies by epic)
 # Click on "Child Issues" or "Issues" tab
-# Copy all story keys:
+# Copy all story keys - EXAMPLE for a 13-story epic:
 RDBP-93, RDBP-94, RDBP-95, RDBP-96, RDBP-97, RDBP-98,
 RDBP-99, RDBP-100, RDBP-101, RDBP-102, RDBP-103, RDBP-104, RDBP-105
+# (Adjust the list based on actual stories created)
 
 # 3. Copy close template
 cp deliverables/jira-import/close_epic_template.py deliverables/jira-import/close_epic7.py
@@ -1002,16 +1004,7 @@ EPIC_KEY = "RDBP-92"
 STORY_KEYS = [
     "RDBP-93",
     "RDBP-94",
-    "RDBP-95",
-    "RDBP-96",
-    "RDBP-97",
-    "RDBP-98",
-    "RDBP-99",
-    "RDBP-100",
-    "RDBP-101",
-    "RDBP-102",
-    "RDBP-103",
-    "RDBP-104",
+    # ... add all story keys from your epic
     "RDBP-105"
 ]
 
@@ -1032,13 +1025,13 @@ Completed: November 16, 2025"""
 
 EPIC_COMPLETION_COMMENT = """Epic completed successfully! ✅
 
-All 13 stories implemented and tested.
+All stories implemented and tested.
 
 Summary:
 - Google Docs API integration complete
 - Markdown to Docs conversion working
 - Fallback to .docx implemented
-- 35 tests added, 83% coverage
+- X tests added, 83% coverage
 - All acceptance criteria met
 - Documentation complete
 
@@ -1049,7 +1042,7 @@ Completed: November 16, 2025"""
 python3 deliverables/jira-import/close_epic7.py
 
 # Expected output:
-# ✅ Closed 13 stories
+# ✅ Closed X stories
 # ✅ Closed Epic RDBP-92
 # 🎉 SUCCESS!
 
@@ -1058,14 +1051,14 @@ rm deliverables/jira-import/close_epic7.py
 ```
 
 **What the script does:**
-1. Adds completion comment to each of 13 stories
+1. Adds completion comment to each story
 2. Transitions each story to "Done"
 3. Adds completion comment to Epic
 4. Transitions Epic to "Done"
 
 ---
 
-### Step 3.5: Upload to Confluence (Optional)
+### Step 3.5: Upload to Confluence (REQUIRED)
 
 **Action:** Upload epic documentation to Confluence
 
@@ -1088,10 +1081,13 @@ python3 deliverables/jira-import/upload_epic7.py
 rm deliverables/jira-import/upload_epic7.py
 ```
 
-**Note:** Confluence upload may fail due to permissions. If it fails:
-- The epic file (`deliverables/epic-07-google-docs-export.md`) already has all documentation
-- You can manually upload or skip this step
-- The epic is still complete without Confluence
+**If upload fails due to permissions:**
+1. Check API token is valid and not expired
+2. Verify SPACE_KEY is correct (~712020bfc89abf8f5841728f3bd48d6a60043a)
+3. Try uploading manually via Confluence UI
+4. Document the issue but DO NOT skip this step - fix the access first
+
+**Note:** Confluence documentation is REQUIRED for project tracking and team visibility.
 
 ---
 
@@ -1105,7 +1101,7 @@ git commit -m "docs: add Epic 7 completion summary
 
 - Complete completion summary appended to epic file
 - Test coverage: 83%
-- All 13 stories closed in Jira (RDBP-93 to RDBP-105)
+- All stories closed in Jira (see epic for full list)
 - Epic RDBP-92 complete and closed
 - Confluence documentation uploaded
 
@@ -1120,11 +1116,11 @@ git push origin main
 
 | Phase | Duration | Key Actions | Output |
 |---|---|---|---|
-| **1. Planning** | 2-4 hours | Create epic file, create sprint + stories in Jira | Epic file + 13 Jira stories |
+| **1. Planning** | 2-4 hours | Create epic file, create sprint + stories in Jira | Epic file + Jira stories |
 | **2. Implementation** | 3-5 days | Implement code, regression tests, new tests, 80% coverage | Working code + tests |
 | **3. Completion** | 1-2 hours | Final tests, commit, update epic, close Jira, Confluence | Complete + closed |
 
-**Total Time:** 4-6 days for typical epic (13 stories, 30-40 story points)
+**Total Time:** 4-6 days for typical epic (varies by size and complexity, 30-40 story points)
 
 ---
 
@@ -1136,7 +1132,11 @@ git push origin main
 - [ ] Copy `create_epic_template.py` → `create_epicX.py`
 - [ ] Edit epic details (summary, description, following `[EPIC]` format)
 - [ ] Edit sprint name (<30 chars), duration (14 days), goal
-- [ ] Create 13 user stories (6 backend, 4 UI, 3 testing)
+- [ ] Create user stories based on epic size:
+  - [ ] Small epic (5-8 stories): Minimal viable implementation
+  - [ ] Medium epic (10-15 stories): Typical size
+  - [ ] Large epic (20+ stories): Complex feature, consider splitting
+- [ ] Distribute stories across: Backend, UI, Testing (adjust ratio per epic)
 - [ ] Use Fibonacci story points (1, 2, 3, 5, 8, 13)
 - [ ] Add acceptance criteria to each story
 - [ ] Add Definition of Done to each story
@@ -1213,28 +1213,29 @@ git push origin main
   - [ ] Save the SAME file
 
 - [ ] **Step 4: Close Jira Epic and Stories**
-  - [ ] Go to Epic page in Jira, get all story keys
+  - [ ] Go to Epic page in Jira, get all story keys (number varies by epic)
   - [ ] Copy `close_epic_template.py` → `close_epicX.py`
-  - [ ] Edit Epic Key and Story Keys (all 13 stories)
+  - [ ] Edit Epic Key and Story Keys (all stories from your epic)
   - [ ] Edit completion comments
   - [ ] Run script: `python3 deliverables/jira-import/close_epicX.py`
   - [ ] Verify all stories moved to Done
   - [ ] Verify epic moved to Done
   - [ ] Delete `close_epicX.py`
 
-- [ ] **Step 5: Upload to Confluence (optional)**
+- [ ] **Step 5: Upload to Confluence (REQUIRED)**
   - [ ] Copy `upload_confluence_template.py` → `upload_epicX.py`
   - [ ] Edit page title and markdown file path
   - [ ] Run script: `python3 deliverables/jira-import/upload_epicX.py`
+  - [ ] Verify page uploaded successfully
+  - [ ] If fails: Check token, space key, permissions - FIX before proceeding
   - [ ] Delete `upload_epicX.py`
-  - [ ] *(If fails due to permissions, skip this step)*
 
 - [ ] **Step 6: Final commit**
   - [ ] Commit completion summary: `git add deliverables/epic-XX-name.md`
   - [ ] Commit: `git commit -m "docs: add Epic X completion summary"`
   - [ ] Push: `git push origin main`
 
-**Total:** 32 steps | **Time:** 4-6 days | **Output:** Complete, tested, documented epic
+**Total:** Varies by epic size (typically 20-35 steps) | **Time:** 4-6 days | **Output:** Complete, tested, documented epic
 
 ---
 
@@ -1382,9 +1383,9 @@ EPIC-7-COMPLETION-SUMMARY.md
 
 | User Says | AI Does | Phase |
 |---|---|---|
-| "Vamos a manejar una nueva épica" | Create epic file + Jira setup (Sprint + 13 stories) | Phase 1 |
+| "Vamos a manejar una nueva épica" | Create epic file + Jira setup (Sprint + stories based on epic size) | Phase 1 |
 | "Pasemos a la fase de implementación" | Run regression tests → Implement → New tests → 80% coverage | Phase 2 |
-| "Te apruebo todo" | Final tests → Commit → Update epic → Close Jira → Confluence | Phase 3 |
+| "Te apruebo todo" | Final tests → Commit → Update epic → Close Jira → Confluence (REQUIRED) | Phase 3 |
 
 | Task | Command | File |
 |---|---|---|
