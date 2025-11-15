@@ -1,0 +1,1250 @@
+# Epic 9: Error Handling & Loading States - Technical Spike
+
+## 📋 Overview
+
+**Epic Title:** Error Handling & Loading States  
+**Sprint:** TBD (Sprint 5 or 6)  
+**Status:** Planning  
+**Priority:** High (Critical for production readiness)  
+**Estimated Effort:** 2-3 days (12-18 hours)
+
+## 🎯 Business Goal
+
+Improve app robustness and user experience by implementing comprehensive error handling, loading states, and validation across all operations. Ensure graceful degradation when LLM APIs fail, provide clear feedback to users, and handle edge cases (empty PDFs, invalid JSON, low-confidence results).
+
+## 📐 Architecture & Error Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Centralized Error Handler                     │
+│                   (src/utils/error_handler.py)                   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  AppError (Base Exception)                                      │
+│    ├── LLMError (API failures, timeouts, rate limits)          │
+│    ├── ValidationError (Input validation failures)             │
+│    ├── PDFError (PDF parsing, extraction errors)               │
+│    └── SessionError (Missing data, state issues)               │
+│                                                                  │
+│  handle_error(error, context, fallback_data, show_ui)          │
+│    1. Log error with context (logger.error)                    │
+│    2. Show UI feedback (st.error, st.warning)                  │
+│    3. Offer retry or fallback options                          │
+│    4. Return fallback data if provided                         │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Application Components                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  LLM Services (wrapped with @handle_errors decorator)          │
+│  ┌────────────────────────────────────────────────────┐        │
+│  │ RequirementExtractor                               │        │
+│  │   • extract_requirements() → try/except/retry      │        │
+│  │   • Fallback: 3-5 generic mock requirements        │        │
+│  │   • Loading: "🤖 Extracting requirements..."       │        │
+│  ├────────────────────────────────────────────────────┤        │
+│  │ RiskDetector                                       │        │
+│  │   • detect_risks() → try/except/retry              │        │
+│  │   • Fallback: 2-3 generic mock risks               │        │
+│  │   • Loading: "🤖 Analyzing risks..."               │        │
+│  ├────────────────────────────────────────────────────┤        │
+│  │ DraftGenerator                                     │        │
+│  │   • generate_draft() → try/except/retry            │        │
+│  │   • Fallback: Template with placeholders           │        │
+│  │   • Loading: "✍️ Generating draft..."             │        │
+│  ├────────────────────────────────────────────────────┤        │
+│  │ AIAssistant                                        │        │
+│  │   • ask() → try/except/retry                       │        │
+│  │   • Fallback: "Service unavailable, retry later"   │        │
+│  │   • Loading: "💬 Thinking..."                      │        │
+│  └────────────────────────────────────────────────────┘        │
+│                                                                  │
+│  PDF Processing (src/services/pdf_extractor.py)                │
+│  ┌────────────────────────────────────────────────────┐        │
+│  │ PDFExtractor                                       │        │
+│  │   • Validate: Size (<50MB), Type (PDF), Not empty │        │
+│  │   • extract_text() → try/except                    │        │
+│  │   • Errors: Empty/Corrupt/No text → clear message │        │
+│  │   • Loading: "📄 Extracting text from PDF..."     │        │
+│  └────────────────────────────────────────────────────┘        │
+│                                                                  │
+│  JSON I/O (src/utils/json_handler.py)                          │
+│  ┌────────────────────────────────────────────────────┐        │
+│  │ JSONHandler                                        │        │
+│  │   • import_json() → validate schema                │        │
+│  │   • export_json() → handle write errors            │        │
+│  │   • Errors: Invalid syntax, missing fields, types  │        │
+│  │   • Loading: "📥 Importing JSON..."                │        │
+│  └────────────────────────────────────────────────────┘        │
+│                                                                  │
+│  Session State Guard (src/utils/session_guard.py)              │
+│  ┌────────────────────────────────────────────────────┐        │
+│  │ check_rfp_exists() → Redirect to Upload if missing│        │
+│  │ restore_from_json() → Offer JSON restore on clear │        │
+│  │ persist_notification() → Show across pages         │        │
+│  └────────────────────────────────────────────────────┘        │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    UI Pages (with Error Handling)                │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Upload Page (1_📤_Upload_RFP.py)                              │
+│    • Validate file before upload                               │
+│    • st.spinner("Uploading PDF...")                            │
+│    • st.spinner("Extracting text...")                          │
+│    • Handle: Empty PDF, Corrupt file, No text                  │
+│                                                                  │
+│  Requirements Page (2_📋_Requirements.py)                      │
+│    • Check RFP exists → redirect if not                        │
+│    • st.spinner("🤖 Extracting requirements...")               │
+│    • Highlight low-confidence (<70%) with "Verify?" button     │
+│    • Expander: "⚠️ X Requirements Need Verification"           │
+│    • Handle: LLM failure → Retry or Mock                       │
+│                                                                  │
+│  Risk Analysis Page (3_⚠️_Risk_Analysis.py)                   │
+│    • Check RFP exists → redirect if not                        │
+│    • st.spinner("Detecting risks...")                          │
+│    • Highlight low-confidence (<70%)                           │
+│    • Handle: LLM failure → Retry or Mock                       │
+│                                                                  │
+│  Draft Generation Page (4_✍️_Draft_Generation.py)             │
+│    • Check prerequisites (RFP, Reqs, Risks acknowledged)       │
+│    • st.spinner("✍️ Generating draft... (60-120s)")           │
+│    • Handle: LLM failure → Retry or Template                   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## 🚨 Error Types & Handlers
+
+### 1. Custom Exception Classes
+
+```python
+# src/utils/error_handler.py
+
+class AppError(Exception):
+    """Base exception for all app errors."""
+    
+    def __init__(self, message: str, context: dict = None, user_message: str = None):
+        self.message = message
+        self.context = context or {}
+        self.user_message = user_message or message
+        super().__init__(self.message)
+
+
+class LLMError(AppError):
+    """LLM API errors (rate limit, timeout, invalid key, empty response)."""
+    
+    def __init__(self, message: str, error_code: str = None, retry_after: int = None, **kwargs):
+        super().__init__(message, **kwargs)
+        self.error_code = error_code  # e.g., "RATE_LIMIT", "TIMEOUT"
+        self.retry_after = retry_after  # seconds
+
+
+class ValidationError(AppError):
+    """Input validation errors."""
+    
+    def __init__(self, message: str, field: str = None, expected: str = None, **kwargs):
+        super().__init__(message, **kwargs)
+        self.field = field
+        self.expected = expected
+
+
+class PDFError(AppError):
+    """PDF processing errors."""
+    
+    def __init__(self, message: str, pdf_path: str = None, **kwargs):
+        super().__init__(message, **kwargs)
+        self.pdf_path = pdf_path
+
+
+class SessionError(AppError):
+    """Session state errors (missing data, cleared state)."""
+    
+    def __init__(self, message: str, missing_key: str = None, **kwargs):
+        super().__init__(message, **kwargs)
+        self.missing_key = missing_key
+```
+
+### 2. Centralized Error Handler
+
+```python
+# src/utils/error_handler.py
+
+import logging
+import streamlit as st
+from typing import Any, Optional, Callable
+from functools import wraps
+
+logger = logging.getLogger("rfp_booster")
+
+
+def handle_error(
+    error: Exception,
+    context: dict = None,
+    fallback_data: Any = None,
+    show_ui_error: bool = True,
+    allow_retry: bool = True
+) -> Any:
+    """
+    Centralized error handler.
+    
+    Args:
+        error: The exception to handle
+        context: Additional context for logging
+        fallback_data: Data to return if error occurs
+        show_ui_error: Whether to show error in Streamlit UI
+        allow_retry: Whether to show retry button
+    
+    Returns:
+        fallback_data if provided, else None
+    """
+    context = context or {}
+    
+    # Log error with full context
+    logger.error(
+        f"{error.__class__.__name__}: {str(error)}",
+        extra=context,
+        exc_info=True
+    )
+    
+    # Show UI feedback
+    if show_ui_error:
+        if isinstance(error, LLMError):
+            _handle_llm_error_ui(error, allow_retry)
+        elif isinstance(error, ValidationError):
+            _handle_validation_error_ui(error)
+        elif isinstance(error, PDFError):
+            _handle_pdf_error_ui(error)
+        elif isinstance(error, SessionError):
+            _handle_session_error_ui(error)
+        else:
+            st.error(f"❌ {error.__class__.__name__}: {str(error)}")
+            if allow_retry:
+                st.button("🔄 Retry", key=f"retry_{id(error)}")
+    
+    return fallback_data
+
+
+def _handle_llm_error_ui(error: LLMError, allow_retry: bool):
+    """Handle LLM error UI feedback."""
+    
+    if error.error_code == "RATE_LIMIT":
+        st.warning(
+            f"⚠️ **API Rate Limit Reached**\n\n"
+            f"The LLM service has hit its rate limit. "
+            f"{'Retry in ' + str(error.retry_after) + ' seconds.' if error.retry_after else 'Please try again later.'}"
+        )
+    elif error.error_code == "TIMEOUT":
+        st.error(
+            "❌ **Request Timed Out**\n\n"
+            "The LLM service took too long to respond. This can happen with large documents."
+        )
+    elif error.error_code == "INVALID_KEY":
+        st.error(
+            "❌ **Invalid API Key**\n\n"
+            "Your LLM API key is invalid or expired. Please check your configuration.\n\n"
+            "📚 [Get API Key from Google AI Studio](https://makersuite.google.com)"
+        )
+    elif error.error_code == "EMPTY_RESPONSE":
+        st.warning(
+            "⚠️ **Empty Response from LLM**\n\n"
+            "The LLM returned an empty response. This can happen occasionally."
+        )
+    else:
+        st.error(f"❌ **LLM Error:** {error.user_message}")
+    
+    # Offer mock data fallback
+    if allow_retry:
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔄 Retry", key=f"retry_llm_{id(error)}"):
+                st.rerun()
+        with col2:
+            use_mock = st.radio(
+                "Use mock data instead?",
+                ["No", "Yes, use mock data"],
+                key=f"mock_llm_{id(error)}",
+                horizontal=True
+            )
+            if use_mock == "Yes, use mock data":
+                st.session_state.use_mock_data = True
+                st.rerun()
+
+
+def _handle_validation_error_ui(error: ValidationError):
+    """Handle validation error UI feedback."""
+    st.error(
+        f"❌ **Validation Error**\n\n"
+        f"Field: `{error.field}`\n\n"
+        f"Issue: {error.user_message}\n\n"
+        f"Expected: {error.expected}" if error.expected else ""
+    )
+
+
+def _handle_pdf_error_ui(error: PDFError):
+    """Handle PDF error UI feedback."""
+    st.error(
+        f"❌ **PDF Processing Error**\n\n"
+        f"{error.user_message}\n\n"
+        f"File: `{error.pdf_path}`" if error.pdf_path else ""
+    )
+
+
+def _handle_session_error_ui(error: SessionError):
+    """Handle session error UI feedback."""
+    st.warning(
+        f"⚠️ **Session Error**\n\n"
+        f"{error.user_message}"
+    )
+    
+    if error.missing_key == "rfp":
+        st.info("📤 Please upload an RFP to continue.")
+        if st.button("Go to Upload Page", key="goto_upload"):
+            st.switch_page("pages/1_📤_Upload_RFP.py")
+
+
+# Decorator for error handling
+def handle_errors(
+    fallback_data: Any = None,
+    show_ui: bool = True,
+    allow_retry: bool = True,
+    context: dict = None
+):
+    """
+    Decorator to wrap functions with error handling.
+    
+    Usage:
+        @handle_errors(fallback_data=[], show_ui=True)
+        def extract_requirements(text: str) -> List[Requirement]:
+            # ... LLM call that might fail
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as error:
+                return handle_error(
+                    error=error,
+                    context=context or {"function": func.__name__},
+                    fallback_data=fallback_data,
+                    show_ui_error=show_ui,
+                    allow_retry=allow_retry
+                )
+        return wrapper
+    return decorator
+```
+
+## 🔄 Retry Logic with Tenacity
+
+```python
+# src/utils/retry_utils.py
+
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+    before_sleep_log
+)
+import logging
+
+logger = logging.getLogger("rfp_booster")
+
+
+# Retry decorator for LLM calls
+retry_llm_call = retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type((LLMError, ConnectionError, TimeoutError)),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True
+)
+
+
+# Usage in services
+class RequirementExtractor:
+    
+    @retry_llm_call  # Auto-retry up to 3 times
+    @handle_errors(fallback_data=[], show_ui=True)
+    def extract_requirements(self, text: str) -> List[Requirement]:
+        """Extract requirements with auto-retry on failure."""
+        try:
+            # LLM call
+            response = self.llm_client.generate(prompt, timeout=120)
+            
+            if not response or response.strip() == "":
+                raise LLMError(
+                    "Empty response from LLM",
+                    error_code="EMPTY_RESPONSE",
+                    user_message="LLM returned no results. Please retry."
+                )
+            
+            requirements = self._parse_response(response)
+            
+            if not requirements:
+                logger.warning("No requirements parsed from LLM response")
+                return self._get_mock_requirements() if st.session_state.get("use_mock_data") else []
+            
+            return requirements
+            
+        except requests.exceptions.Timeout:
+            raise LLMError(
+                "LLM request timed out",
+                error_code="TIMEOUT",
+                user_message="Request took too long (>120s)"
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                retry_after = e.response.headers.get("Retry-After", 60)
+                raise LLMError(
+                    "Rate limit exceeded",
+                    error_code="RATE_LIMIT",
+                    retry_after=int(retry_after),
+                    user_message="Too many requests. Please wait."
+                )
+            elif e.response.status_code == 401:
+                raise LLMError(
+                    "Invalid API key",
+                    error_code="INVALID_KEY",
+                    user_message="API key is invalid or expired"
+                )
+            else:
+                raise LLMError(f"HTTP {e.response.status_code}: {str(e)}")
+```
+
+## 📊 Loading States with Spinners
+
+### Implementation in UI Pages
+
+```python
+# pages/2_📋_Requirements.py
+
+def extract_requirements_ui():
+    """Extract requirements with loading state."""
+    
+    if st.button("🤖 Extract with AI", type="primary"):
+        # Check prerequisites
+        if not st.session_state.get("rfp"):
+            st.error("❌ Please upload an RFP first")
+            return
+        
+        # Disable button during processing
+        st.session_state.processing = True
+        
+        try:
+            with st.spinner("🤖 Extracting requirements with AI... (may take 30-60s)"):
+                extractor = RequirementExtractor(llm_client=create_llm_client())
+                requirements = extractor.extract_requirements(st.session_state.rfp.text)
+                
+                if requirements:
+                    st.session_state.requirements = requirements
+                    st.success(f"✅ Extracted {len(requirements)} requirements successfully!")
+                    st.toast("✅ Requirements extracted!", icon="✅")
+                else:
+                    st.warning("⚠️ No requirements found. Please add manually or retry.")
+        
+        except Exception as e:
+            logger.error(f"Requirements extraction failed: {e}", exc_info=True)
+            # Error already handled by @handle_errors decorator
+        
+        finally:
+            st.session_state.processing = False
+            st.rerun()
+
+
+# pages/3_⚠️_Risk_Analysis.py
+
+def detect_risks_ui():
+    """Detect risks with loading state."""
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("🔍 Pattern Detection"):
+            with st.spinner("🔍 Detecting risks with pattern matching..."):
+                detector = RiskDetector()
+                risks = detector.detect_by_patterns(st.session_state.rfp.text)
+                st.session_state.risks = risks
+                st.success(f"✅ Detected {len(risks)} risks")
+    
+    with col2:
+        if st.button("🤖 AI Detection"):
+            with st.spinner("🤖 Analyzing risks with AI... (may take 30-60s)"):
+                detector = RiskDetector(llm_client=create_llm_client())
+                risks = detector.detect_by_ai(st.session_state.rfp.text)
+                st.session_state.risks = risks
+                st.success(f"✅ Detected {len(risks)} risks")
+
+
+# pages/4_✍️_Draft_Generation.py
+
+def generate_draft_ui():
+    """Generate draft with loading state."""
+    
+    if st.button("✍️ Generate Draft", type="primary"):
+        # Validate prerequisites
+        if not st.session_state.get("rfp"):
+            st.error("❌ Please upload an RFP first")
+            return
+        
+        if not st.session_state.get("requirements"):
+            st.error("❌ Please extract requirements first")
+            return
+        
+        # Check critical risks
+        critical_risks = [r for r in st.session_state.risks if r.severity == RiskSeverity.CRITICAL and not r.acknowledged]
+        if critical_risks:
+            st.warning(f"⚠️ {len(critical_risks)} critical risks not acknowledged")
+            if not st.checkbox("Proceed anyway?"):
+                return
+        
+        with st.spinner("✍️ Generating draft with AI... (may take 60-120s)"):
+            try:
+                generator = DraftGenerator(llm_client=create_llm_client())
+                draft = generator.generate_draft(
+                    rfp=st.session_state.rfp,
+                    requirements=st.session_state.requirements,
+                    risks=st.session_state.risks,
+                    instructions=custom_instructions,
+                    word_count=word_count
+                )
+                
+                st.session_state.draft = draft
+                st.success("✅ Draft generated successfully!")
+                st.toast("✅ Draft ready!", icon="✅")
+                st.balloons()
+                
+            except Exception as e:
+                logger.error(f"Draft generation failed: {e}", exc_info=True)
+                # Offer template fallback
+                if st.session_state.get("use_mock_data"):
+                    st.warning("⚠️ Using template draft (LLM unavailable). Please edit manually.")
+                    st.session_state.draft = _get_template_draft()
+```
+
+## ⚠️ Low-Confidence Highlighting
+
+### Inline Highlighting in Tables
+
+```python
+# pages/2_📋_Requirements.py
+
+def render_requirements_table(requirements: List[Requirement]):
+    """Render requirements table with low-confidence highlighting."""
+    
+    # Separate by confidence
+    low_conf = [r for r in requirements if r.confidence < 0.70]
+    normal_conf = [r for r in requirements if r.confidence >= 0.70]
+    
+    # Show low-confidence expander
+    if low_conf:
+        with st.expander(f"⚠️ {len(low_conf)} Requirements Need Verification", expanded=True):
+            st.warning(
+                f"The following requirements have low confidence (<70%). "
+                f"Please review and edit them for accuracy."
+            )
+            
+            for req in low_conf:
+                col1, col2 = st.columns([4, 1])
+                
+                with col1:
+                    st.markdown(
+                        f"**{req.description}**\n\n"
+                        f"Category: {req.category.value} | "
+                        f"Priority: {req.priority.value} | "
+                        f"Confidence: {req.confidence:.0%} ⚠️"
+                    )
+                
+                with col2:
+                    if st.button("✏️ Verify & Edit", key=f"verify_{req.id}"):
+                        st.session_state.editing_req = req
+                        st.rerun()
+    
+    # Show normal requirements in dataframe
+    if normal_conf:
+        st.subheader(f"✅ Verified Requirements ({len(normal_conf)})")
+        
+        df = pd.DataFrame([
+            {
+                "Description": r.description,
+                "Category": r.category.value,
+                "Priority": r.priority.value,
+                "Confidence": f"{r.confidence:.0%}",
+                "Page": r.page_number
+            }
+            for r in normal_conf
+        ])
+        
+        # Color-code by confidence
+        def highlight_confidence(row):
+            conf = float(row['Confidence'].strip('%')) / 100
+            if conf >= 0.90:
+                return ['background-color: #d1ecf1'] * len(row)  # Light blue
+            elif conf >= 0.70:
+                return ['background-color: #d4edda'] * len(row)  # Light green
+            else:
+                return ['background-color: #fff3cd'] * len(row)  # Yellow
+        
+        st.dataframe(
+            df.style.apply(highlight_confidence, axis=1),
+            use_container_width=True
+        )
+    
+    # Edit modal
+    if st.session_state.get("editing_req"):
+        render_edit_requirement_modal(st.session_state.editing_req)
+
+
+def render_edit_requirement_modal(req: Requirement):
+    """Render modal to edit a requirement."""
+    
+    st.markdown("---")
+    st.subheader("✏️ Edit Requirement")
+    
+    with st.form(key=f"edit_req_{req.id}"):
+        new_desc = st.text_area("Description", value=req.description, height=100)
+        new_cat = st.selectbox("Category", options=RequirementCategory, index=list(RequirementCategory).index(req.category))
+        new_pri = st.selectbox("Priority", options=RequirementPriority, index=list(RequirementPriority).index(req.priority))
+        new_verified = st.checkbox("Mark as verified", value=req.verified)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.form_submit_button("💾 Save Changes", type="primary"):
+                req.description = new_desc
+                req.category = new_cat
+                req.priority = new_pri
+                req.verified = new_verified
+                req.confidence = 1.0 if new_verified else req.confidence
+                
+                st.session_state.editing_req = None
+                st.success("✅ Requirement updated")
+                st.rerun()
+        
+        with col2:
+            if st.form_submit_button("❌ Cancel"):
+                st.session_state.editing_req = None
+                st.rerun()
+```
+
+## ✅ Input Validation
+
+### JSON Schema Validation
+
+```python
+# src/utils/schemas.py
+
+REQUIREMENT_SCHEMA = {
+    "type": "object",
+    "required": ["description", "category", "priority", "confidence"],
+    "properties": {
+        "description": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500
+        },
+        "category": {
+            "type": "string",
+            "enum": ["Technical", "Functional", "Timeline", "Budget", "Compliance"]
+        },
+        "priority": {
+            "type": "string",
+            "enum": ["Critical", "High", "Medium", "Low"]
+        },
+        "confidence": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+        },
+        "page_number": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "verified": {
+            "type": "boolean"
+        }
+    }
+}
+
+RISK_SCHEMA = {
+    "type": "object",
+    "required": ["clause_text", "category", "severity", "confidence"],
+    "properties": {
+        "clause_text": {
+            "type": "string",
+            "minLength": 10
+        },
+        "category": {
+            "type": "string",
+            "enum": ["Legal", "Financial", "Timeline", "Technical", "Compliance"]
+        },
+        "severity": {
+            "type": "string",
+            "enum": ["Critical", "High", "Medium", "Low"]
+        },
+        "confidence": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+        }
+    }
+}
+
+
+# src/utils/validators.py
+
+import jsonschema
+from jsonschema import validate, ValidationError as JSONValidationError
+from typing import List, Dict, Any
+import streamlit as st
+
+def validate_json_import(data: Dict[str, Any], schema: Dict) -> tuple[bool, str]:
+    """
+    Validate imported JSON against schema.
+    
+    Returns:
+        (is_valid, error_message)
+    """
+    try:
+        validate(instance=data, schema=schema)
+        return True, ""
+    except JSONValidationError as e:
+        error_msg = f"Validation error at {'.'.join(str(p) for p in e.path)}: {e.message}"
+        return False, error_msg
+
+
+def validate_rfp_upload(file, title: str, client: str, deadline) -> tuple[bool, str]:
+    """Validate RFP upload inputs."""
+    
+    # File validation
+    if not file:
+        return False, "No file uploaded"
+    
+    if file.size == 0:
+        return False, "PDF file is empty (0 bytes)"
+    
+    if file.size > 50 * 1024 * 1024:  # 50MB
+        return False, f"PDF file too large ({file.size / 1024 / 1024:.1f}MB). Maximum 50MB."
+    
+    if not file.name.endswith('.pdf'):
+        return False, f"Invalid file type: {file.type}. Only PDF files are supported."
+    
+    # Title validation
+    if not title or title.strip() == "":
+        return False, "RFP title is required"
+    
+    if len(title) < 5:
+        return False, "RFP title must be at least 5 characters"
+    
+    # Client validation
+    if not client or client.strip() == "":
+        return False, "Client name is required"
+    
+    # Deadline validation
+    if not deadline:
+        return False, "Deadline is required"
+    
+    from datetime import datetime
+    if deadline < datetime.now():
+        return False, "Deadline must be in the future"
+    
+    return True, ""
+
+
+def validate_requirement(req: Dict[str, Any]) -> tuple[bool, str]:
+    """Validate a single requirement."""
+    
+    if not req.get("description") or req["description"].strip() == "":
+        return False, "Description is required"
+    
+    if len(req["description"]) < 10:
+        return False, "Description must be at least 10 characters"
+    
+    valid_categories = ["Technical", "Functional", "Timeline", "Budget", "Compliance"]
+    if req.get("category") not in valid_categories:
+        return False, f"Category must be one of: {', '.join(valid_categories)}"
+    
+    valid_priorities = ["Critical", "High", "Medium", "Low"]
+    if req.get("priority") not in valid_priorities:
+        return False, f"Priority must be one of: {', '.join(valid_priorities)}"
+    
+    conf = req.get("confidence", 0.0)
+    if not (0.0 <= conf <= 1.0):
+        return False, f"Confidence must be between 0.0 and 1.0, got {conf}"
+    
+    return True, ""
+```
+
+## 📝 Structured Logging
+
+```python
+# src/utils/logger.py
+
+import logging
+import sys
+from pathlib import Path
+from logging.handlers import RotatingFileHandler
+from datetime import datetime
+
+def setup_logger(name: str = "rfp_booster", level: str = "DEBUG") -> logging.Logger:
+    """
+    Setup structured logger with file and console handlers.
+    
+    Args:
+        name: Logger name
+        level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    
+    Returns:
+        Configured logger instance
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(getattr(logging, level.upper()))
+    
+    # Avoid duplicate handlers
+    if logger.handlers:
+        return logger
+    
+    # Create logs directory
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+    
+    # File handler with rotation (10MB, keep 5 backups)
+    log_file = log_dir / f"app_{datetime.now().strftime('%Y%m%d')}.log"
+    file_handler = RotatingFileHandler(
+        log_file,
+        maxBytes=10 * 1024 * 1024,  # 10MB
+        backupCount=5
+    )
+    file_handler.setLevel(logging.DEBUG)
+    
+    # Console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+    
+    # Formatter
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+    
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+    
+    return logger
+
+
+# Initialize logger
+logger = setup_logger()
+
+# Usage examples:
+logger.debug("Extracting requirements from RFP text (length: 50000)")
+logger.info("User uploaded RFP: sample_rfp.pdf")
+logger.warning(f"Low confidence requirement detected: {req.description} (conf: {req.confidence})")
+logger.error(f"LLM API call failed: {error}", exc_info=True)
+logger.critical("Application crash: Unable to initialize LLM client")
+```
+
+## 🧪 Mock Data Generators
+
+```python
+# src/utils/mock_data.py
+
+from typing import List
+from models import Requirement, Risk, Draft, DraftSection, RequirementCategory, RequirementPriority, RiskCategory, RiskSeverity, DraftStatus
+from datetime import datetime
+
+def get_mock_requirements(count: int = 5) -> List[Requirement]:
+    """Generate mock requirements for fallback."""
+    
+    mock_reqs = [
+        Requirement(
+            description="Cloud-based infrastructure with 99.9% uptime SLA",
+            category=RequirementCategory.TECHNICAL,
+            priority=RequirementPriority.CRITICAL,
+            confidence=0.95,
+            page_number=1,
+            verified=False
+        ),
+        Requirement(
+            description="Support for microservices architecture and containerization",
+            category=RequirementCategory.TECHNICAL,
+            priority=RequirementPriority.HIGH,
+            confidence=0.90,
+            page_number=2,
+            verified=False
+        ),
+        Requirement(
+            description="Proposal submission deadline: 30 days from RFP date",
+            category=RequirementCategory.TIMELINE,
+            priority=RequirementPriority.CRITICAL,
+            confidence=0.98,
+            page_number=3,
+            verified=False
+        ),
+        Requirement(
+            description="Budget not to exceed $500,000 for initial implementation",
+            category=RequirementCategory.BUDGET,
+            priority=RequirementPriority.HIGH,
+            confidence=0.85,
+            page_number=4,
+            verified=False
+        ),
+        Requirement(
+            description="GDPR and SOC 2 compliance required",
+            category=RequirementCategory.COMPLIANCE,
+            priority=RequirementPriority.CRITICAL,
+            confidence=0.92,
+            page_number=5,
+            verified=False
+        )
+    ]
+    
+    return mock_reqs[:count]
+
+
+def get_mock_risks(count: int = 3) -> List[Risk]:
+    """Generate mock risks for fallback."""
+    
+    mock_risks = [
+        Risk(
+            clause_text="Payment terms: Net-90 days from invoice date",
+            category=RiskCategory.FINANCIAL,
+            severity=RiskSeverity.MEDIUM,
+            confidence=0.88,
+            page_number=10,
+            recommendation="Negotiate for Net-30 terms to improve cash flow",
+            alternative_language="Payment terms: Net-30 days from invoice date",
+            acknowledged=False
+        ),
+        Risk(
+            clause_text="Unlimited liability clause for data breaches",
+            category=RiskCategory.LEGAL,
+            severity=RiskSeverity.HIGH,
+            confidence=0.92,
+            page_number=15,
+            recommendation="Request liability cap at contract value or $1M, whichever is higher",
+            alternative_language="Liability limited to the greater of contract value or $1,000,000",
+            acknowledged=False
+        ),
+        Risk(
+            clause_text="Client reserves right to terminate without cause with 7 days notice",
+            category=RiskCategory.LEGAL,
+            severity=RiskSeverity.MEDIUM,
+            confidence=0.85,
+            page_number=18,
+            recommendation="Negotiate for 30 days notice and partial payment for work completed",
+            alternative_language="Either party may terminate with 30 days written notice, with payment for services rendered",
+            acknowledged=False
+        )
+    ]
+    
+    return mock_risks[:count]
+
+
+def get_template_draft() -> Draft:
+    """Generate template draft for fallback."""
+    
+    sections = [
+        DraftSection(
+            title="Executive Summary",
+            content="[To be completed: Provide a high-level overview of your proposed solution, highlighting key benefits and alignment with client requirements.]"
+        ),
+        DraftSection(
+            title="Company Overview",
+            content="[To be completed: Describe your company's expertise, relevant experience, and why you're the right partner for this project.]"
+        ),
+        DraftSection(
+            title="Technical Approach",
+            content="[To be completed: Detail your technical solution, architecture, technologies, and implementation methodology.]"
+        ),
+        DraftSection(
+            title="Project Timeline",
+            content="[To be completed: Provide a realistic timeline with key milestones and deliverables.]"
+        ),
+        DraftSection(
+            title="Budget & Pricing",
+            content="[To be completed: Break down your pricing structure, payment terms, and cost justification.]"
+        ),
+        DraftSection(
+            title="Risk Mitigation",
+            content="[To be completed: Address identified risks and your strategies to mitigate them.]"
+        )
+    ]
+    
+    return Draft(
+        title="RFP Response Draft Template",
+        sections=sections,
+        status=DraftStatus.DRAFT,
+        word_count=0,
+        generated_at=datetime.now(),
+        completeness_score=0.0
+    )
+```
+
+## 🗂️ File Structure
+
+```
+src/
+├── utils/
+│   ├── error_handler.py           # NEW: Centralized error handling
+│   │   ├── AppError, LLMError, ValidationError, PDFError, SessionError
+│   │   ├── handle_error()
+│   │   ├── @handle_errors decorator
+│   │   └── UI feedback functions
+│   │
+│   ├── retry_utils.py              # NEW: Retry logic with tenacity
+│   │   └── retry_llm_call decorator
+│   │
+│   ├── logger.py                   # NEW: Structured logging
+│   │   └── setup_logger()
+│   │
+│   ├── validators.py               # NEW: Input validation
+│   │   ├── validate_json_import()
+│   │   ├── validate_rfp_upload()
+│   │   └── validate_requirement()
+│   │
+│   ├── schemas.py                  # NEW: JSON schemas
+│   │   ├── REQUIREMENT_SCHEMA
+│   │   ├── RISK_SCHEMA
+│   │   └── DRAFT_SCHEMA
+│   │
+│   ├── mock_data.py                # NEW: Mock data generators
+│   │   ├── get_mock_requirements()
+│   │   ├── get_mock_risks()
+│   │   └── get_template_draft()
+│   │
+│   └── session_guard.py            # NEW: Session state guards
+│       ├── check_rfp_exists()
+│       ├── redirect_to_upload()
+│       └── persist_notification()
+│
+├── services/
+│   ├── requirement_extractor.py   # MODIFIED: Add error handling
+│   ├── risk_detector.py            # MODIFIED: Add error handling
+│   ├── draft_generator.py          # MODIFIED: Add error handling
+│   ├── ai_assistant.py             # MODIFIED: Add error handling
+│   └── pdf_extractor.py            # MODIFIED: Add validation
+│
+pages/
+├── 1_📤_Upload_RFP.py             # MODIFIED: Add validation + spinners
+├── 2_📋_Requirements.py           # MODIFIED: Low-conf highlighting + spinners
+├── 3_⚠️_Risk_Analysis.py         # MODIFIED: Low-conf highlighting + spinners
+└── 4_✍️_Draft_Generation.py      # MODIFIED: Spinners + prerequisites check
+
+tests/
+├── test_utils/
+│   ├── test_error_handler.py      # NEW: Error handling tests
+│   ├── test_validators.py         # NEW: Validation tests
+│   ├── test_logger.py             # NEW: Logging tests
+│   └── test_mock_data.py          # NEW: Mock data tests
+│
+└── test_integration/
+    ├── test_error_scenarios.py    # NEW: Integration tests for errors
+    └── test_edge_cases.py         # NEW: Edge case tests
+
+logs/
+└── app_YYYYMMDD.log               # NEW: Daily log files
+
+docs/
+└── TROUBLESHOOTING.md             # NEW: User-facing troubleshooting guide
+```
+
+## 🚀 Implementation Plan
+
+### Phase 1: Core Error Infrastructure (4-6 hours)
+
+1. **Create error handler** (`src/utils/error_handler.py`)
+   - Custom exception classes
+   - `handle_error()` function
+   - `@handle_errors` decorator
+   - UI feedback functions
+
+2. **Setup logging** (`src/utils/logger.py`)
+   - Structured logger with file rotation
+   - Console and file handlers
+   - Test logging at all levels
+
+3. **Create retry utils** (`src/utils/retry_utils.py`)
+   - Configure tenacity decorators
+   - Add retry logic for LLM calls
+
+4. **Write unit tests**
+   - Test error handling functions
+   - Test logger setup
+   - Test retry logic
+
+**Deliverable:** Core error infrastructure ready
+
+### Phase 2: Validation & Schemas (2-3 hours)
+
+1. **Create schemas** (`src/utils/schemas.py`)
+   - JSON schemas for Requirements, Risks, Drafts
+   - Define all field constraints
+
+2. **Create validators** (`src/utils/validators.py`)
+   - JSON validation with jsonschema
+   - RFP upload validation
+   - Requirement/Risk validation
+
+3. **Create mock data** (`src/utils/mock_data.py`)
+   - Mock requirements generator
+   - Mock risks generator
+   - Template draft generator
+
+4. **Write unit tests**
+   - Test validation functions
+   - Test schema compliance
+   - Test mock data generation
+
+**Deliverable:** Validation and fallback systems ready
+
+### Phase 3: Service Refactoring (4-5 hours)
+
+1. **Refactor RequirementExtractor**
+   - Add `@handle_errors` and `@retry_llm_call`
+   - Handle empty responses → mock fallback
+   - Add structured logging
+
+2. **Refactor RiskDetector**
+   - Add error handling for AI detection
+   - Pattern detection already robust
+   - Add logging
+
+3. **Refactor DraftGenerator**
+   - Add error handling
+   - Template fallback on failure
+   - Progress logging
+
+4. **Refactor AIAssistant**
+   - Graceful degradation on failure
+   - Generic fallback responses
+   - Error messages to user
+
+5. **Refactor PDFExtractor**
+   - Validate before processing
+   - Handle empty/corrupt PDFs
+   - Clear error messages
+
+6. **Write unit tests**
+   - Test each service with mocked failures
+   - Test fallback behaviors
+   - Regression tests (Epic 5 tests still pass)
+
+**Deliverable:** All services have robust error handling
+
+### Phase 4: UI Enhancements (3-4 hours)
+
+1. **Update Upload page** (`pages/1_📤_Upload_RFP.py`)
+   - Add input validation
+   - Add spinners for upload/extract
+   - Handle edge cases (empty, corrupt)
+
+2. **Update Requirements page** (`pages/2_📋_Requirements.py`)
+   - Add low-confidence highlighting
+   - Add "Verify & Edit" modal
+   - Add spinners for AI extraction
+   - Add "Retry All" button
+
+3. **Update Risk Analysis page** (`pages/3_⚠️_Risk_Analysis.py`)
+   - Add low-confidence highlighting
+   - Add spinners for detection
+   - Add retry buttons
+
+4. **Update Draft Generation page** (`pages/4_✍️_Draft_Generation.py`)
+   - Add prerequisites check (redirect if missing)
+   - Add spinner for generation
+   - Add fallback to template
+
+5. **Add session guards**
+   - Check RFP exists on Requirements/Risk/Draft pages
+   - Redirect to Upload if missing
+   - Show helpful messages
+
+**Deliverable:** UI with loading states and error feedback
+
+### Phase 5: Testing & Documentation (2-3 hours)
+
+1. **Write integration tests** (`tests/test_integration/test_error_scenarios.py`)
+   - Test empty PDF end-to-end
+   - Test invalid JSON import end-to-end
+   - Test LLM failure scenarios
+   - Test session state edge cases
+
+2. **Manual testing**
+   - Disconnect internet → Test offline
+   - Invalid API key → Test error messages
+   - Upload corrupt PDF → Test validation
+   - Rapid button clicks → Test race conditions
+   - Empty RFP → Test all pages
+   - Low-confidence results → Test highlighting
+
+3. **Create documentation** (`docs/TROUBLESHOOTING.md`)
+   - Common errors and solutions
+   - API key setup guide
+   - PDF format requirements
+   - JSON import schema reference
+
+4. **Code coverage check**
+   - Ensure >80% coverage
+   - Add missing tests
+
+5. **Update README**
+   - Document error handling features
+   - Add troubleshooting section link
+
+**Deliverable:** Fully tested error handling system
+
+## 📊 Success Criteria
+
+- [ ] All LLM calls wrapped with `@handle_errors` and `@retry_llm_call`
+- [ ] Centralized error handler with custom exception classes
+- [ ] Structured logging to file and console (logs/ directory)
+- [ ] All user inputs validated before processing
+- [ ] Loading spinners on all long-running operations
+- [ ] Low-confidence requirements/risks highlighted with "Verify?" button
+- [ ] Mock data fallback available on LLM failures
+- [ ] Session state guards prevent navigation errors
+- [ ] Empty PDF, corrupt file, invalid JSON handled gracefully
+- [ ] Retry buttons shown on failures (manual retry)
+- [ ] 1 auto-retry on LLM failures, then manual
+- [ ] Toast notifications on success operations
+- [ ] All Epic 5 tests still pass (backward compatible)
+- [ ] >80% code coverage on new error handling code
+- [ ] TROUBLESHOOTING.md guide created
+- [ ] No unhandled exceptions in UI (all caught and logged)
+
+## 🔗 Related Documentation
+
+- **Epic 5:** Draft Generation & AI Assistant (refactor targets)
+- **PRD:** Error handling requirements
+- **Python Practices:** `.cursor/rules/python-practices.mdc`
+
+## 📝 Notes
+
+- **Critical for production:** This epic is essential before any real deployment
+- **User experience:** Proper error handling dramatically improves UX
+- **Debugging:** Structured logging makes troubleshooting much easier
+- **Resilience:** Graceful degradation keeps app usable even with API issues
+- **Testing:** Comprehensive error scenarios ensure robustness
+
+## 🎯 Next Steps After Epic 9
+
+1. **Epic 6:** Service Matching Screen (with robust error handling)
+2. **Epic 7:** Google Docs Export (with auth/API error handling)
+3. **Epic 10:** Performance optimization and caching (future)
+
+---
+
+**Estimated Total Effort:** 2-3 days (12-18 hours)  
+**Sprint Assignment:** TBD (Sprint 5 or 6)  
+**Priority:** High (production readiness requirement)
+

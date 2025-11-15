@@ -14,6 +14,7 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 import json
 import os
+import sys
 
 from services.llm_client import LLMClient, LLMProvider, create_llm_client
 
@@ -21,32 +22,33 @@ from services.llm_client import LLMClient, LLMProvider, create_llm_client
 class TestLLMClient:
     """Test LLM Client initialization and basic functionality."""
     
-    @patch('google.generativeai.configure')
-    @patch('google.generativeai.GenerativeModel')
-    def test_gemini_initialization(self, mock_model_class, mock_configure):
+    def test_gemini_initialization(self):
         """Test Gemini client initialization."""
-        mock_model_instance = Mock()
-        mock_model_class.return_value = mock_model_instance
+        mock_genai = MagicMock()
+        mock_model_instance = MagicMock()
+        mock_genai.GenerativeModel.return_value = mock_model_instance
         
         with patch.dict(os.environ, {'GEMINI_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GEMINI, api_key='test-key')
-            
-            assert client.provider == LLMProvider.GEMINI
-            assert client.model == "gemini-pro"
-            mock_configure.assert_called_once_with(api_key='test-key')
+            with patch.dict('sys.modules', {'google.generativeai': mock_genai}):
+                client = LLMClient(provider=LLMProvider.GEMINI, api_key='test-key')
+                
+                assert client.provider == LLMProvider.GEMINI
+                assert client.model == "gemini-2.5-flash"  # Default model updated
+                assert client._client is not None
     
-    @patch('groq.Groq')
-    def test_groq_initialization(self, mock_groq_class):
+    def test_groq_initialization(self):
         """Test Groq client initialization."""
-        mock_groq_instance = Mock()
-        mock_groq_class.return_value = mock_groq_instance
+        mock_groq_module = MagicMock()
+        mock_groq_instance = MagicMock()
+        mock_groq_module.Groq.return_value = mock_groq_instance
         
         with patch.dict(os.environ, {'GROQ_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GROQ, api_key='test-key')
-            
-            assert client.provider == LLMProvider.GROQ
-            assert client.model == "mixtral-8x7b-32768"
-            mock_groq_class.assert_called_once_with(api_key='test-key')
+            with patch.dict('sys.modules', {'groq': mock_groq_module}):
+                client = LLMClient(provider=LLMProvider.GROQ, api_key='test-key')
+                
+                assert client.provider == LLMProvider.GROQ
+                assert client.model == "mixtral-8x7b-32768"
+                assert client._client is not None
     
     def test_initialization_without_api_key_raises_error(self):
         """Test that initialization without API key raises error."""
@@ -109,25 +111,27 @@ class TestLLMGeneration:
             assert result == "Generated response text"
             mock_model_instance.generate_content.assert_called_once()
     
-    @patch('groq.Groq')
-    def test_groq_generate(self, mock_groq_class):
+    def test_groq_generate(self):
         """Test text generation with Groq."""
         # Mock the response
-        mock_choice = Mock()
+        mock_choice = MagicMock()
         mock_choice.message.content = "Generated response from Groq"
         
-        mock_response = Mock()
+        mock_response = MagicMock()
         mock_response.choices = [mock_choice]
         
-        mock_groq_instance = Mock()
+        mock_groq_instance = MagicMock()
         mock_groq_instance.chat.completions.create.return_value = mock_response
-        mock_groq_class.return_value = mock_groq_instance
+        
+        mock_groq_module = MagicMock()
+        mock_groq_module.Groq.return_value = mock_groq_instance
         
         with patch.dict(os.environ, {'GROQ_API_KEY': 'test-key'}):
-            client = LLMClient(provider=LLMProvider.GROQ, api_key='test-key')
-            result = client.generate("Test prompt")
-            
-            assert result == "Generated response from Groq"
+            with patch.dict('sys.modules', {'groq': mock_groq_module}):
+                client = LLMClient(provider=LLMProvider.GROQ, api_key='test-key')
+                result = client.generate("Test prompt")
+                
+                assert result == "Generated response from Groq"
 
 
 class TestJSONExtraction:
@@ -260,25 +264,33 @@ class TestClientFactory:
         mock_llm_class.assert_called_once()
         assert client == mock_instance
     
-    @patch('services.llm_client.LLMClient')
-    def test_create_client_with_fallback(self, mock_llm_class):
+    @patch('services.llm_client._is_provider_available')
+    @patch('services.llm_client.LLMClient.test_connection')
+    def test_create_client_with_fallback(self, mock_test_conn, mock_is_available):
         """Test fallback to different providers."""
-        # First provider fails, second succeeds
-        mock_failing = Mock()
-        mock_failing.test_connection.return_value = False
+        # Mock provider availability: Gemini not available, Groq available
+        def side_effect(provider):
+            if provider == LLMProvider.GEMINI:
+                return (False, "Gemini not available")
+            elif provider == LLMProvider.GROQ:
+                return (True, None)
+            else:
+                return (False, "Not available")
         
-        mock_working = Mock()
-        mock_working.test_connection.return_value = True
+        mock_is_available.side_effect = side_effect
+        mock_test_conn.return_value = True  # Mock successful connection test
         
-        mock_llm_class.side_effect = [
-            mock_failing,  # Gemini fails
-            mock_working,  # Groq works
-        ]
+        mock_groq = MagicMock()
+        mock_groq_instance = MagicMock()
+        mock_groq.Groq.return_value = mock_groq_instance
         
-        client = create_llm_client(fallback=True)
-        
-        assert client == mock_working
-        assert mock_llm_class.call_count == 2
+        with patch.dict(os.environ, {'GROQ_API_KEY': 'test-key'}):
+            with patch.dict('sys.modules', {'groq': mock_groq}):
+                client = create_llm_client(fallback=True)
+                
+                # Should use Groq since Gemini is not available
+                assert client is not None
+                assert client.provider == LLMProvider.GROQ
     
     @patch('services.llm_client.LLMClient')
     def test_create_client_all_providers_fail(self, mock_llm_class):

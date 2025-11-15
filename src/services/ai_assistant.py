@@ -217,6 +217,18 @@ class AIAssistant:
 - Import requirements from JSON files
 - Requirements are linked to specific pages in the RFP
             """,
+            "service_matching": """
+**Service Matching Page:**
+- Automatically match RFP requirements to BairesDev services
+- Uses TF-IDF vectorization and cosine similarity for matching
+- View match scores (🟢 >80%, 🟡 50-80%, 🔴 <50%)
+- Filter matches by category and minimum score threshold
+- Approve high-confidence matches (>80%) for draft generation
+- View coverage by requirement category with bar chart
+- Export matches to JSON for reference
+- Approved matches are automatically included in proposal drafts
+- Prerequisites: RFP uploaded, requirements extracted
+            """,
             "risks": """
 **Risk Analysis Page:**
 - Detect risks using pattern matching or AI
@@ -235,6 +247,7 @@ class AIAssistant:
 - Edit drafts directly in the app with real-time preview
 - Regenerate specific sections without regenerating the entire draft
 - Export drafts to Markdown or JSON
+- Approved service matches (>80%) are automatically included
 - Prerequisites: RFP uploaded, requirements extracted, risks acknowledged
             """,
             "main": """

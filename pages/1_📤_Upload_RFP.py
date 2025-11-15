@@ -48,13 +48,13 @@ def main():
     st.divider()
     
     # Show results if processing is complete
-    if st.session_state.get("processing_complete") and st.session_state.get("current_rfp"):
-        display_results(st.session_state.current_rfp)
+    if st.session_state.get("processing_complete") and st.session_state.get("rfp"):
+        display_results(st.session_state.rfp)
         
         # Reset button
         if st.button("📤 Upload Another RFP", type="primary"):
             st.session_state.processing_complete = False
-            st.session_state.current_rfp = None
+            st.session_state.rfp = None
             st.rerun()
         return
     
@@ -221,7 +221,7 @@ def process_rfp(
         progress_bar.progress(100, text="Complete!")
         
         # Store in session
-        st.session_state.current_rfp = rfp
+        st.session_state.rfp = rfp
         st.session_state.processing_complete = True
         
         logger.info(f"RFP processing complete: {rfp.id}")
@@ -311,7 +311,7 @@ def display_results(rfp: RFP):
     
     with col2:
         if st.button("⚠️ Check Risks", use_container_width=True):
-            st.switch_page("pages/3_⚠️_Risk_Analysis.py")
+            st.switch_page("pages/4_⚠️_Risk_Analysis.py")
     
     with col3:
         if st.button("🏠 Back to Home", use_container_width=True):

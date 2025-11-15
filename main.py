@@ -41,6 +41,11 @@ init_session_state()
 def main() -> None:
     """Main application entry point."""
     
+    # Render AI Assistant modal FIRST if open (so it's visible at top)
+    if st.session_state.get("show_ai_assistant", False):
+        render_ai_assistant_modal(key_suffix="main", page_context="main")
+        st.markdown("---")
+    
     # Header with AI Assistant button
     col1, col2 = st.columns([5, 1])
     with col1:

@@ -103,7 +103,15 @@ def main():
     rfp = get_current_rfp()
     requirements = st.session_state.get("requirements", [])
     risks = st.session_state.get("risks", [])
-    service_matches = st.session_state.get("service_matches", {})
+    # Get approved service matches (>80% confidence) for draft generation
+    all_service_matches = st.session_state.get("service_matches", [])
+    approved_matches = [m for m in all_service_matches if getattr(m, 'approved', False) and getattr(m, 'score', 0.0) >= 0.80]
+    
+    # Show service matches indicator
+    if approved_matches:
+        st.success(f"✅ {len(approved_matches)} approved service matches will be included in the draft")
+    elif all_service_matches:
+        st.info(f"ℹ️ {len(all_service_matches)} service matches found. Approve high-confidence matches (>80%) in the Service Matching page to include them in the draft.")
     
     # Draft generation controls
     st.markdown("---")
@@ -214,7 +222,7 @@ def main():
                     rfp=rfp,
                     requirements=requirements,
                     risks=risks,
-                    service_matches=list(service_matches.values()) if service_matches else [],
+                    service_matches=approved_matches,
                     instructions=instructions,
                     tone=tone,
                     audience=audience,
@@ -254,7 +262,7 @@ def main():
                             rfp=rfp,
                             requirements=requirements,
                             risks=risks,
-                            service_matches=list(service_matches.values()) if service_matches else [],
+                            service_matches=approved_matches,
                             instructions=instructions,
                             tone=tone,
                             audience=audience

@@ -289,17 +289,37 @@ class DraftGenerator:
         return "\n".join(summary_parts)
     
     def _build_service_matches_summary(self, service_matches: List[Any]) -> str:
-        """Build service matches summary."""
-        if not service_matches:
-            return "No service matches available. Describe your standard service offerings."
+        """Build service matches summary for approved service matches (>80%).
         
-        # If service_matches is a list of ServiceMatch objects
-        summary_parts = [f"Service Matches: {len(service_matches)}"]
-        for match in service_matches[:10]:  # Top 10 matches
-            if hasattr(match, 'service') and hasattr(match, 'match_score'):
-                service_name = match.service.name if hasattr(match.service, 'name') else str(match.service)
-                score = match.match_score if hasattr(match, 'match_score') else 0.0
-                summary_parts.append(f"- {service_name} (match: {score:.2f})")
+        This integrates approved service matches into the draft generation,
+        providing context about available BairesDev services that align with requirements.
+        """
+        if not service_matches:
+            return "No approved service matches available. Describe BairesDev's standard service offerings."
+        
+        # Filter for approved and high-confidence matches (>80%)
+        high_matches = [m for m in service_matches if hasattr(m, 'approved') and m.approved and hasattr(m, 'score') and m.score >= 0.80]
+        
+        if not high_matches:
+            return "No high-confidence approved service matches. Include general BairesDev service offerings."
+        
+        summary_parts = [f"✅ Approved Service Matches ({len(high_matches)}):"]
+        summary_parts.append("\nThe following BairesDev services are strong matches for the RFP requirements:")
+        
+        for match in high_matches[:10]:  # Top 10 approved matches
+            service_name = match.service_name if hasattr(match, 'service_name') else "Unknown Service"
+            score = match.score if hasattr(match, 'score') else 0.0
+            req_desc = match.requirement_description[:80] if hasattr(match, 'requirement_description') else ""
+            
+            summary_parts.append(f"\n- **{service_name}** (Match: {score:.0%})")
+            summary_parts.append(f"  For requirement: \"{req_desc}...\"")
+            
+            # Add reasoning if available
+            if hasattr(match, 'reasoning') and match.reasoning:
+                reasoning = match.reasoning[:150]
+                summary_parts.append(f"  Reasoning: {reasoning}")
+        
+        summary_parts.append("\n💡 **Instruction:** Highlight these services in the 'Services & Solutions' section and reference them when addressing specific requirements.")
         
         return "\n".join(summary_parts)
     

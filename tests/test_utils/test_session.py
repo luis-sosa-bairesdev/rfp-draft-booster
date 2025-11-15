@@ -1,43 +1,71 @@
 """
-Tests for session management utilities.
+Unit tests for session utilities.
 
-Note: These tests verify the functions exist and can be called.
-Full integration testing requires Streamlit runtime.
+Tests cover:
+- Session helper functions
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from models import RFP, RFPStatus
+from unittest.mock import MagicMock, patch
+from models import RFP
 
 
-class TestSessionUtils:
-    """Test session management utilities."""
+class TestSessionFunctionsExist:
+    """Test session functions exist and are callable."""
     
-    def test_session_functions_exist(self):
-        """Test session functions are importable."""
+    def test_all_functions_callable(self):
+        """Test that all session functions can be imported and are callable."""
         from utils.session import (
             init_session_state,
             reset_session,
             get_current_rfp,
             set_current_rfp,
-            has_current_rfp
+            has_current_rfp,
+            get_approved_matches,
+            update_approved_matches
         )
         
-        # All functions should exist
         assert callable(init_session_state)
         assert callable(reset_session)
         assert callable(get_current_rfp)
         assert callable(set_current_rfp)
         assert callable(has_current_rfp)
-    
-    def test_session_module_structure(self):
-        """Test session module has expected structure."""
-        import utils.session as session_module
-        
-        # Verify all expected functions exist
-        assert hasattr(session_module, 'init_session_state')
-        assert hasattr(session_module, 'reset_session')
-        assert hasattr(session_module, 'get_current_rfp')
-        assert hasattr(session_module, 'set_current_rfp')
-        assert hasattr(session_module, 'has_current_rfp')
+        assert callable(get_approved_matches)
+        assert callable(update_approved_matches)
 
+
+class TestSessionWithMocks:
+    """Test session functions with mocked streamlit."""
+    
+    def test_get_current_rfp_when_none(self):
+        """Test getting RFP when none exists."""
+        mock_st = MagicMock()
+        mock_st.session_state = {}
+        
+        with patch('utils.session.st', mock_st):
+            from utils.session import get_current_rfp
+            result = get_current_rfp()
+            assert result is None
+    
+    def test_has_current_rfp_when_false(self):
+        """Test has_current_rfp when no RFP."""
+        mock_st = MagicMock()
+        mock_st.session_state = {}
+        
+        with patch('utils.session.st', mock_st):
+            from utils.session import has_current_rfp
+            result = has_current_rfp()
+            assert result is False
+    
+    def test_set_current_rfp(self):
+        """Test setting current RFP."""
+        mock_st = MagicMock()
+        mock_st.session_state = {}
+        
+        with patch('utils.session.st', mock_st):
+            from utils.session import set_current_rfp
+            
+            rfp = RFP(id="test-001", file_name="test.pdf")
+            set_current_rfp(rfp)
+            
+            assert "rfp" in mock_st.session_state
+            assert mock_st.session_state["rfp"] == rfp

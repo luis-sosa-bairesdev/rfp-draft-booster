@@ -1,125 +1,196 @@
-"""Service and ServiceMatch data models."""
+"""Service model for service matching.
+
+This module defines the Service data model and related enums for
+matching BairesDev services to RFP requirements.
+"""
 
 from dataclasses import dataclass, field
-from datetime import datetime
 from enum import Enum
 from typing import List, Optional
-from uuid import uuid4
+import json
+from pathlib import Path
 
 
-class ServiceCategory(Enum):
-    """Service category types."""
-    CLOUD = "cloud"
-    CONSULTING = "consulting"
-    DEVELOPMENT = "development"
-    SUPPORT = "support"
-    INTEGRATION = "integration"
-    TRAINING = "training"
-
-
-class PricingModel(Enum):
-    """Pricing model types."""
-    FIXED = "fixed"
-    HOURLY = "hourly"
-    SUBSCRIPTION = "subscription"
-    CUSTOM = "custom"
+class ServiceCategory(str, Enum):
+    """Service category enum."""
+    TECHNICAL = "technical"
+    FUNCTIONAL = "functional"
+    TIMELINE = "timeline"
+    BUDGET = "budget"
+    COMPLIANCE = "compliance"
 
 
 @dataclass
 class Service:
-    """Internal service offering."""
+    """Service model for service catalog.
     
-    # Core identifiers
-    id: str = field(default_factory=lambda: f"svc-{uuid4()}")
-    name: str = ""
-    code: Optional[str] = None
-    
-    # Classification
-    category: ServiceCategory = ServiceCategory.CONSULTING
-    subcategory: Optional[str] = None
+    Represents a BairesDev service offering that can be matched
+    to RFP requirements.
+    """
+    id: str
+    name: str
+    category: ServiceCategory
+    description: str
+    capabilities: List[str]
+    success_rate: float = 0.95  # Default 95% success rate
     tags: List[str] = field(default_factory=list)
     
-    # Description
-    description: str = ""
-    capabilities: List[str] = field(default_factory=list)
-    key_benefits: Optional[List[str]] = None
+    def __post_init__(self):
+        """Validate service data after initialization."""
+        # Convert category string to enum if needed
+        if isinstance(self.category, str):
+            self.category = ServiceCategory(self.category)
+        
+        # Validate success rate
+        if not 0.0 <= self.success_rate <= 1.0:
+            raise ValueError(f"Success rate must be between 0.0 and 1.0, got {self.success_rate}")
+        
+        # Ensure capabilities and tags are lists
+        if not isinstance(self.capabilities, list):
+            self.capabilities = [self.capabilities] if self.capabilities else []
+        if not isinstance(self.tags, list):
+            self.tags = [self.tags] if self.tags else []
     
-    # Delivery
-    typical_duration: Optional[str] = None
-    team_size: Optional[str] = None
-    delivery_model: Optional[str] = None
+    def to_dict(self) -> dict:
+        """Convert service to dictionary."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "category": self.category.value,
+            "description": self.description,
+            "capabilities": self.capabilities,
+            "success_rate": self.success_rate,
+            "tags": self.tags
+        }
     
-    # Pricing
-    pricing_model: PricingModel = PricingModel.CUSTOM
-    base_price: Optional[float] = None
-    currency: Optional[str] = "USD"
+    @classmethod
+    def from_dict(cls, data: dict) -> "Service":
+        """Create service from dictionary."""
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            category=data["category"],
+            description=data["description"],
+            capabilities=data.get("capabilities", []),
+            success_rate=data.get("success_rate", 0.95),
+            tags=data.get("tags", [])
+        )
     
-    # Performance
-    past_projects: int = 0
-    success_rate: float = 0.0
-    average_rating: Optional[float] = None
-    
-    # Status
-    active: bool = True
-    created_date: datetime = field(default_factory=datetime.now)
-    last_updated: datetime = field(default_factory=datetime.now)
-    
-    def is_high_performer(self) -> bool:
-        """Check if service has strong track record."""
-        return self.success_rate >= 0.90 and self.past_projects >= 10
+    def get_full_text(self) -> str:
+        """Get full text representation for matching.
+        
+        Combines name, description, capabilities, and tags into
+        a single text string for TF-IDF vectorization.
+        """
+        text_parts = [
+            self.name,
+            self.description,
+            " ".join(self.capabilities),
+            " ".join(self.tags)
+        ]
+        return " ".join(filter(None, text_parts))
 
 
-class MatchStatus(Enum):
-    """Service match status."""
-    SUGGESTED = "suggested"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    ALTERNATIVE_NEEDED = "alternative_needed"
+def load_services_from_json(file_path: str = "data/services.json") -> List[Service]:
+    """Load services from JSON file.
+    
+    Args:
+        file_path: Path to services JSON file
+        
+    Returns:
+        List of Service objects
+        
+    Raises:
+        FileNotFoundError: If file doesn't exist
+        json.JSONDecodeError: If JSON is malformed
+        ValueError: If service data is invalid
+    """
+    path = Path(file_path)
+    
+    if not path.exists():
+        raise FileNotFoundError(f"Services file not found: {file_path}")
+    
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        raise json.JSONDecodeError(
+            f"Invalid JSON in {file_path}: {e.msg}",
+            e.doc,
+            e.pos
+        )
+    
+    # Validate structure
+    if not isinstance(data, dict):
+        raise ValueError(f"Services JSON must be a dict, got {type(data)}")
+    
+    if "services" not in data:
+        raise ValueError("Services JSON must have 'services' key")
+    
+    if not isinstance(data["services"], list):
+        raise ValueError(f"'services' must be a list, got {type(data['services'])}")
+    
+    # Parse services
+    services = []
+    for i, service_data in enumerate(data["services"]):
+        try:
+            service = Service.from_dict(service_data)
+            services.append(service)
+        except Exception as e:
+            raise ValueError(f"Error parsing service at index {i}: {e}")
+    
+    return services
 
 
-@dataclass
-class ServiceMatch:
-    """Requirement-to-service match."""
+def get_default_services() -> List[Service]:
+    """Get default services if JSON file doesn't exist.
     
-    # Core identifiers
-    id: str = field(default_factory=lambda: f"match-{uuid4()}")
-    requirement_id: str = ""
-    service_id: str = ""
-    
-    # Match quality
-    match_score: float = 0.0
-    match_type: str = "medium"  # exact, high, medium, low
-    reasoning: str = ""
-    
-    # Decision
-    status: MatchStatus = MatchStatus.SUGGESTED
-    suggested_date: datetime = field(default_factory=datetime.now)
-    decision_date: Optional[datetime] = None
-    approved_by: Optional[str] = None
-    
-    # Notes
-    notes: Optional[str] = None
-    alternative_service_id: Optional[str] = None
-    
-    def is_auto_approved(self) -> bool:
-        """Check if match score is high enough for auto-approval."""
-        return self.match_score >= 0.85
-    
-    def needs_review(self) -> bool:
-        """Check if manual review needed."""
-        return 0.70 <= self.match_score < 0.85
-    
-    def approve(self, user_email: str) -> None:
-        """Approve the match."""
-        self.status = MatchStatus.APPROVED
-        self.approved_by = user_email
-        self.decision_date = datetime.now()
-    
-    def reject(self, user_email: str, reason: Optional[str] = None) -> None:
-        """Reject the match."""
-        self.status = MatchStatus.REJECTED
-        self.approved_by = user_email
-        self.decision_date = datetime.now()
-        if reason:
-            self.notes = reason
-
+    Returns a minimal set of BairesDev services for fallback.
+    """
+    return [
+        Service(
+            id="cloud-infrastructure",
+            name="Cloud Infrastructure & DevOps",
+            category=ServiceCategory.TECHNICAL,
+            description="Design and implement scalable cloud infrastructure with CI/CD pipelines",
+            capabilities=[
+                "AWS/Azure/GCP deployment",
+                "Kubernetes orchestration",
+                "Docker containerization",
+                "CI/CD automation",
+                "Infrastructure as Code"
+            ],
+            success_rate=0.96,
+            tags=["cloud", "devops", "kubernetes", "docker", "aws", "azure"]
+        ),
+        Service(
+            id="custom-software-development",
+            name="Custom Software Development",
+            category=ServiceCategory.FUNCTIONAL,
+            description="End-to-end custom software development with agile methodology",
+            capabilities=[
+                "Full-stack development",
+                "Backend API development",
+                "Frontend web applications",
+                "Mobile app development",
+                "Legacy system modernization"
+            ],
+            success_rate=0.95,
+            tags=["development", "agile", "full-stack", "api", "web", "mobile"]
+        ),
+        Service(
+            id="qa-testing",
+            name="QA & Testing Services",
+            category=ServiceCategory.COMPLIANCE,
+            description="Comprehensive quality assurance and testing services",
+            capabilities=[
+                "Automated testing",
+                "Manual testing",
+                "Performance testing",
+                "Security testing",
+                "Test automation frameworks"
+            ],
+            success_rate=0.94,
+            tags=["qa", "testing", "automation", "quality", "security"]
+        )
+    ]

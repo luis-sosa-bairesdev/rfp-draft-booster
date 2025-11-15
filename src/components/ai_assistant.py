@@ -33,16 +33,13 @@ def render_ai_assistant_button(key_suffix: str = ""):
     # Render button - use on_click callback for more reliable handling
     def open_ai_assistant():
         """Callback to open AI Assistant modal."""
-        st.session_state.show_ai_assistant = True
-        st.rerun()  # Force rerun to show modal immediately
+        st.session_state["show_ai_assistant"] = True
+        # NOTE: Don't call st.rerun() here - Streamlit does it automatically after on_click
     
-    if st.button("💬 Ask", key=button_key, use_container_width=True, 
-                 help="Get help about your RFP, requirements, and risks",
-                 type="primary",
-                 on_click=open_ai_assistant):
-        # This block executes after callback, ensure state is set and rerun
-        st.session_state.show_ai_assistant = True
-        st.rerun()  # Force rerun to show modal immediately
+    st.button("💬 Ask", key=button_key, use_container_width=True, 
+              help="Get help about your RFP, requirements, and risks",
+              type="primary",
+              on_click=open_ai_assistant)
 
 
 def render_ai_assistant_modal(key_suffix: str = "", page_context: str = ""):
@@ -77,9 +74,13 @@ def render_ai_assistant_modal(key_suffix: str = "", page_context: str = ""):
         st.caption("Ask questions about your RFP, requirements, and risks")
     with col2:
         close_key = f"btn_close_ai_assistant_{key_suffix}" if key_suffix else "btn_close_ai_assistant"
-        if st.button("✕ Close", key=close_key, use_container_width=True, help="Close AI Assistant"):
-            st.session_state.show_ai_assistant = False
-            st.rerun()
+        def close_ai_assistant():
+            """Callback to close AI Assistant modal."""
+            st.session_state["show_ai_assistant"] = False
+            # NOTE: Don't call st.rerun() here - Streamlit does it automatically
+        
+        st.button("✕ Close", key=close_key, use_container_width=True, 
+                  help="Close AI Assistant", on_click=close_ai_assistant)
     
     st.divider()
     
@@ -145,10 +146,12 @@ def render_ai_assistant_modal(key_suffix: str = "", page_context: str = ""):
     
     with col2:
         clear_key = f"btn_clear_history_{key_suffix}" if key_suffix else "btn_clear_history"
-        if st.button("🗑️ Clear History", key=clear_key, use_container_width=True):
+        def clear_history():
+            """Callback to clear conversation history."""
             assistant.clear_history()
+        
+        if st.button("🗑️ Clear History", key=clear_key, use_container_width=True, on_click=clear_history):
             st.success("✅ Conversation history cleared!")
-            st.rerun()
     
     # Context info
     st.markdown("---")

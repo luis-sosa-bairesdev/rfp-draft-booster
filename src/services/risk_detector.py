@@ -187,14 +187,18 @@ class RiskDetector:
                     end = min(len(rfp.extracted_text), match.end() + 100)
                     clause_text = rfp.extracted_text[start:end].strip()
                     
-                    # Try to extract full sentence
-                    sentence_start = clause_text.rfind('.', 0, 100)
-                    sentence_end = clause_text.find('.', 100)
-                    if sentence_start != -1 or sentence_end != -1:
-                        if sentence_start != -1:
-                            clause_text = clause_text[sentence_start + 1:]
-                        if sentence_end != -1:
-                            clause_text = clause_text[:sentence_end + 1]
+                    # Try to extract full sentence if clause is long enough
+                    if len(clause_text) > 150:  # Only try to extract sentence if text is reasonably long
+                        sentence_start = clause_text.rfind('.', 0, 50)
+                        sentence_end = clause_text.find('.', len(clause_text) - 50)
+                        if sentence_start != -1 and sentence_start > 0:
+                            clause_text = clause_text[sentence_start + 1:].strip()
+                        if sentence_end != -1 and sentence_end < len(clause_text):
+                            clause_text = clause_text[:sentence_end + 1].strip()
+                    
+                    # Ensure clause_text is not empty
+                    if not clause_text:
+                        clause_text = rfp.extracted_text[match.start():match.end()].strip()
                     
                     # Estimate page number if available
                     page_number = None

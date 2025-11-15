@@ -72,7 +72,13 @@ cover/
 *.sublime-workspace
 
 # Streamlit
+.streamlit/
 .streamlit/secrets.toml
+.streamlit/google_credentials.json
+*.json
+!data/**/*.json
+!deliverables/**/*.json
+!tests/**/*.jsonsecrets.toml
 .streamlit/config.toml
 
 # Data files

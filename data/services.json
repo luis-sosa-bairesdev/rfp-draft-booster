@@ -1,0 +1,187 @@
+{
+  "version": "1.0",
+  "last_updated": "2025-01-13",
+  "services": [
+    {
+      "id": "cloud-infrastructure",
+      "name": "Cloud Infrastructure & DevOps",
+      "category": "technical",
+      "description": "Design and implement scalable cloud infrastructure with automated CI/CD pipelines, container orchestration, and infrastructure as code. Expertise in AWS, Azure, and GCP with 99.9% uptime SLA guarantee.",
+      "capabilities": [
+        "AWS/Azure/GCP deployment and migration",
+        "Kubernetes orchestration and management",
+        "Docker containerization",
+        "CI/CD pipeline automation (Jenkins, GitLab, GitHub Actions)",
+        "Infrastructure as Code (Terraform, CloudFormation)",
+        "Auto-scaling and load balancing",
+        "Monitoring and alerting (Prometheus, Grafana)",
+        "Disaster recovery and backup strategies"
+      ],
+      "success_rate": 0.96,
+      "tags": ["cloud", "devops", "kubernetes", "docker", "aws", "azure", "gcp", "cicd", "terraform", "infrastructure"]
+    },
+    {
+      "id": "custom-software-development",
+      "name": "Custom Software Development",
+      "category": "functional",
+      "description": "End-to-end custom software development using agile methodology. From MVP to enterprise-grade applications with modern tech stacks and best practices.",
+      "capabilities": [
+        "Full-stack web development (React, Angular, Vue.js)",
+        "Backend API development (Node.js, Python, Java, .NET)",
+        "Mobile app development (iOS, Android, React Native)",
+        "Database design and optimization (SQL, NoSQL)",
+        "Microservices architecture",
+        "Legacy system modernization",
+        "API integration and webhooks",
+        "Real-time applications (WebSockets, Socket.io)"
+      ],
+      "success_rate": 0.95,
+      "tags": ["development", "agile", "full-stack", "api", "web", "mobile", "microservices", "react", "python"]
+    },
+    {
+      "id": "qa-testing",
+      "name": "QA & Testing Services",
+      "category": "compliance",
+      "description": "Comprehensive quality assurance and testing services to ensure software reliability, security, and performance. Automated and manual testing with detailed reporting.",
+      "capabilities": [
+        "Automated testing (Selenium, Cypress, Playwright)",
+        "Manual testing and exploratory testing",
+        "Performance and load testing (JMeter, k6)",
+        "Security testing and penetration testing",
+        "Test automation frameworks (pytest, Jest, Mocha)",
+        "Regression testing and smoke testing",
+        "API testing (Postman, REST Assured)",
+        "Mobile app testing (Appium)"
+      ],
+      "success_rate": 0.94,
+      "tags": ["qa", "testing", "automation", "quality", "security", "performance", "selenium", "cypress"]
+    },
+    {
+      "id": "data-analytics-bi",
+      "name": "Data Analytics & Business Intelligence",
+      "category": "functional",
+      "description": "Transform raw data into actionable insights with advanced analytics, data warehousing, and BI dashboards. Real-time reporting and predictive analytics.",
+      "capabilities": [
+        "Data warehouse design (Snowflake, Redshift, BigQuery)",
+        "ETL pipeline development",
+        "BI dashboard creation (Tableau, Power BI, Looker)",
+        "Predictive analytics and machine learning",
+        "Real-time data streaming (Kafka, Spark)",
+        "Data visualization and reporting",
+        "SQL optimization and query tuning",
+        "Data governance and quality assurance"
+      ],
+      "success_rate": 0.93,
+      "tags": ["data", "analytics", "bi", "business intelligence", "etl", "warehouse", "tableau", "powerbi", "ml"]
+    },
+    {
+      "id": "ai-ml-solutions",
+      "name": "AI & Machine Learning Solutions",
+      "category": "technical",
+      "description": "Cutting-edge AI and machine learning solutions including NLP, computer vision, recommendation systems, and predictive models. Production-ready ML pipelines.",
+      "capabilities": [
+        "Natural Language Processing (NLP)",
+        "Computer vision and image recognition",
+        "Recommendation engines",
+        "Predictive analytics and forecasting",
+        "ML model development (TensorFlow, PyTorch, scikit-learn)",
+        "MLOps and model deployment",
+        "Chatbots and conversational AI",
+        "Anomaly detection and fraud prevention"
+      ],
+      "success_rate": 0.91,
+      "tags": ["ai", "ml", "machine learning", "nlp", "computer vision", "deep learning", "tensorflow", "pytorch"]
+    },
+    {
+      "id": "security-compliance",
+      "name": "Security Audit & Compliance",
+      "category": "compliance",
+      "description": "Comprehensive security audits, penetration testing, and compliance consulting. Ensure adherence to GDPR, SOC 2, HIPAA, and industry standards.",
+      "capabilities": [
+        "Security audits and vulnerability assessments",
+        "Penetration testing (web, mobile, network)",
+        "GDPR compliance consulting",
+        "SOC 2 Type II certification support",
+        "HIPAA compliance for healthcare",
+        "Security code review",
+        "Threat modeling and risk assessment",
+        "Incident response planning"
+      ],
+      "success_rate": 0.97,
+      "tags": ["security", "compliance", "gdpr", "soc2", "hipaa", "penetration testing", "audit", "vulnerability"]
+    },
+    {
+      "id": "uiux-design",
+      "name": "UI/UX Design & Prototyping",
+      "category": "functional",
+      "description": "User-centered design services from research to high-fidelity prototypes. Create intuitive, accessible, and visually appealing interfaces.",
+      "capabilities": [
+        "User research and persona development",
+        "Wireframing and prototyping (Figma, Sketch, Adobe XD)",
+        "High-fidelity UI design",
+        "Interaction design and animations",
+        "Accessibility (WCAG 2.1 AA/AAA)",
+        "Design system creation",
+        "Usability testing and A/B testing",
+        "Responsive and mobile-first design"
+      ],
+      "success_rate": 0.94,
+      "tags": ["ui", "ux", "design", "prototyping", "figma", "accessibility", "user research", "usability"]
+    },
+    {
+      "id": "staffing-augmentation",
+      "name": "Staff Augmentation & Dedicated Teams",
+      "category": "timeline",
+      "description": "On-demand talent acquisition with vetted engineers, designers, and QA specialists. Flexible engagement models from short-term to long-term dedicated teams.",
+      "capabilities": [
+        "Pre-vetted senior engineers (5+ years experience)",
+        "Flexible engagement (hourly, monthly, project-based)",
+        "Rapid onboarding (1-2 weeks)",
+        "Timezone-aligned teams (Americas, EMEA, APAC)",
+        "Dedicated team management",
+        "Skill-specific hiring (React, Python, DevOps, etc.)",
+        "Contract-to-hire options",
+        "Remote and on-site options"
+      ],
+      "success_rate": 0.98,
+      "tags": ["staffing", "augmentation", "hiring", "dedicated teams", "remote", "onboarding", "talent"]
+    },
+    {
+      "id": "maintenance-support",
+      "name": "Application Maintenance & Support",
+      "category": "timeline",
+      "description": "24/7 application maintenance and support services. Bug fixes, performance optimization, feature enhancements, and proactive monitoring.",
+      "capabilities": [
+        "24/7 support (email, phone, chat)",
+        "Bug fixing and hotfixes (SLA: 4 hours for critical)",
+        "Performance monitoring and optimization",
+        "Security patches and updates",
+        "Feature enhancements and minor changes",
+        "Database maintenance and optimization",
+        "Server monitoring and incident response",
+        "Monthly maintenance reports"
+      ],
+      "success_rate": 0.96,
+      "tags": ["maintenance", "support", "24/7", "bug fixing", "monitoring", "sla", "hotfix", "optimization"]
+    },
+    {
+      "id": "mvp-development",
+      "name": "MVP Development (Rapid Prototyping)",
+      "category": "budget",
+      "description": "Fast-track MVP development for startups and new products. Launch in 4-8 weeks with core features, scalable architecture, and market validation.",
+      "capabilities": [
+        "Rapid prototyping (4-8 weeks delivery)",
+        "Core feature prioritization",
+        "Scalable architecture for future growth",
+        "Modern tech stack (React, Node.js, AWS)",
+        "User feedback integration",
+        "Market validation support",
+        "Cost-effective fixed-price model",
+        "Post-launch support (3 months)"
+      ],
+      "success_rate": 0.92,
+      "tags": ["mvp", "rapid", "startup", "prototype", "fast", "fixed-price", "scalable", "launch"]
+    }
+  ]
+}
+

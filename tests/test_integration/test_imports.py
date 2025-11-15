@@ -26,7 +26,6 @@ class TestModelImports:
             RequirementCategory,
             RequirementPriority,
             Service,
-            ServiceMatch,
             ServiceCategory,
             Risk,
             RiskCategory,
@@ -35,6 +34,7 @@ class TestModelImports:
             DraftStatus,
             DraftSection,
         )
+        # ServiceMatch is in services.service_matcher, not models
         
         # Verify all imports are not None
         assert RFP is not None
@@ -43,7 +43,6 @@ class TestModelImports:
         assert RequirementCategory is not None
         assert RequirementPriority is not None
         assert Service is not None
-        assert ServiceMatch is not None
         assert ServiceCategory is not None
         assert Risk is not None
         assert RiskCategory is not None
@@ -57,8 +56,9 @@ class TestModelImports:
         from models.rfp import RFP, RFPStatus
         from models.requirement import Requirement, RequirementCategory, RequirementPriority
         from models.risk import Risk, RiskCategory, RiskSeverity
-        from models.service import Service, ServiceMatch, ServiceCategory
+        from models.service import Service, ServiceCategory
         from models.draft import Draft, DraftStatus, DraftSection
+        # ServiceMatch is in services.service_matcher
         
         assert RFP is not None
         assert Requirement is not None
@@ -292,14 +292,14 @@ class TestRegressionImports:
             "RequirementCategory",
             "RequirementPriority",
             "Service",
-            "ServiceMatch",
-            "ServiceCategory",
+            "ServiceCategory",  # ServiceMatch is in services.service_matcher
             "Risk",
             "RiskCategory",
             "RiskSeverity",
             "Draft",
             "DraftStatus",
             "DraftSection",
+            "GenerationMethod",
         ]
         
         for model in expected_models:

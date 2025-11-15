@@ -10,6 +10,7 @@ This test verifies:
 import asyncio
 import sys
 from pathlib import Path
+import pytest
 
 try:
     from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
@@ -21,6 +22,7 @@ except ImportError:
     from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 
 
+@pytest.mark.asyncio
 async def test_ai_assistant_button():
     """E2E test for AI Assistant button."""
     print("=" * 60)

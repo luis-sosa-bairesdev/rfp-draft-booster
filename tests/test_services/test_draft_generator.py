@@ -376,18 +376,26 @@ class TestDraftGenerator:
         """Test building service matches summary."""
         generator = DraftGenerator(llm_client=mock_llm_client)
         
-        # Mock service matches
+        # Mock service matches with new ServiceMatch structure
         class MockServiceMatch:
-            def __init__(self):
-                self.service = Mock()
-                self.service.name = "Test Service"
-                self.match_score = 0.95
+            def __init__(self, name="Test Service", score=0.95, approved=True):
+                self.service_name = name
+                self.score = score
+                self.approved = approved
+                self.requirement_description = "Test requirement description"
+                self.reasoning = "Strong match based on keywords"
         
-        service_matches = [MockServiceMatch() for _ in range(3)]
+        # Create high-confidence approved matches (>80%)
+        service_matches = [
+            MockServiceMatch(name="Cloud Service", score=0.92, approved=True),
+            MockServiceMatch(name="Dev Service", score=0.88, approved=True),
+            MockServiceMatch(name="QA Service", score=0.70, approved=False),  # Low score, not approved
+        ]
         summary = generator._build_service_matches_summary(service_matches)
         
-        assert "3" in summary or "Service Matches" in summary
-        assert "Test Service" in summary
+        # Should only include approved high-confidence matches (>80%)
+        assert "Approved Service Matches" in summary or "2" in summary
+        assert "Cloud Service" in summary or "Dev Service" in summary
     
     def test_build_service_matches_summary_empty(self, mock_llm_client):
         """Test building service matches summary with no matches."""

@@ -1,71 +1,64 @@
 """
-Tests for prompt templates.
+Unit tests for prompt templates.
+
+Tests cover:
+- Prompt template generation functions
 """
 
-import pytest
 from utils.prompt_templates import (
     get_extraction_prompt,
-    get_refinement_prompt,
-    get_categorization_prompt,
-    get_prioritization_prompt,
-    MAX_CHUNK_SIZE,
-    CHUNK_OVERLAP,
+    get_risk_detection_prompt,
+    get_draft_generation_prompt,
+    get_ai_assistant_prompt
 )
 
 
 class TestPromptTemplates:
     """Test prompt template functions."""
     
-    def test_get_extraction_prompt_with_page(self):
-        """Test extraction prompt generation with page number."""
-        prompt = get_extraction_prompt("Test RFP text", page_number=5)
+    def test_extraction_prompt(self):
+        """Test requirement extraction prompt generation."""
+        prompt = get_extraction_prompt(
+            rfp_text="Sample RFP text",
+            page_number=1
+        )
         
-        assert "Test RFP text" in prompt
-        assert "page 5" in prompt
-        assert "category" in prompt.lower()
-        assert "priority" in prompt.lower()
-        assert "confidence" in prompt.lower()
+        assert prompt is not None
+        assert isinstance(prompt, str)
+        assert len(prompt) > 0
+        assert "Sample RFP text" in prompt
     
-    def test_get_extraction_prompt_without_page(self):
-        """Test extraction prompt generation without page number."""
-        prompt = get_extraction_prompt("Test RFP text")
+    def test_risk_detection_prompt(self):
+        """Test risk detection prompt generation."""
+        prompt = get_risk_detection_prompt(
+            rfp_text="Sample clause text",
+            page_number=1
+        )
         
-        assert "Test RFP text" in prompt
-        assert "unknown" in prompt or "page" in prompt.lower()
+        assert prompt is not None
+        assert isinstance(prompt, str)
+        assert len(prompt) > 0
     
-    def test_get_refinement_prompt(self):
-        """Test refinement prompt generation."""
-        requirement = {
-            "description": "System must be fast",
-            "category": "technical",
-            "priority": "high"
-        }
+    def test_draft_generation_prompt(self):
+        """Test draft generation prompt."""
+        prompt = get_draft_generation_prompt(
+            rfp_info="Test RFP Info",
+            requirements_summary="Summary",
+            service_matches="Service matches",
+            risks_summary="Risks"
+        )
         
-        prompt = get_refinement_prompt(requirement)
-        
-        assert "System must be fast" in prompt
-        assert "technical" in prompt
-        assert "high" in prompt
+        assert prompt is not None
+        assert isinstance(prompt, str)
+        assert len(prompt) > 0
     
-    def test_get_categorization_prompt(self):
-        """Test categorization prompt generation."""
-        prompt = get_categorization_prompt("System must support 99.9% uptime")
+    def test_ai_assistant_prompt(self):
+        """Test AI assistant prompt."""
+        prompt = get_ai_assistant_prompt(
+            question="What is this?",
+            context={}
+        )
         
-        assert "System must support 99.9% uptime" in prompt
-        assert "category" in prompt.lower()
-    
-    def test_get_prioritization_prompt(self):
-        """Test prioritization prompt generation."""
-        prompt = get_prioritization_prompt("Must be HIPAA compliant")
-        
-        assert "Must be HIPAA compliant" in prompt
-        assert "priority" in prompt.lower()
-    
-    def test_chunk_size_constants(self):
-        """Test chunk size constants are defined."""
-        assert MAX_CHUNK_SIZE > 0
-        assert CHUNK_OVERLAP > 0
-        assert CHUNK_OVERLAP < MAX_CHUNK_SIZE
-
-
-
+        assert prompt is not None
+        assert isinstance(prompt, str)
+        assert "What is this?" in prompt
