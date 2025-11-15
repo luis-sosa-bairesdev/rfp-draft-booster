@@ -1067,8 +1067,11 @@ rm deliverables/jira-import/close_epic7.py
 cp deliverables/jira-import/upload_confluence_template.py deliverables/jira-import/upload_epic7.py
 
 # 2. Edit configuration
-PAGE_TITLE = "Epic 7: Google Docs Export - Technical Documentation"
+PAGE_TITLE = "Epic 7: Google Docs Export"  # Short, no "- Technical Documentation"
 MARKDOWN_FILE = "deliverables/epic-07-google-docs-export.md"
+
+# ⚠️ IMPORTANT: Do NOT modify CONFLUENCE_URL or SPACE_KEY
+# These are pre-configured and marked "don't change" for a reason
 
 # 3. Run the script
 python3 deliverables/jira-import/upload_epic7.py
@@ -1081,11 +1084,42 @@ python3 deliverables/jira-import/upload_epic7.py
 rm deliverables/jira-import/upload_epic7.py
 ```
 
+**Confluence Formatting (Automatic):**
+
+The template includes **improved markdown → HTML conversion** that produces clean, professional formatting:
+
+✅ **What Works Correctly:**
+- **Headings:** `#`, `##`, `###`, `####` → Proper H1, H2, H3, H4
+- **Lists:** `- item` or `* item` → Properly nested `<ul>` and `<li>`
+- **Bold:** `**text**` → `<strong>text</strong>`
+- **Italic:** `*text*` → `<em>text</em>`
+- **Inline code:** `` `code` `` → `<code>code</code>`
+- **Links:** `[text](url)` → `<a href="url">text</a>`
+- **Code blocks:** Triple backticks with language → Syntax-highlighted code blocks
+- **Horizontal rules:** `---` or `***` → `<hr />`
+- **Tables:** Basic pipe tables → HTML tables
+- **HTML escaping:** Special characters (`&`, `<`, `>`, `"`, `'`) properly escaped
+
+❌ **What to Avoid:**
+- Empty `<p></p>` tags (automatically removed)
+- Raw HTML tags visible in pages (automatically prevented)
+- Broken list formatting (automatically fixed)
+
+**Conversion Functions (Already in Template):**
+- `markdown_to_confluence()`: Main conversion function
+- `escape_html()`: Escapes special characters
+- `process_inline_formatting()`: Handles bold, italic, code, links
+
+**Result:** Pages render cleanly without raw HTML tags visible, with proper formatting preserved.
+
+---
+
 **If upload fails due to permissions:**
 1. Check API token is valid and not expired
 2. Verify SPACE_KEY is correct (~712020bfc89abf8f5841728f3bd48d6a60043a)
-3. Try uploading manually via Confluence UI
-4. Document the issue but DO NOT skip this step - fix the access first
+3. **DO NOT change CONFLUENCE_URL** (marked "don't change" in template)
+4. Try uploading manually via Confluence UI
+5. Document the issue but DO NOT skip this step - fix the access first
 
 **Note:** Confluence documentation is REQUIRED for project tracking and team visibility.
 
