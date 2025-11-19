@@ -15,6 +15,7 @@ from models.requirement import Requirement
 from models.risk import Risk
 from services.draft_generator import DraftGenerator
 from services.llm_client import create_llm_client, LLMProvider, get_available_provider_names
+from services.docx_exporter import DocxExporter
 from exceptions import LLMGenerationError, LLMConnectionError
 from utils.session import init_session_state, get_current_rfp
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
@@ -75,6 +76,63 @@ def display_draft_sections(draft: Draft):
                 
                 if section.user_edited:
                     st.caption("✏️ Edited")
+
+
+def export_to_docx(
+    draft: Draft,
+    rfp: Optional[RFP],
+    service_matches: Optional[List]
+):
+    """Export draft to .docx format.
+    
+    Args:
+        draft: Draft to export
+        rfp: Optional RFP for metadata
+        service_matches: Optional approved service matches
+    """
+    logger.info("export_to_docx() called")
+    logger.info(f"Draft: {draft is not None}, RFP: {rfp is not None}, Matches: {len(service_matches) if service_matches else 0}")
+    
+    exporter = DocxExporter()
+    
+    if not exporter.is_available():
+        st.error("❌ DOCX export not available. Install python-docx: pip install python-docx")
+        return
+    
+    with st.spinner("📄 Generating .docx file..."):
+        # Convert approved matches to dict format
+        matches_list = None
+        if service_matches:
+            matches_list = []
+            for match in service_matches:
+                match_dict = {
+                    'requirement_desc': match.requirement.description if hasattr(match, 'requirement') else '',
+                    'service_name': match.service.name if hasattr(match, 'service') else '',
+                    'match_percentage': getattr(match, 'score', 0) * 100
+                }
+                matches_list.append(match_dict)
+        
+        docx_bytes = exporter.export_to_docx(
+            draft=draft,
+            rfp=rfp,
+            service_matches=matches_list
+        )
+    
+    if docx_bytes:
+        client_name = rfp.client_name if rfp and rfp.client_name else 'sample'
+        filename = f"draft_{client_name}_{datetime.now().strftime('%Y%m%d')}.docx"
+        st.download_button(
+            label="⬇️ Download .docx",
+            data=docx_bytes,
+            file_name=filename,
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            key="download_docx_btn"
+        )
+        st.success("✅ .docx file ready for download!")
+        logger.info(f"Successfully generated .docx file: {filename}")
+    else:
+        st.error("❌ Failed to generate .docx file. Please try exporting as Markdown.")
+        logger.error("Failed to generate .docx file")
 
 
 def main():
@@ -328,28 +386,34 @@ def main():
         # Export options
         st.markdown("---")
         st.markdown("### 📤 Export")
-        col1, col2 = st.columns(2)
+        
+        # Export buttons
+        col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("📄 Export to Markdown", key="btn_export_md"):
+            if st.button("📝 Export to Markdown", key="btn_export_md"):
                 st.download_button(
-                    label="⬇️ Download",
+                    label="⬇️ Download .md",
                     data=draft.content,
-                    file_name=f"draft_{rfp.id if rfp else 'unknown'}.md",
+                    file_name=f"draft_{rfp.id if rfp else 'unknown'}_{datetime.now().strftime('%Y%m%d')}.md",
                     mime="text/markdown",
                     key="download_md"
                 )
         
         with col2:
             draft_json = json.dumps(draft.to_dict(), indent=2, default=str)
-            if st.button("📦 Export to JSON", key="btn_export_json"):
+            if st.button("📋 Export to JSON", key="btn_export_json"):
                 st.download_button(
-                    label="⬇️ Download",
+                    label="⬇️ Download .json",
                     data=draft_json,
-                    file_name=f"draft_{rfp.id if rfp else 'unknown'}.json",
+                    file_name=f"draft_{rfp.id if rfp else 'unknown'}_{datetime.now().strftime('%Y%m%d')}.json",
                     mime="application/json",
                     key="download_json"
                 )
+        
+        with col3:
+            if st.button("📄 Export to DOCX", key="btn_export_docx"):
+                export_to_docx(draft, rfp, approved_matches)
     
 
 

@@ -17,6 +17,7 @@ from utils.session import init_session_state, get_current_rfp
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 from components.progress_dashboard import render_progress_dashboard
 from components.global_search import render_global_search
+from components.quick_stats import render_quick_stats
 
 
 # Page configuration
@@ -66,70 +67,61 @@ def main() -> None:
     
     st.divider()
     
-    # Progress Dashboard (if RFP exists)
-    if rfp:
-        render_progress_dashboard(requirements=requirements, risks=risks)
-        st.divider()
-    
     # Welcome message
     st.markdown("""
-    ## Welcome!
+    ## Welcome to RFP Draft Booster! 👋
     
-    RFP Draft Booster automates the time-consuming process of responding to Request for Proposals. 
+    Automate your RFP response process and **save 80% of your time**.
     
-    ### How it works:
+    ### 🚀 Quick Start
     
-    1. **📤 Upload** - Upload your RFP PDF (up to 50MB)
-    2. **🔍 Extract** - AI extracts requirements automatically
-    3. **⚠️ Analyze** - Detect risky clauses and terms
-    4. **🤝 Match** - Match requirements to our services
-    5. **📝 Generate** - Create editable proposal draft
-    6. **📄 Export** - Export to Google Docs
+    1. **📤 Upload** your RFP PDF
+    2. **🔍 Extract** requirements automatically  
+    3. **⚠️ Analyze** risks and red flags
+    4. **🤝 Match** with your services
+    5. **✍️ Generate** proposal draft
+    6. **📄 Export** to DOCX
     
-    ### Benefits:
+    ### 💰 Business Impact
     
     - ⚡ **80% faster** response time
-    - 📈 **25-30% higher** win rates
-    - 💰 **100+ hours** saved per month
+    - 📈 **Higher win rates** with better proposals
+    - 💵 **Significant cost savings** on proposal teams
     - 🎯 **Zero requirements** missed
     
     ---
-    
-    ### Ready to get started?
-    
-    Use the sidebar to navigate to **Upload RFP** to begin!
     """)
     
-    # Statistics (mock data for now)
-    col1, col2, col3, col4 = st.columns(4)
+    # CTA Buttons
+    cta_col1, cta_col2, cta_col3 = st.columns([2, 2, 1])
     
-    with col1:
-        st.metric(
-            label="RFPs Processed",
-            value="0",
-            delta="Start now!"
-        )
+    with cta_col1:
+        if st.button(
+            "📤 Upload Your First RFP",
+            type="primary",
+            use_container_width=True,
+            help="Start by uploading an RFP document"
+        ):
+            st.switch_page("pages/1_📤_Upload_RFP.py")
     
-    with col2:
-        st.metric(
-            label="Avg Response Time",
-            value="N/A",
-            delta="Coming soon"
-        )
+    with cta_col2:
+        if st.button(
+            "💰 Calculate Your ROI",
+            use_container_width=True,
+            help="Estimate time and cost savings"
+        ):
+            st.switch_page("pages/7_💰_ROI_Calculator.py")
     
-    with col3:
-        st.metric(
-            label="Time Saved",
-            value="0 hours",
-            delta="Track savings"
-        )
+    st.markdown("---")
     
-    with col4:
-        st.metric(
-            label="Win Rate",
-            value="N/A",
-            delta="Measure success"
-        )
+    # Quick Stats (NEW - Epic 8)
+    render_quick_stats()
+    
+    # Progress Dashboard (if RFP exists)
+    if rfp:
+        st.markdown("---")
+        st.subheader("📈 Progress Dashboard")
+        render_progress_dashboard(requirements=requirements, risks=risks)
     
     st.divider()
     

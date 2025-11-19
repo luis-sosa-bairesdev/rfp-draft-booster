@@ -3,10 +3,46 @@
 ## 📋 Overview
 
 **Epic Title:** ROI Calculator & Metrics Polish  
-**Sprint:** TBD (Sprint 5 or 6)  
-**Status:** Planning  
+**Epic Key:** [RDBP-106](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-106)  
+**Sprint:** Sprint 8 - ROI & Metrics (Nov 20 - Dec 4, 2025)  
+**Status:** 🚀 Ready for Implementation  
 **Priority:** Medium  
-**Estimated Effort:** 1 day (6-9 hours)
+**Estimated Effort:** 1 day (6-9 hours) = 14 story points
+
+## 📊 Sprint Planning
+
+### Epic & Sprint Details
+
+- **Epic Key:** [RDBP-106](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-106)
+- **Sprint:** Sprint 8 - ROI & Metrics
+- **Sprint ID:** 205
+- **Duration:** November 20 - December 4, 2025 (2 weeks)
+- **Total Story Points:** 14 (Fibonacci scale)
+
+### User Stories Breakdown
+
+**Phase 1: ROI Calculator Component (6 points)**
+1. [RDBP-107](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-107) - Interactive ROI calculator with sliders (3 points)
+2. [RDBP-108](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-108) - ROI metrics display with deltas (2 points)
+3. [RDBP-109](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-109) - Export ROI report to CSV (1 point)
+
+**Phase 2: Quick Stats Component (4 points)**
+4. [RDBP-110](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-110) - Quick Stats showing current RFP metrics (2 points)
+5. [RDBP-111](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-111) - Navigation buttons in Quick Stats (1 point)
+6. [RDBP-112](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-112) - Demo RFP loader for Quick Stats preview (1 point)
+
+**Phase 3: Integration (2 points)**
+7. [RDBP-113](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-113) - Integrate ROI calculator and Quick Stats in main.py (2 points)
+
+**Phase 4: Testing & Polish (2 points)**
+8. [RDBP-114](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-114) - Unit tests for ROI calculator logic (1 point)
+9. [RDBP-115](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-115) - UI polish and responsive design (1 point)
+
+### Sprint Goal
+
+Implement ROI calculator and Quick Stats on Welcome page to demonstrate business value
+
+---
 
 ## 🎯 Business Goal
 
