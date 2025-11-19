@@ -762,7 +762,20 @@ TOTAL                              1250     50    83%
 
 ## Phase 3: Completion & Closure ✅
 
-**TRIGGER:** User says "Everything is done, let's close this epic" or "Approve everything" or "Te apruebo todo"
+**TRIGGER:** User says "Everything is done, let's close this epic" or "Approve everything" or "Te apruebo todo" or "Continua con la siguiente fase"
+
+**⚠️ CRITICAL: PHASE 3 MANDATORY STEPS - DO NOT SKIP OR REORDER:**
+1. ✅ **Step 3.1:** Run all tests (must pass)
+2. ✅ **Step 3.2:** Update epic file with completion summary
+3. ✅ **Step 3.3:** Close all Jira tasks (stories + epic)
+4. ✅ **Step 3.4:** Upload to Confluence (REQUIRED - NOT OPTIONAL)
+5. ✅ **Step 3.5:** Final commit (AFTER Confluence upload)
+
+**🚫 DO NOT:**
+- ❌ Skip Confluence upload (it's mandatory for project tracking)
+- ❌ Commit before uploading to Confluence
+- ❌ Close epic without Confluence documentation
+- ❌ Assume Confluence is optional
 
 ---
 
@@ -794,65 +807,7 @@ pytest tests/ -v --cov=src --cov-report=term
 
 ---
 
-### Step 3.2: Commit Changes
-
-**Action:** Commit all changes with descriptive message
-
-```bash
-# Review changes
-git add -A
-git status
-
-# Commit with detailed message (reference jira-guidelines.md)
-git commit -m "feat(epic-7): implement Google Docs export
-
-Features:
-- Google Docs API integration with service account
-- Markdown to Docs formatting (headings, bold, lists)
-- Fallback to .docx download on error
-- Export progress spinner and success message
-- Email sharing functionality
-
-Testing:
-- 35 new tests (20 unit, 10 UI, 5 E2E)
-- Coverage: 83% (backend), 75% (frontend)
-- All 433 tests passing
-- Regression tests: ALL PASS
-
-Integration:
-- Integrated with DraftGenerator
-- Passes approved service matches
-- Updated AI Assistant help text
-
-Documentation:
-- Updated epic-07-google-docs-export.md
-- Added README-GOOGLE-DOCS-SETUP.md
-
-Closes RDBP-92"
-
-# Push to main
-git push origin main
-```
-
-**Commit Message Format (Follow jira-guidelines.md):**
-```
-feat(epic-X): brief summary
-
-Features:
-- Feature 1
-- Feature 2
-
-Testing:
-- X new tests
-- Coverage: Y%
-- All tests passing
-
-Closes RDBP-XX
-```
-
----
-
-### Step 3.3: Update Epic File with Completion Summary
+### Step 3.2: Update Epic File with Completion Summary
 
 **Action:** Add completion summary to END of epic file
 
@@ -981,7 +936,7 @@ Open `deliverables/epic-XX-name.md` and add at the END:
 
 ---
 
-### Step 3.4: Close Jira Epic and Stories
+### Step 3.3: Close Jira Epic and Stories
 
 **Action:** Close all stories and epic in Jira
 
@@ -1058,7 +1013,7 @@ rm deliverables/jira-import/close_epic7.py
 
 ---
 
-### Step 3.5: Upload to Confluence (REQUIRED)
+### Step 3.4: Upload to Confluence (REQUIRED - DO BEFORE FINAL COMMIT)
 
 **Action:** Upload epic documentation to Confluence
 
@@ -1125,7 +1080,7 @@ The template includes **improved markdown → HTML conversion** that produces cl
 
 ---
 
-### Step 3.6: Final Commit (Completion Summary)
+### Step 3.5: Final Commit (AFTER Confluence Upload)
 
 **Action:** Commit the completion summary
 
@@ -1226,7 +1181,9 @@ git push origin main
   - [ ] Document challenges and solutions
   - [ ] Update checklist
 
-**When user says "Te apruebo todo" or "Everything is done" (Phase 3):**
+**When user says "Te apruebo todo" or "Everything is done" or "Continua con la siguiente fase" (Phase 3):**
+
+**⚠️ CRITICAL: DO NOT SKIP OR REORDER THESE STEPS:**
 
 - [ ] **Step 1: Final testing**
   - [ ] Run complete test suite: `pytest tests/ -v --cov=src --cov-report=term`
@@ -1234,19 +1191,14 @@ git push origin main
   - [ ] Verify coverage >80%
   - [ ] Manual testing complete
 
-- [ ] **Step 2: Commit changes**
-  - [ ] Review changes: `git add -A && git status`
-  - [ ] Commit with detailed message (reference RDBP-XX)
-  - [ ] Push to main: `git push origin main`
-
-- [ ] **Step 3: Add completion summary to epic file**
+- [ ] **Step 2: Add completion summary to epic file**
   - [ ] Open `deliverables/epic-XX-name.md`
   - [ ] Scroll to END of file
   - [ ] Add separator: `---` and `## ✅ Completion Summary`
   - [ ] Add status, dates, features, testing, documentation, impact
   - [ ] Save the SAME file
 
-- [ ] **Step 4: Close Jira Epic and Stories**
+- [ ] **Step 3: Close Jira Epic and Stories**
   - [ ] Go to Epic page in Jira, get all story keys (number varies by epic)
   - [ ] Copy `close_epic_template.py` → `close_epicX.py`
   - [ ] Edit Epic Key and Story Keys (all stories from your epic)
@@ -1256,17 +1208,19 @@ git push origin main
   - [ ] Verify epic moved to Done
   - [ ] Delete `close_epicX.py`
 
-- [ ] **Step 5: Upload to Confluence (REQUIRED)**
+- [ ] **Step 4: Upload to Confluence (REQUIRED - DO BEFORE FINAL COMMIT)**
   - [ ] Copy `upload_confluence_template.py` → `upload_epicX.py`
   - [ ] Edit page title and markdown file path
   - [ ] Run script: `python3 deliverables/jira-import/upload_epicX.py`
   - [ ] Verify page uploaded successfully
   - [ ] If fails: Check token, space key, permissions - FIX before proceeding
   - [ ] Delete `upload_epicX.py`
+  - [ ] ⚠️ **IMPORTANT:** Do NOT proceed to Step 5 until Confluence upload succeeds
 
-- [ ] **Step 6: Final commit**
+- [ ] **Step 5: Final commit (AFTER Confluence upload)**
+  - [ ] Verify Confluence page was uploaded successfully
   - [ ] Commit completion summary: `git add deliverables/epic-XX-name.md`
-  - [ ] Commit: `git commit -m "docs: add Epic X completion summary"`
+  - [ ] Commit: `git commit -m "docs: add Epic X completion summary\n\n- Confluence documentation uploaded\n- All stories closed in Jira"`
   - [ ] Push: `git push origin main`
 
 **Total:** Varies by epic size (typically 20-35 steps) | **Time:** 4-6 days | **Output:** Complete, tested, documented epic
@@ -1419,7 +1373,7 @@ EPIC-7-COMPLETION-SUMMARY.md
 |---|---|---|
 | "Vamos a manejar una nueva épica" | Create epic file + Jira setup (Sprint + stories based on epic size) | Phase 1 |
 | "Pasemos a la fase de implementación" | Run regression tests → Implement → New tests → 80% coverage | Phase 2 |
-| "Te apruebo todo" | Final tests → Commit → Update epic → Close Jira → Confluence (REQUIRED) | Phase 3 |
+| "Te apruebo todo" or "Continua con la siguiente fase" | Final tests → Update epic → Close Jira → **Confluence (REQUIRED)** → Final commit | Phase 3 |
 
 | Task | Command | File |
 |---|---|---|
@@ -1435,6 +1389,12 @@ EPIC-7-COMPLETION-SUMMARY.md
 
 ---
 
-**Last Updated:** November 15, 2025  
-**Version:** 2.0 (Complete Process with Regression Tests)  
+**Last Updated:** November 18, 2025  
+**Version:** 2.1 (Updated Phase 3 - Confluence is now REQUIRED before final commit)  
 **Status:** ✅ Active
+
+**Changelog v2.1:**
+- ✅ Added explicit warning that Confluence upload is REQUIRED
+- ✅ Reordered Phase 3 steps: Confluence BEFORE final commit
+- ✅ Added "Continua con la siguiente fase" as Phase 3 trigger
+- ✅ Emphasized that skipping Confluence is not allowed
