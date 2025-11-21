@@ -1,16 +1,222 @@
-# Epic 9: Error Handling & Loading States - Technical Spike
+# Epic 9: Error Handling, UX Polish & Loading States
 
 ## 📋 Overview
 
-**Epic Title:** Error Handling & Loading States  
-**Sprint:** TBD (Sprint 5 or 6)  
-**Status:** Planning  
-**Priority:** High (Critical for production readiness)  
-**Estimated Effort:** 2-3 days (12-18 hours)
+**Epic Key:** [RDBP-116](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-116)  
+**Epic Title:** Error Handling, UX Polish & Loading States  
+**Sprint:** Sprint 9 - Error & UX (Nov 21 - Dec 5, 2025) | Sprint ID: 238  
+**Status:** 🚀 Ready for Implementation  
+**Priority:** High (Critical for production readiness & UX)  
+**Estimated Effort:** 3-4 days (18-24 hours) = 63 story points
 
 ## 🎯 Business Goal
 
-Improve app robustness and user experience by implementing comprehensive error handling, loading states, and validation across all operations. Ensure graceful degradation when LLM APIs fail, provide clear feedback to users, and handle edge cases (empty PDFs, invalid JSON, low-confidence results).
+**Primary Goal:** Improve app robustness and user experience by implementing comprehensive error handling, loading states, and validation across all operations.
+
+**Secondary Goal:** Polish UX based on user feedback - improve AI Assistant interaction, add extraction settings consistency, duplicate detection, real-time progress feedback, and better navigation flow.
+
+**Key Improvements:**
+1. **Robustness:** Graceful degradation when LLM APIs fail
+2. **Clarity:** Clear feedback to users during operations
+3. **Validation:** Handle edge cases (empty PDFs, invalid JSON, low-confidence results, duplicates)
+4. **UX Polish:** Chat-style AI Assistant, consistent settings, real-time progress, better navigation
+
+---
+
+## 📊 Sprint Planning
+
+### Epic & Sprint Details
+
+| Attribute | Value |
+|-----------|-------|
+| **Epic Key** | [RDBP-116](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-116) |
+| **Sprint** | Sprint 9 - Error & UX |
+| **Sprint ID** | 238 |
+| **Sprint Dates** | November 21 - December 5, 2025 (2 weeks) |
+| **Sprint Goal** | Implement robust error handling and UX polish for production readiness |
+| **Total Story Points** | 63 points |
+| **Estimated Effort** | 3-4 days (~31-42 hours) |
+
+---
+
+### User Stories Breakdown
+
+#### Phase 1: Core Error Infrastructure (8 points)
+- [RDBP-117](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-117) (5 pts) - Create centralized error handler with custom exceptions
+- [RDBP-118](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-118) (3 pts) - Setup structured logging and retry utilities
+
+#### Phase 2: Validation & Schemas (5 points)
+- [RDBP-119](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-119) (3 pts) - Create JSON schemas and input validators
+- [RDBP-120](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-120) (2 pts) - Create mock data generators and duplicate detector
+
+#### Phase 3: Service Refactoring (13 points)
+- [RDBP-121](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-121) (5 pts) - Refactor RequirementExtractor with error handling and progress
+- [RDBP-122](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-122) (3 pts) - Refactor RiskDetector with error handling and progress
+- [RDBP-123](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-123) (5 pts) - Refactor DraftGenerator and AIAssistant with error handling
+
+#### Phase 4: UI Error Handling (8 points)
+- [RDBP-124](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-124) (3 pts) - Add error handling to Upload and Requirements pages
+- [RDBP-125](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-125) (5 pts) - Add error handling to Risk, Draft pages and session guards
+
+#### Phase 5: UX Polish - NEW FEATURES ⭐ (21 points)
+- [RDBP-126](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-126) (8 pts) - ⭐ Convert AI Assistant to floating chat button with modal
+- [RDBP-127](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-127) (3 pts) - ⭐ Add extraction settings to Risk and Draft pages
+- [RDBP-128](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-128) (2 pts) - ⭐ Add manual risk addition with form modal
+- [RDBP-129](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-129) (3 pts) - ⭐ Add duplicate detection to Requirements page
+- [RDBP-130](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-130) (3 pts) - ⭐ Add real-time progress feedback with steps
+- [RDBP-131](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-131) (2 pts) - ⭐ Add navigation flow buttons to all pages
+
+#### Phase 6: Testing & Documentation (8 points)
+- [RDBP-132](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-132) (5 pts) - Write comprehensive tests for error handling and UX features
+- [RDBP-133](https://luis-sosa-bairesdev.atlassian.net/browse/RDBP-133) (3 pts) - Create TROUBLESHOOTING.md and update README
+
+---
+
+## 🎨 UX Improvements (Based on User Feedback)
+
+### 1. AI Assistant Chat Modal ⭐ NEW
+**Current State:** "Ask AI" button in sidebar opens a simple modal  
+**Issue:** Not intuitive, doesn't feel like a natural chat experience  
+**Desired State:** Chat modal with button in bottom-left corner (like Intercom/Drift)
+
+**Implementation:**
+- Add floating chat button (💬) in bottom-left corner of all pages
+- Click opens a modal with chat-style interface
+- Chat history persists across pages (session state)
+- Messages displayed as conversation bubbles (user vs AI)
+- Input box at bottom with "Send" button or Enter key
+- Typing indicator while AI is responding
+- Close button to minimize back to floating button
+
+**Files to Modify:**
+- `src/components/ai_assistant.py` (refactor to chat-style UI)
+- `main.py` and all pages (add floating button)
+
+---
+
+### 2. Extraction Settings Consistency ⭐ NEW
+**Current State:**  
+- ✅ Requirements page HAS extraction settings
+- ❌ Risk Analysis page DOES NOT have extraction settings  
+- ❌ Draft Generation page DOES NOT have extraction settings
+
+**Issue:** Inconsistent UX across pages  
+**Desired State:** All extraction/generation pages have consistent settings expander
+
+**Implementation:**
+- **Risk Analysis Page:** Add "⚙️ Detection Settings" expander with:
+  - LLM Provider selection (same as Requirements)
+  - Model selection
+  - Temperature slider
+  - "Detect All Risks" vs "Detect Critical Only" toggle
+- **Draft Generation Page:** Add "⚙️ Generation Settings" expander with:
+  - LLM Provider selection
+  - Model selection
+  - Temperature slider
+  - Word count target
+  - Tone/Style selector (Professional, Technical, Executive Summary)
+  - Custom instructions text area
+
+**Files to Modify:**
+- `pages/3_⚠️_Risk_Analysis.py` (add settings expander)
+- `pages/5_✍️_Draft_Generation.py` (add settings expander)
+
+---
+
+### 3. Manual Risk Addition ⭐ NEW
+**Current State:** Risks can only be detected by AI or pattern matching  
+**Issue:** Users cannot manually add risks they know about  
+**Desired State:** Users can manually add risks with form
+
+**Implementation:**
+- Add "+ Add Risk Manually" button in Risk Analysis page
+- Opens form modal with fields:
+  - Clause text (text area)
+  - Category dropdown (Legal, Financial, Timeline, Technical, Compliance)
+  - Severity dropdown (Critical, High, Medium, Low)
+  - Page number (optional, integer)
+  - Recommendation (optional, text area)
+  - Alternative language (optional, text area)
+- Pre-populate confidence as 1.0 (manual = verified)
+- Add to `st.session_state.risks` list
+
+**Files to Modify:**
+- `pages/3_⚠️_Risk_Analysis.py` (add manual entry form)
+
+---
+
+### 4. Duplicate Detection in Requirements ⭐ NEW
+**Current State:**  
+- ❌ Requirements page DOES NOT detect duplicates when loaded
+- ✅ Risk Analysis page DOES detect duplicates
+
+**Issue:** Inconsistent behavior - duplicates can slip through in Requirements  
+**Desired State:** Both Requirements and Risks detect and highlight duplicates
+
+**Implementation:**
+- After extraction, check for duplicate requirements (by description similarity)
+- Use fuzzy matching or embedding similarity (>90% match)
+- Show warning: "⚠️ X duplicate requirements detected"
+- Expander to review duplicates with "Merge" or "Keep Separate" buttons
+- Same logic as Risk Analysis page (reuse code)
+
+**Files to Modify:**
+- `pages/2_📋_Requirements.py` (add duplicate detection)
+- `src/utils/duplicate_detector.py` (NEW - shared utility)
+
+---
+
+### 5. Real-Time Progress Feedback ⭐ NEW
+**Current State:** Spinners show generic message "Extracting..."  
+**Issue:** Users don't understand WHY extraction is slow (large PDFs, complex parsing)  
+**Desired State:** Step-by-step progress feedback during extraction
+
+**Implementation:**
+- Show progress bar or step indicator during long operations
+- Example for Requirements extraction:
+  ```
+  ⏳ Extracting Requirements...
+  ✅ Step 1/4: Parsing PDF (50 pages)... Done ✓
+  ⏳ Step 2/4: Analyzing text with AI... (30-60s)
+  ⏳ Step 3/4: Extracting requirements...
+  ⏳ Step 4/4: Validating and categorizing...
+  ```
+- Use `st.progress()` bar + `st.status()` expander (Streamlit 1.29+)
+- Show estimated time remaining if possible
+
+**Files to Modify:**
+- `pages/2_📋_Requirements.py` (add progress feedback)
+- `pages/3_⚠️_Risk_Analysis.py` (add progress feedback)
+- `pages/5_✍️_Draft_Generation.py` (add progress feedback)
+- `src/services/requirement_extractor.py` (yield progress updates)
+- `src/services/risk_detector.py` (yield progress updates)
+- `src/services/draft_generator.py` (yield progress updates)
+
+---
+
+### 6. Navigation Flow Fix ⭐ NEW
+**Current State:** From Requirements page, user goes to Risk Analysis (sidebar)  
+**Issue:** User expects to go to "Service Matching" after Requirements  
+**Desired State:** Requirements page shows CTA: "Next: Match Services →"
+
+**Implementation:**
+- Add "action buttons" at bottom of Requirements page:
+  - "← Back to Upload" (gray button)
+  - "Next: Match Services →" (primary button, navigates to Matching page)
+- Similarly for other pages:
+  - Upload → Requirements
+  - Requirements → Matching
+  - Matching → Risk Analysis
+  - Risk Analysis → Draft Generation
+- Use `st.switch_page()` for navigation
+
+**Files to Modify:**
+- `pages/2_📋_Requirements.py` (add navigation buttons)
+- `pages/3_⚠️_Risk_Analysis.py` (add navigation buttons)
+- `pages/4_🔗_Service_Matching.py` (add navigation buttons)
+- `pages/5_✍️_Draft_Generation.py` (add navigation buttons)
+
+---
 
 ## 📐 Architecture & Error Flow
 
@@ -1058,7 +1264,7 @@ docs/
 └── TROUBLESHOOTING.md             # NEW: User-facing troubleshooting guide
 ```
 
-## 🚀 Implementation Plan
+## 🚀 Implementation Plan (UPDATED - 6 Phases)
 
 ### Phase 1: Core Error Infrastructure (4-6 hours)
 
@@ -1084,6 +1290,8 @@ docs/
 
 **Deliverable:** Core error infrastructure ready
 
+---
+
 ### Phase 2: Validation & Schemas (2-3 hours)
 
 1. **Create schemas** (`src/utils/schemas.py`)
@@ -1100,12 +1308,20 @@ docs/
    - Mock risks generator
    - Template draft generator
 
-4. **Write unit tests**
+4. **Create duplicate detector** (`src/utils/duplicate_detector.py`) ⭐ NEW
+   - Fuzzy matching for requirements
+   - Embedding similarity for risks
+   - Shared utility for Requirements and Risks pages
+
+5. **Write unit tests**
    - Test validation functions
    - Test schema compliance
    - Test mock data generation
+   - Test duplicate detection
 
 **Deliverable:** Validation and fallback systems ready
+
+---
 
 ### Phase 3: Service Refactoring (4-5 hours)
 
@@ -1113,21 +1329,26 @@ docs/
    - Add `@handle_errors` and `@retry_llm_call`
    - Handle empty responses → mock fallback
    - Add structured logging
+   - Yield progress updates for real-time feedback ⭐ NEW
 
 2. **Refactor RiskDetector**
    - Add error handling for AI detection
    - Pattern detection already robust
    - Add logging
+   - Yield progress updates ⭐ NEW
 
 3. **Refactor DraftGenerator**
    - Add error handling
    - Template fallback on failure
    - Progress logging
+   - Yield progress updates (step-by-step) ⭐ NEW
 
 4. **Refactor AIAssistant**
+   - Convert to chat-style interface ⭐ NEW
    - Graceful degradation on failure
    - Generic fallback responses
    - Error messages to user
+   - Chat history management
 
 5. **Refactor PDFExtractor**
    - Validate before processing
@@ -1138,10 +1359,13 @@ docs/
    - Test each service with mocked failures
    - Test fallback behaviors
    - Regression tests (Epic 5 tests still pass)
+   - Test progress yielding
 
-**Deliverable:** All services have robust error handling
+**Deliverable:** All services have robust error handling + progress feedback
 
-### Phase 4: UI Enhancements (3-4 hours)
+---
+
+### Phase 4: UI Enhancements - Error Handling (3-4 hours)
 
 1. **Update Upload page** (`pages/1_📤_Upload_RFP.py`)
    - Add input validation
@@ -1159,7 +1383,7 @@ docs/
    - Add spinners for detection
    - Add retry buttons
 
-4. **Update Draft Generation page** (`pages/4_✍️_Draft_Generation.py`)
+4. **Update Draft Generation page** (`pages/5_✍️_Draft_Generation.py`)
    - Add prerequisites check (redirect if missing)
    - Add spinner for generation
    - Add fallback to template
@@ -1171,7 +1395,48 @@ docs/
 
 **Deliverable:** UI with loading states and error feedback
 
-### Phase 5: Testing & Documentation (2-3 hours)
+---
+
+### Phase 5: UX Polish & New Features (5-6 hours) ⭐ NEW PHASE
+
+1. **AI Assistant Chat Modal** (`src/components/ai_assistant.py`)
+   - Create floating chat button (bottom-left)
+   - Refactor to chat-style UI (conversation bubbles)
+   - Add chat history (session state)
+   - Typing indicator during AI response
+   - Close/minimize functionality
+
+2. **Extraction Settings Consistency**
+   - Risk Analysis page: Add "⚙️ Detection Settings" expander
+   - Draft Generation page: Add "⚙️ Generation Settings" expander
+   - Reuse components from Requirements page
+
+3. **Manual Risk Addition** (`pages/3_⚠️_Risk_Analysis.py`)
+   - "+ Add Risk Manually" button
+   - Form modal with all risk fields
+   - Validation and save to session state
+
+4. **Duplicate Detection** (`pages/2_📋_Requirements.py`)
+   - Add duplicate detection after extraction
+   - Warning message with count
+   - Expander to review and merge duplicates
+   - Reuse `duplicate_detector.py` utility
+
+5. **Real-Time Progress Feedback** (all extraction pages)
+   - Use `st.progress()` + `st.status()` for step-by-step feedback
+   - Show estimated time remaining
+   - Update progress as services yield updates
+
+6. **Navigation Flow** (all pages)
+   - Add "Next Step" buttons at bottom of pages
+   - Upload → Requirements → Matching → Risk → Draft
+   - Use `st.switch_page()` for seamless navigation
+
+**Deliverable:** Polished UX with all user-requested improvements
+
+---
+
+### Phase 6: Testing & Documentation (3-4 hours) ⭐ EXPANDED
 
 1. **Write integration tests** (`tests/test_integration/test_error_scenarios.py`)
    - Test empty PDF end-to-end
@@ -1205,22 +1470,43 @@ docs/
 
 ## 📊 Success Criteria
 
+### Error Handling & Robustness
 - [ ] All LLM calls wrapped with `@handle_errors` and `@retry_llm_call`
 - [ ] Centralized error handler with custom exception classes
 - [ ] Structured logging to file and console (logs/ directory)
 - [ ] All user inputs validated before processing
-- [ ] Loading spinners on all long-running operations
-- [ ] Low-confidence requirements/risks highlighted with "Verify?" button
 - [ ] Mock data fallback available on LLM failures
 - [ ] Session state guards prevent navigation errors
 - [ ] Empty PDF, corrupt file, invalid JSON handled gracefully
 - [ ] Retry buttons shown on failures (manual retry)
 - [ ] 1 auto-retry on LLM failures, then manual
+- [ ] No unhandled exceptions in UI (all caught and logged)
+
+### Loading States & Feedback
+- [ ] Loading spinners on all long-running operations
+- [ ] Real-time progress feedback with steps (st.progress + st.status)
+- [ ] Estimated time remaining shown during extraction
 - [ ] Toast notifications on success operations
+- [ ] Low-confidence requirements/risks highlighted with "Verify?" button
+
+### UX Polish (New Features)
+- [ ] ⭐ AI Assistant as floating chat button (bottom-left) with modal
+- [ ] ⭐ Chat-style conversation UI (bubbles, history, typing indicator)
+- [ ] ⭐ Extraction settings on Risk Analysis page (consistent with Requirements)
+- [ ] ⭐ Generation settings on Draft Generation page
+- [ ] ⭐ Manual risk addition with form modal
+- [ ] ⭐ Duplicate detection on Requirements page (same as Risk Analysis)
+- [ ] ⭐ Navigation buttons on all pages (Upload → Req → Matching → Risk → Draft)
+
+### Testing & Documentation
 - [ ] All Epic 5 tests still pass (backward compatible)
 - [ ] >80% code coverage on new error handling code
+- [ ] Unit tests for duplicate detection
+- [ ] Unit tests for progress feedback yielding
+- [ ] E2E tests for chat modal interaction
+- [ ] E2E tests for navigation flow
 - [ ] TROUBLESHOOTING.md guide created
-- [ ] No unhandled exceptions in UI (all caught and logged)
+- [ ] README updated with new UX features
 
 ## 🔗 Related Documentation
 
@@ -1244,7 +1530,17 @@ docs/
 
 ---
 
-**Estimated Total Effort:** 2-3 days (12-18 hours)  
-**Sprint Assignment:** TBD (Sprint 5 or 6)  
-**Priority:** High (production readiness requirement)
+**Estimated Total Effort:** 3-4 days (18-24 hours) - **EXPANDED with UX improvements**  
+**Sprint Assignment:** Sprint 9 (2 weeks, starting TBD)  
+**Priority:** High (production readiness + UX polish)
+
+**Breakdown:**
+- **Phase 1:** Error Infrastructure (4-6 hours)
+- **Phase 2:** Validation & Schemas (2-3 hours)
+- **Phase 3:** Service Refactoring (4-5 hours)
+- **Phase 4:** UI Error Handling (3-4 hours)
+- **Phase 5:** UX Polish & New Features (5-6 hours) ⭐ NEW
+- **Phase 6:** Testing & Documentation (3-4 hours)
+
+**Total:** 21-28 hours (~3-4 days)
 
