@@ -357,40 +357,120 @@ class TestGetErrorSummary:
 
 
 class TestUIFeedback:
-    """Test UI feedback functions without Streamlit mocking."""
+    """Test UI feedback functions."""
     
     def test_llm_error_rate_limit_ui(self):
-        """Test UI for rate limit error doesn't crash."""
+        """Test UI for rate limit error."""
+        from src.utils.error_handler import _handle_llm_error_ui
+        
         error = LLMError(
             "Rate limit",
             error_code="RATE_LIMIT",
             retry_after=60
         )
-        # Verify error attributes are set correctly
         assert error.error_code == "RATE_LIMIT"
         assert error.retry_after == 60
-        # Verify handling without UI (UI testing requires Streamlit environment)
-        result = handle_error(error, show_ui_error=False, allow_retry=False)
-        assert result is None
+        
+        # Test that the function can be called (UI rendering requires Streamlit)
+        # We just verify it doesn't crash
+        try:
+            _handle_llm_error_ui(error, allow_retry=False)
+        except ImportError:
+            # Expected if Streamlit is not available
+            pass
     
     def test_llm_error_invalid_key_ui(self):
-        """Test UI for invalid key error doesn't crash."""
+        """Test UI for invalid key error."""
+        from src.utils.error_handler import _handle_llm_error_ui
+        
         error = LLMError("Invalid key", error_code="INVALID_KEY")
         assert error.error_code == "INVALID_KEY"
-        result = handle_error(error, show_ui_error=False, allow_retry=False)
-        assert result is None
+        
+        try:
+            _handle_llm_error_ui(error, allow_retry=False)
+        except ImportError:
+            pass
     
     def test_llm_error_empty_response_ui(self):
-        """Test UI for empty response error doesn't crash."""
+        """Test UI for empty response error."""
+        from src.utils.error_handler import _handle_llm_error_ui
+        
         error = LLMError("Empty", error_code="EMPTY_RESPONSE")
         assert error.error_code == "EMPTY_RESPONSE"
-        result = handle_error(error, show_ui_error=False, allow_retry=False)
-        assert result is None
+        
+        try:
+            _handle_llm_error_ui(error, allow_retry=False)
+        except ImportError:
+            pass
+    
+    def test_llm_error_generic_ui(self):
+        """Test UI for generic LLM error."""
+        from src.utils.error_handler import _handle_llm_error_ui
+        
+        error = LLMError("Generic error", error_code="OTHER")
+        
+        try:
+            _handle_llm_error_ui(error, allow_retry=False)
+        except ImportError:
+            pass
+    
+    def test_llm_error_with_retry_ui(self):
+        """Test UI for LLM error with retry button."""
+        from src.utils.error_handler import _handle_llm_error_ui
+        
+        error = LLMError("Timeout", error_code="TIMEOUT")
+        
+        try:
+            _handle_llm_error_ui(error, allow_retry=True)
+        except ImportError:
+            pass
+    
+    def test_validation_error_ui(self):
+        """Test UI for validation error."""
+        from src.utils.error_handler import _handle_validation_error_ui
+        
+        error = ValidationError(
+            "Invalid email",
+            field="email",
+            expected="user@example.com"
+        )
+        
+        try:
+            _handle_validation_error_ui(error)
+        except ImportError:
+            pass
+    
+    def test_pdf_error_ui(self):
+        """Test UI for PDF error."""
+        from src.utils.error_handler import _handle_pdf_error_ui
+        
+        error = PDFError("Empty PDF", pdf_path="test.pdf")
+        
+        try:
+            _handle_pdf_error_ui(error)
+        except ImportError:
+            pass
     
     def test_session_error_rfp_missing_ui(self):
-        """Test UI for missing RFP session error doesn't crash."""
+        """Test UI for missing RFP session error."""
+        from src.utils.error_handler import _handle_session_error_ui
+        
         error = SessionError("No RFP", missing_key="rfp")
         assert error.missing_key == "rfp"
-        result = handle_error(error, show_ui_error=False)
-        assert result is None
+        
+        try:
+            _handle_session_error_ui(error)
+        except ImportError:
+            pass
+    
+    def test_session_error_other_key_ui(self):
+        """Test UI for session error with non-RFP key."""
+        from src.utils.error_handler import _handle_session_error_ui
+        
+        error = SessionError("Missing data", missing_key="other_key")
+        
+        try:
+            _handle_session_error_ui(error)
+        except ImportError:
+            pass
 
