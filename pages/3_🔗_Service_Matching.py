@@ -427,9 +427,23 @@ def main():
     # AI Assistant button in sidebar
     with st.sidebar:
         st.markdown("---")
-        if st.button("💬 Ask AI", key="btn_open_chat_matching", use_container_width=True):
-            open_floating_chat()
-            st.rerun()
+        if st.button("💬 Ask AI", key="btn_ask_ai_matching", use_container_width=True):
+            st.session_state.show_ai_chat_matching = True
+    
+    # AI Chat Dialog
+    if st.session_state.get("show_ai_chat_matching", False):
+        with st.container():
+            st.markdown("### 💬 AI Assistant")
+            user_question = st.text_area("Ask about service matching...", height=80, key="ai_q_matching")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Send", key="send_ai_matching", type="primary") and user_question.strip():
+                    st.info(f"🤖 Question: {user_question}")
+            with col2:
+                if st.button("Close", key="close_ai_matching"):
+                    st.session_state.show_ai_chat_matching = False
+                    st.rerun()
+            st.markdown("---")
 
     # Navigation buttons
     render_navigation_buttons('matching')

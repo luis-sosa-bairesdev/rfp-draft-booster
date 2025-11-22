@@ -148,9 +148,23 @@ def main():
     # AI Assistant button in header
     col1, col2 = st.columns([5, 1])
     with col2:
-        if st.button("💬 Ask AI", key="btn_open_chat_draft", use_container_width=True):
-            open_floating_chat()
-            st.rerun()
+        if st.button("💬 Ask AI", key="btn_ask_ai_draft", use_container_width=True):
+            st.session_state.show_ai_chat_draft = True
+    
+    # AI Chat Dialog
+    if st.session_state.get("show_ai_chat_draft", False):
+        with st.container():
+            st.markdown("### 💬 AI Assistant")
+            user_question = st.text_area("Ask about draft generation...", height=80, key="ai_q_draft")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Send", key="send_ai_draft", type="primary") and user_question.strip():
+                    st.info(f"🤖 Question: {user_question}")
+            with col2:
+                if st.button("Close", key="close_ai_draft"):
+                    st.session_state.show_ai_chat_draft = False
+                    st.rerun()
+            st.markdown("---")
     
     # Check prerequisites
     can_generate, error_msg = check_prerequisites()

@@ -22,7 +22,7 @@ from components.roi_calculator import (
     DEFAULT_HOURLY_RATE,
     DEFAULT_TIME_PER_PAGE
 )
-from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
+from components.ai_assistant import render_ai_assistant_in_sidebar
 from utils.calculations import calculate_full_roi
 
 # Page configuration
@@ -225,11 +225,6 @@ def render_rfp_based_calculator(rfp):
 def main():
     """Main ROI Calculator page."""
     
-    # Render AI Assistant modal if open
-    if st.session_state.get("show_ai_assistant", False):
-        render_ai_assistant_modal(key_suffix="roi", page_context="roi_calculator")
-        st.markdown("---")
-    
     # Header
     col1, col2 = st.columns([5, 1])
     with col1:
@@ -239,7 +234,23 @@ def main():
             "Calculate potential ROI based on your team's parameters."
         )
     with col2:
-        render_ai_assistant_button(key_suffix="roi")
+        if st.button("💬 Ask AI", key="btn_ask_ai_roi", use_container_width=True):
+            st.session_state.show_ai_chat_roi = True
+    
+    # AI Chat Dialog
+    if st.session_state.get("show_ai_chat_roi", False):
+        with st.container():
+            st.markdown("### 💬 AI Assistant")
+            user_question = st.text_area("Ask about ROI calculations...", height=80, key="ai_q_roi")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Send", key="send_ai_roi", type="primary") and user_question.strip():
+                    st.info(f"🤖 Question: {user_question}")
+            with col2:
+                if st.button("Close", key="close_ai_roi"):
+                    st.session_state.show_ai_chat_roi = False
+                    st.rerun()
+            st.markdown("---")
     
     st.divider()
     

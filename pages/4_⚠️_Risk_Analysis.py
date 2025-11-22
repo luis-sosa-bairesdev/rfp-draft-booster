@@ -229,9 +229,23 @@ def main():
         st.title("⚠️ Risk Detection & Analysis")
         st.markdown("Identify and analyze potentially problematic clauses in RFPs")
     with col2:
-        if st.button("💬 Ask AI", key="btn_open_chat_risk", use_container_width=True):
-            open_floating_chat()
-            st.rerun()
+        if st.button("💬 Ask AI", key="btn_ask_ai_risk", use_container_width=True):
+            st.session_state.show_ai_chat_risk = True
+    
+    # AI Chat Dialog
+    if st.session_state.get("show_ai_chat_risk", False):
+        with st.container():
+            st.markdown("### 💬 AI Assistant")
+            user_question = st.text_area("Ask about risks...", height=80, key="ai_q_risk")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Send", key="send_ai_risk", type="primary") and user_question.strip():
+                    st.info(f"🤖 Question: {user_question}")
+            with col2:
+                if st.button("Close", key="close_ai_risk"):
+                    st.session_state.show_ai_chat_risk = False
+                    st.rerun()
+            st.markdown("---")
     
     # Get current RFP
     rfp = get_current_rfp()
