@@ -1,6 +1,5 @@
 """Upload RFP Page - Epic 2: PDF Processing & Upload."""
 
-import logging
 import streamlit as st
 from datetime import datetime, date
 import io
@@ -13,11 +12,12 @@ from models.rfp import RFP, RFPStatus
 from services.pdf_processor import PDFProcessor
 from services.file_validator import FileValidator
 from services.storage_manager import StorageManager
-from exceptions import PDFProcessingError
+from src.utils.error_handler import PDFError, ValidationError, handle_errors, handle_error
+from src.utils.logger import setup_logger
 from utils.session import init_session_state
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 # Page config
 st.set_page_config(
@@ -147,6 +147,7 @@ def handle_file_upload(uploaded_file):
             )
 
 
+@handle_errors(show_ui=True, allow_retry=True, context={"page": "upload", "function": "process_rfp"})
 def process_rfp(
     uploaded_file,
     rfp_title: str,
@@ -154,95 +155,86 @@ def process_rfp(
     deadline: date,
     notes: str
 ):
-    """Process the uploaded RFP."""
+    """Process the uploaded RFP with comprehensive error handling."""
     
-    try:
-        # Create RFP object
-        rfp = RFP(
-            title=rfp_title or uploaded_file.name,
-            file_name=uploaded_file.name,
-            file_size=len(uploaded_file.getvalue()),
-            client_name=client_name or "",
-            deadline=datetime.combine(deadline, datetime.min.time()) if deadline else None,
-            notes=notes or "",
-            uploaded_by="current_user",  # TODO: Get from auth
-            status=RFPStatus.PROCESSING
-        )
-        
-        # Progress tracking
-        progress_bar = st.progress(0, text="Starting processing...")
-        status_text = st.empty()
-        
-        # Step 1: Save file
-        status_text.text("💾 Saving file...")
-        progress_bar.progress(20, text="Saving file...")
-        storage = StorageManager()
-        file_content = io.BytesIO(uploaded_file.getvalue())
-        rfp.file_path = storage.save_upload(
-            file_content=file_content,
-            file_name=uploaded_file.name,
-            rfp_id=rfp.id
-        )
-        logger.info(f"File saved: {rfp.file_path}")
-        
-        # Step 2: Validate PDF
-        status_text.text("✓ Validating PDF...")
-        progress_bar.progress(40, text="Validating PDF...")
-        processor = PDFProcessor()
-        file_content.seek(0)
-        is_valid, error = processor.validate_pdf(file_content)
-        
-        if not is_valid:
-            raise PDFProcessingError(error)
-        
-        # Step 3: Extract text
-        status_text.text("📄 Extracting text...")
-        progress_bar.progress(60, text="Extracting text from PDF...")
-        
-        rfp.processing_start = datetime.now()
-        file_content.seek(0)
-        
-        full_text, text_by_page, page_count = processor.extract_text(
-            pdf_file=file_content,
-            preserve_layout=True
-        )
-        
-        rfp.extracted_text = full_text
-        rfp.extracted_text_by_page = text_by_page
-        rfp.total_pages = page_count
-        rfp.processing_end = datetime.now()
-        rfp.processing_time = (
-            rfp.processing_end - rfp.processing_start
-        ).total_seconds()
-        rfp.status = RFPStatus.COMPLETED
-        
-        # Step 4: Finalize
-        status_text.text("✅ Finalizing...")
-        progress_bar.progress(100, text="Complete!")
-        
-        # Store in session
-        st.session_state.rfp = rfp
-        st.session_state.processing_complete = True
-        
-        logger.info(f"RFP processing complete: {rfp.id}")
-        
-        # Show success
-        st.balloons()
-        st.success("🎉 **RFP Processing Complete!**")
-        st.info("👇 Scroll down to see results or refresh the page")
-        
-        # Trigger rerun to show results outside form context
-        st.rerun()
-        
-    except PDFProcessingError as e:
-        logger.error(f"PDF processing error: {e}")
-        st.error(f"❌ **Processing Failed:** {str(e)}")
-        st.info("💡 **Tip:** Make sure your PDF contains selectable text, not just images.")
-        
-    except Exception as e:
-        logger.error(f"Unexpected error processing RFP: {e}", exc_info=True)
-        st.error(f"❌ **Unexpected Error:** {str(e)}")
-        st.error("Please try again or contact support if the problem persists.")
+    logger.info(f"Starting RFP processing: {uploaded_file.name}")
+    
+    # Create RFP object
+    rfp = RFP(
+        title=rfp_title or uploaded_file.name,
+        file_name=uploaded_file.name,
+        file_size=len(uploaded_file.getvalue()),
+        client_name=client_name or "",
+        deadline=datetime.combine(deadline, datetime.min.time()) if deadline else None,
+        notes=notes or "",
+        uploaded_by="current_user",  # TODO: Get from auth
+        status=RFPStatus.PROCESSING
+    )
+    
+    # Progress tracking
+    progress_bar = st.progress(0, text="Starting processing...")
+    status_text = st.empty()
+    
+    # Step 1: Save file
+    status_text.text("💾 Saving file...")
+    progress_bar.progress(20, text="Saving file...")
+    storage = StorageManager()
+    file_content = io.BytesIO(uploaded_file.getvalue())
+    rfp.file_path = storage.save_upload(
+        file_content=file_content,
+        file_name=uploaded_file.name,
+        rfp_id=rfp.id
+    )
+    logger.info(f"File saved: {rfp.file_path}")
+    
+    # Step 2: Validate PDF
+    status_text.text("✓ Validating PDF...")
+    progress_bar.progress(40, text="Validating PDF...")
+    processor = PDFProcessor()
+    file_content.seek(0)
+    is_valid, error = processor.validate_pdf(file_content)
+    
+    if not is_valid:
+        raise PDFError(error or "PDF validation failed", pdf_path=uploaded_file.name)
+    
+    # Step 3: Extract text
+    status_text.text("📄 Extracting text...")
+    progress_bar.progress(60, text="Extracting text from PDF...")
+    
+    rfp.processing_start = datetime.now()
+    file_content.seek(0)
+    
+    full_text, text_by_page, page_count = processor.extract_text(
+        pdf_file=file_content,
+        preserve_layout=True
+    )
+    
+    rfp.extracted_text = full_text
+    rfp.extracted_text_by_page = text_by_page
+    rfp.total_pages = page_count
+    rfp.processing_end = datetime.now()
+    rfp.processing_time = (
+        rfp.processing_end - rfp.processing_start
+    ).total_seconds()
+    rfp.status = RFPStatus.COMPLETED
+    
+    # Step 4: Finalize
+    status_text.text("✅ Finalizing...")
+    progress_bar.progress(100, text="Complete!")
+    
+    # Store in session
+    st.session_state.rfp = rfp
+    st.session_state.processing_complete = True
+    
+    logger.info(f"RFP processing complete: {rfp.id}")
+    
+    # Show success
+    st.balloons()
+    st.success("🎉 **RFP Processing Complete!**")
+    st.info("👇 Scroll down to see results or refresh the page")
+    
+    # Trigger rerun to show results outside form context
+    st.rerun()
 
 
 def display_results(rfp: RFP):
