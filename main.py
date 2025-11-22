@@ -15,6 +15,7 @@ from config import settings
 from utils.logging_config import setup_logging
 from utils.session import init_session_state, get_current_rfp
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
+from components.floating_chat import render_floating_chat
 from components.progress_dashboard import render_progress_dashboard
 from components.global_search import render_global_search
 from components.quick_stats import render_quick_stats
@@ -132,6 +133,9 @@ def main() -> None:
         <p style='font-size: 0.9em;'>Version {version}</p>
     </div>
     """.format(version=settings.version), unsafe_allow_html=True)
+    
+    # Render floating chat widget (always visible, bottom-left corner)
+    render_floating_chat()
 
 
 if __name__ == "__main__":

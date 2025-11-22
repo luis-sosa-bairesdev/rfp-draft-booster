@@ -6,6 +6,12 @@ from components.ai_assistant import (
     render_ai_assistant_modal,
     render_ai_assistant_in_sidebar
 )
+from components.floating_chat import (
+    render_floating_chat,
+    init_floating_chat,
+    render_floating_chat_button,
+    render_floating_chat_modal
+)
 from components.progress_dashboard import render_progress_dashboard
 from components.global_search import render_global_search, search_content, SearchResult
 from components.roi_calculator import (
@@ -30,6 +36,10 @@ __all__ = [
     "render_ai_assistant_button",
     "render_ai_assistant_modal",
     "render_ai_assistant_in_sidebar",
+    "render_floating_chat",
+    "init_floating_chat",
+    "render_floating_chat_button",
+    "render_floating_chat_modal",
     "render_progress_dashboard",
     "render_global_search",
     "search_content",
