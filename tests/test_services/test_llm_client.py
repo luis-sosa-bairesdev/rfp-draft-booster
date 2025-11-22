@@ -17,6 +17,7 @@ import os
 import sys
 
 from services.llm_client import LLMClient, LLMProvider, create_llm_client
+from src.utils.error_handler import LLMError
 
 
 class TestLLMClient:
@@ -53,7 +54,7 @@ class TestLLMClient:
     def test_initialization_without_api_key_raises_error(self):
         """Test that initialization without API key raises error."""
         with patch.dict(os.environ, {}, clear=True):
-            with pytest.raises(ValueError, match="GEMINI_API_KEY not found"):
+            with pytest.raises(LLMError, match="GEMINI_API_KEY not found"):
                 LLMClient(provider=LLMProvider.GEMINI)
     
     @patch('google.generativeai.configure')

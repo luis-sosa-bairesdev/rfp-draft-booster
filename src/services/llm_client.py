@@ -6,7 +6,6 @@ This module provides a unified interface for interacting with different LLM prov
 """
 
 import json
-import logging
 import os
 from typing import Optional, List, Dict, Any, Tuple
 from enum import Enum
@@ -19,7 +18,11 @@ except ImportError:
     # python-dotenv not installed, but that's okay if env vars are set another way
     pass
 
-logger = logging.getLogger(__name__)
+from src.utils.logger import setup_logger
+from src.utils.error_handler import LLMError
+from src.utils.retry_utils import retry_llm_call
+
+logger = setup_logger(__name__)
 
 
 class LLMProvider(str, Enum):
@@ -94,9 +97,14 @@ class LLMClient:
                 self._initialize_groq()
             elif self.provider == LLMProvider.OLLAMA:
                 self._initialize_ollama()
-        except Exception as e:
-            logger.error(f"Failed to initialize {self.provider} client: {e}")
+        except LLMError:
             raise
+        except Exception as e:
+            logger.error(f"Failed to initialize {self.provider} client: {e}", exc_info=True)
+            raise LLMError(
+                f"Initialization failed for {self.provider}: {str(e)}",
+                error_code="INITIALIZATION_FAILED"
+            ) from e
     
     def _initialize_gemini(self):
         """Initialize Google Gemini client."""
@@ -146,6 +154,7 @@ class LLMClient:
                 "Install with: pip install ollama"
             )
     
+    @retry_llm_call
     def generate(self, prompt: str, max_tokens: int = 4096, temperature: Optional[float] = None) -> str:
         """
         Generate text using the LLM.
@@ -173,10 +182,14 @@ class LLMClient:
                 return self._generate_ollama(prompt, temp)
             else:
                 raise ValueError(f"Unsupported provider: {self.provider}")
-                
-        except Exception as e:
-            logger.error(f"LLM generation failed: {e}")
+        except LLMError:
             raise
+        except Exception as e:
+            logger.error(f"LLM generation failed: {e}", exc_info=True)
+            raise LLMError(
+                f"LLM generation failed: {str(e)}",
+                error_code="GENERATION_FAILED"
+            ) from e
     
     def _generate_gemini(self, prompt: str, temperature: float) -> str:
         """Generate with Gemini."""
