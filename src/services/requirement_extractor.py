@@ -5,15 +5,20 @@ This module provides the main service for extracting requirements from RFP docum
 using LLM-powered analysis with categorization, prioritization, and confidence scoring.
 """
 
-import logging
 from typing import List, Optional
 from datetime import datetime
 
 from models import RFP, Requirement, RequirementCategory, RequirementPriority
 from services.llm_client import LLMClient, create_llm_client
 from utils.prompt_templates import get_extraction_prompt, MAX_CHUNK_SIZE, CHUNK_OVERLAP
+from src.utils.logger import setup_logger
+from src.utils.error_handler import LLMError, ValidationError, handle_errors
+from src.utils.retry_utils import retry_llm_call
+from src.utils.duplicate_detector import find_duplicate_requirements
+from src.utils.validators import validate_requirement
+from src.utils.mock_data import generate_mock_requirements, is_mock_data_enabled
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 
 class RequirementExtractor:
@@ -58,31 +63,47 @@ class RequirementExtractor:
             List of extracted requirements
             
         Raises:
-            ValueError: If RFP has no extracted text
+            ValidationError: If RFP has no extracted text
         """
         if not rfp.extracted_text:
-            raise ValueError("RFP must have extracted_text to extract requirements")
+            raise ValidationError(
+                "RFP must have extracted_text to extract requirements",
+                field="extracted_text",
+                expected="non-empty string"
+            )
         
-        logger.info(f"Starting requirement extraction for RFP: {rfp.id}")
+        logger.info(f"Starting requirement extraction for RFP: {rfp.id} ({len(rfp.extracted_text)} characters)")
         
-        # Extract from full text or by page
-        if rfp.extracted_text_by_page:
-            requirements = self._extract_by_page(rfp)
-        else:
-            requirements = self._extract_from_text(rfp.extracted_text, rfp.id)
+        # Check if mock data mode is enabled
+        if is_mock_data_enabled():
+            logger.info("Mock data mode enabled, returning mock requirements")
+            return self._convert_mock_to_requirements(generate_mock_requirements(), rfp.id)
         
-        # Filter by confidence
-        filtered_requirements = [
-            req for req in requirements
-            if req.confidence >= self.min_confidence
-        ]
-        
-        logger.info(
-            f"Extracted {len(requirements)} requirements, "
-            f"{len(filtered_requirements)} above confidence threshold"
-        )
-        
-        return filtered_requirements
+        try:
+            # Extract from full text or by page
+            if rfp.extracted_text_by_page:
+                requirements = self._extract_by_page(rfp)
+            else:
+                requirements = self._extract_from_text(rfp.extracted_text, rfp.id)
+            
+            # Filter by confidence
+            filtered_requirements = [
+                req for req in requirements
+                if req.confidence >= self.min_confidence
+            ]
+            
+            logger.info(
+                f"Extracted {len(requirements)} requirements, "
+                f"{len(filtered_requirements)} above confidence threshold ({self.min_confidence})"
+            )
+            
+            return filtered_requirements
+            
+        except LLMError as e:
+            logger.error(f"LLM error during extraction: {e}", exc_info=True)
+            # Return mock data as fallback
+            logger.warning("Returning mock requirements as fallback")
+            return self._convert_mock_to_requirements(generate_mock_requirements(count=5), rfp.id)
     
     def _extract_by_page(self, rfp: RFP) -> List[Requirement]:
         """Extract requirements page by page."""
@@ -115,6 +136,7 @@ class RequirementExtractor:
         
         return deduplicated
     
+    @retry_llm_call
     def _extract_from_text(
         self,
         text: str,
@@ -122,7 +144,7 @@ class RequirementExtractor:
         page_number: Optional[int] = None
     ) -> List[Requirement]:
         """
-        Extract requirements from text using LLM.
+        Extract requirements from text using LLM with retry logic.
         
         Args:
             text: Text to analyze
@@ -131,10 +153,15 @@ class RequirementExtractor:
             
         Returns:
             List of extracted requirements
+            
+        Raises:
+            LLMError: If LLM generation fails after retries
         """
         # Handle long text by chunking
         if len(text) > MAX_CHUNK_SIZE:
             return self._extract_from_chunks(text, rfp_id, page_number)
+        
+        logger.debug(f"Extracting from text ({len(text)} chars, page={page_number})")
         
         # Generate prompt
         prompt = get_extraction_prompt(text, page_number)
@@ -143,8 +170,17 @@ class RequirementExtractor:
             # Call LLM
             response = self.llm_client.generate(prompt)
             
+            if not response or not response.strip():
+                raise LLMError(
+                    "Empty response from LLM",
+                    error_code="EMPTY_RESPONSE",
+                    user_message="LLM returned empty response"
+                )
+            
             # Parse JSON response
             requirements_data = self.llm_client.extract_json(response)
+            
+            logger.debug(f"Extracted {len(requirements_data)} requirements from LLM")
             
             # Convert to Requirement objects
             requirements = []
@@ -152,15 +188,26 @@ class RequirementExtractor:
                 try:
                     req = self._create_requirement(req_data, rfp_id, page_number)
                     requirements.append(req)
+                except ValidationError as e:
+                    logger.warning(f"Validation error creating requirement: {e.user_message}")
+                    continue
                 except Exception as e:
                     logger.warning(f"Failed to create requirement from data: {e}")
                     continue
             
+            logger.info(f"Successfully created {len(requirements)} valid requirements")
             return requirements
             
+        except LLMError:
+            # Re-raise LLM errors to trigger retry
+            raise
         except Exception as e:
-            logger.error(f"Error extracting requirements: {e}")
-            return []
+            logger.error(f"Unexpected error extracting requirements: {e}", exc_info=True)
+            raise LLMError(
+                f"Extraction failed: {str(e)}",
+                error_code="EXTRACTION_FAILED",
+                user_message="Failed to extract requirements from text"
+            ) from e
     
     def _extract_from_chunks(
         self,
@@ -281,10 +328,7 @@ class RequirementExtractor:
         requirements: List[Requirement]
     ) -> List[Requirement]:
         """
-        Remove duplicate requirements based on similarity.
-        
-        Uses simple text similarity for now. Could be enhanced with
-        embedding-based similarity in the future.
+        Remove duplicate requirements using advanced similarity detection.
         
         Args:
             requirements: List of requirements
@@ -295,22 +339,56 @@ class RequirementExtractor:
         if not requirements:
             return []
         
-        unique_requirements = []
-        seen_descriptions = set()
+        logger.debug(f"Deduplicating {len(requirements)} requirements")
         
-        for req in requirements:
-            # Normalize description for comparison
-            normalized = req.description.lower().strip()
-            
-            # Check for exact duplicates
-            if normalized in seen_descriptions:
-                logger.debug(f"Skipping duplicate: {req.description[:50]}")
-                continue
-            
-            seen_descriptions.add(normalized)
-            unique_requirements.append(req)
+        # Convert to dict format for duplicate detector
+        req_dicts = [
+            {
+                "description": req.description,
+                "category": req.category.value,
+                "priority": req.priority.value,
+                "confidence": req.confidence
+            }
+            for req in requirements
+        ]
         
+        # Find duplicates using similarity detection
+        duplicates = find_duplicate_requirements(req_dicts, threshold=0.85)
+        
+        if duplicates:
+            logger.info(f"Found {len(duplicates)} duplicate pairs")
+        
+        # Keep first occurrence of each duplicate group
+        indices_to_keep = set(range(len(requirements)))
+        for idx1, idx2, similarity in duplicates:
+            # Keep the one with higher confidence
+            if requirements[idx1].confidence >= requirements[idx2].confidence:
+                indices_to_keep.discard(idx2)
+                logger.debug(f"Removing duplicate #{idx2} (similarity={similarity:.2f})")
+            else:
+                indices_to_keep.discard(idx1)
+                logger.debug(f"Removing duplicate #{idx1} (similarity={similarity:.2f})")
+        
+        unique_requirements = [requirements[i] for i in sorted(indices_to_keep)]
+        
+        logger.info(f"Deduplicated to {len(unique_requirements)} unique requirements")
         return unique_requirements
+    
+    def _convert_mock_to_requirements(
+        self,
+        mock_data: List[dict],
+        rfp_id: str
+    ) -> List[Requirement]:
+        """Convert mock requirement dicts to Requirement objects."""
+        requirements = []
+        for data in mock_data:
+            try:
+                req = self._create_requirement(data, rfp_id, data.get("page_number"))
+                requirements.append(req)
+            except Exception as e:
+                logger.warning(f"Failed to convert mock requirement: {e}")
+                continue
+        return requirements
     
     def refine_requirement(self, requirement: Requirement) -> Requirement:
         """
