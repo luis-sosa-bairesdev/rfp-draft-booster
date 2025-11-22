@@ -13,6 +13,7 @@ from services.requirement_extractor import RequirementExtractor, extract_require
 from services.llm_client import LLMClient, create_llm_client, LLMProvider, get_available_provider_names
 from src.utils.error_handler import LLMError, ValidationError, handle_errors, handle_error
 from src.utils.logger import setup_logger
+from src.utils.duplicate_detector import DuplicateDetector
 from utils.session import init_session_state, get_current_rfp
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 
@@ -248,9 +249,15 @@ def display_extraction_controls():
     # Check if already extracted
     if st.session_state.requirements:
         st.success(f"✅ {len(st.session_state.requirements)} requirements already extracted.")
-        if st.button("🔄 Re-extract Requirements", key="btn_re_extract", help="Clear existing and extract again"):
-            st.session_state.requirements = []
-            st.rerun()
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button("🔄 Re-extract Requirements", key="btn_re_extract", help="Clear existing and extract again"):
+                st.session_state.requirements = []
+                st.rerun()
+        with col2:
+            if st.button("🔍 Check Duplicates", key="btn_check_duplicates", help="Find similar/duplicate requirements"):
+                check_duplicates()
     
     # Extraction settings
     with st.expander("⚙️ Extraction Settings", expanded=False):
@@ -517,6 +524,64 @@ def main():
                         file_name=f"requirements_{rfp.id[:8]}.csv",
                         mime="text/csv"
                     )
+
+
+def check_duplicates():
+    """Check for duplicate requirements using semantic similarity."""
+    requirements = st.session_state.requirements
+    
+    if not requirements or len(requirements) < 2:
+        st.info("Need at least 2 requirements to check for duplicates")
+        return
+    
+    with st.spinner("🔍 Checking for duplicates..."):
+        # Convert to dict format for detector
+        req_dicts = [
+            {"description": req.description, "id": req.id}
+            for req in requirements
+        ]
+        
+        # Find duplicates
+        duplicate_groups = DuplicateDetector.get_duplicate_requirement_groups(
+            req_dicts,
+            threshold=0.80
+        )
+        
+        if not duplicate_groups:
+            st.success("✅ No duplicates found!")
+            return
+        
+        st.warning(f"⚠️ Found {len(duplicate_groups)} groups of similar requirements")
+        
+        for idx, group in enumerate(duplicate_groups):
+            st.markdown(f"#### Group {idx + 1} (Similarity > 80%)")
+            
+            group_reqs = [requirements[i] for i in group]
+            
+            for req in group_reqs:
+                with st.expander(f"📋 {req.description[:80]}...", expanded=True):
+                    st.markdown(f"**Full Description:** {req.description}")
+                    st.markdown(f"**Category:** {req.category.value} | **Priority:** {req.priority.value} | **Confidence:** {req.confidence:.0%}")
+                    if req.page_number:
+                        st.markdown(f"**Page:** {req.page_number}")
+            
+            # Merge options
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(f"🗑️ Keep First, Remove Others", key=f"merge_group_{idx}"):
+                    # Keep first, remove others
+                    ids_to_remove = [requirements[i].id for i in list(group)[1:]]
+                    st.session_state.requirements = [
+                        r for r in requirements if r.id not in ids_to_remove
+                    ]
+                    st.success(f"✅ Removed {len(ids_to_remove)} duplicate(s)")
+                    st.rerun()
+            
+            with col2:
+                if st.button(f"↻ Keep All", key=f"keep_all_{idx}"):
+                    st.info("Kept all requirements in this group")
+            
+            st.markdown("---")
 
 
 if __name__ == "__main__":
