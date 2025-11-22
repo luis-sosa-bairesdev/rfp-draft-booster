@@ -16,11 +16,8 @@ from src.utils.error_handler import PDFError, ValidationError, handle_errors, ha
 from src.utils.logger import setup_logger
 from utils.session import init_session_state
 from components.navigation_flow import render_navigation_buttons
-from components.floating_chat_widget import render_floating_chat_widget
 from components.progress_tracker import ProgressTracker, ProgressStep
-from components.floating_chat_widget import render_floating_chat_widget
 from components import open_floating_chat
-from components.floating_chat_widget import render_floating_chat_widget
 
 logger = setup_logger(__name__)
 
@@ -369,5 +366,4 @@ def show_upload_instructions():
 
 if __name__ == "__main__":
     main()
-    render_floating_chat_widget()  # Global floating chat
 

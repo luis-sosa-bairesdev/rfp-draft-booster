@@ -16,7 +16,6 @@ from src.utils.logger import setup_logger
 from src.utils.duplicate_detector import get_duplicate_requirement_groups
 from utils.session import init_session_state, get_current_rfp
 from components.navigation_flow import render_navigation_buttons
-from components.floating_chat_widget import render_floating_chat_widget
 
 
 def get_category_icon(category: RequirementCategory) -> str:
@@ -583,4 +582,3 @@ def check_duplicates():
 
 if __name__ == "__main__":
     main()
-    render_floating_chat_widget()  # Global floating chat

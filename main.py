@@ -17,7 +17,6 @@ from utils.session import init_session_state, get_current_rfp
 from components.progress_dashboard import render_progress_dashboard
 from components.global_search import render_global_search
 from components.quick_stats import render_quick_stats
-from components.floating_chat_widget import render_floating_chat_widget
 
 
 # Page configuration
@@ -129,5 +128,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    render_floating_chat_widget()  # Global floating chat widget
 

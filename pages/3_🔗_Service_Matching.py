@@ -11,9 +11,7 @@ from src.utils.logger import setup_logger
 from src.utils.error_handler import handle_error, ValidationError
 from utils.session import init_session_state, has_current_rfp
 from components.navigation_flow import render_navigation_buttons
-from components.floating_chat_widget import render_floating_chat_widget
 from components import open_floating_chat
-from components.floating_chat_widget import render_floating_chat_widget
 
 logger = setup_logger(__name__)
 
@@ -453,5 +451,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    render_floating_chat_widget()  # Global floating chat
 

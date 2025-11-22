@@ -15,7 +15,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from config import settings
 from utils.session import get_current_rfp
-from components.floating_chat_widget import render_floating_chat_widget
 from components.roi_calculator import (
     render_roi_calculator,
     init_roi_session_state,
@@ -24,7 +23,6 @@ from components.roi_calculator import (
     DEFAULT_TIME_PER_PAGE
 )
 from components.ai_assistant import render_ai_assistant_in_sidebar
-from components.floating_chat_widget import render_floating_chat_widget
 from utils.calculations import calculate_full_roi
 
 # Page configuration

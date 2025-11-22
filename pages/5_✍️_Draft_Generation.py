@@ -19,9 +19,7 @@ from src.utils.error_handler import LLMError, ValidationError, handle_errors, ha
 from src.utils.logger import setup_logger
 from utils.session import init_session_state, get_current_rfp
 from components.navigation_flow import render_navigation_buttons
-from components.floating_chat_widget import render_floating_chat_widget
 from components import open_floating_chat
-from components.floating_chat_widget import render_floating_chat_widget
 
 logger = setup_logger(__name__)
 
@@ -443,5 +441,4 @@ def generate_draft_ui(rfp: RFP, requirements: List[Requirement], risks: List[Ris
 
 if __name__ == "__main__":
     main()
-    render_floating_chat_widget()  # Global floating chat
 
