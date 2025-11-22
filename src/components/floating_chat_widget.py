@@ -11,16 +11,21 @@ def render_floating_chat_widget():
     Modal: Opens as overlay above button
     """
     
-    # HTML + CSS + JavaScript in an iframe (bypass React restrictions)
+    # HTML + CSS + JavaScript in an iframe
     html_code = """
     <!DOCTYPE html>
     <html>
     <head>
         <style>
-            body {
+            * {
                 margin: 0;
                 padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                overflow: hidden;
             }
             
             /* Floating Button - Bottom Right */
@@ -253,7 +258,7 @@ def render_floating_chat_widget():
     </html>
     """
     
-    # Render as HTML component (height 0 since it's fixed position)
-    components.html(html_code, height=0, scrolling=False)
+    # Render with enough height to show button and modal
+    components.html(html_code, height=650, scrolling=False)
 
 
