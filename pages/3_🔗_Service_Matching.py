@@ -11,7 +11,7 @@ from src.utils.logger import setup_logger
 from src.utils.error_handler import handle_error, ValidationError
 from utils.session import init_session_state, has_current_rfp
 from components.navigation_flow import render_navigation_buttons
-from components import open_floating_chat
+from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 
 logger = setup_logger(__name__)
 
@@ -54,8 +54,13 @@ def render_header_stats(
     matcher: ServiceMatcher
 ):
     """Render header with statistics."""
-    st.title("🔗 Service Matching")
-    st.markdown("Match RFP requirements to BairesDev services automatically")
+    # Header with AI Assistant button
+    col1, col2 = st.columns([5, 1])
+    with col1:
+        st.title("🔗 Service Matching")
+        st.markdown("Match RFP requirements to BairesDev services automatically")
+    with col2:
+        render_ai_assistant_button(key_suffix="service_matching")
     
     st.markdown("---")
     

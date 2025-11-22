@@ -15,7 +15,7 @@ from src.utils.error_handler import LLMError, ValidationError, handle_errors, ha
 from src.utils.logger import setup_logger
 from utils.session import init_session_state, get_current_rfp
 from components.navigation_flow import render_navigation_buttons
-from components import open_floating_chat
+from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 
 
 def get_category_icon(category: RiskCategory) -> str:
@@ -229,7 +229,7 @@ def main():
         st.title("⚠️ Risk Detection & Analysis")
         st.markdown("Identify and analyze potentially problematic clauses in RFPs")
     with col2:
-        st.write("")  # Placeholder for future button
+        render_ai_assistant_button(key_suffix="risks")
     
     # Get current RFP
     rfp = get_current_rfp()

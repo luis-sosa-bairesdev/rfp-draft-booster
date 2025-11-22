@@ -17,7 +17,7 @@ from src.utils.logger import setup_logger
 from utils.session import init_session_state
 from components.navigation_flow import render_navigation_buttons
 from components.progress_tracker import ProgressTracker, ProgressStep
-from components import open_floating_chat
+from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 
 logger = setup_logger(__name__)
 
@@ -45,7 +45,7 @@ def main():
         st.title("📤 Upload RFP Document")
         st.markdown("Upload your RFP PDF to begin automated processing")
     with col2:
-        st.divider()
+        render_ai_assistant_button(key_suffix="upload")
     
     # Show results if processing is complete
     if st.session_state.get("processing_complete") and st.session_state.get("rfp"):

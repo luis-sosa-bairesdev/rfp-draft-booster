@@ -19,7 +19,7 @@ from src.utils.error_handler import LLMError, ValidationError, handle_errors, ha
 from src.utils.logger import setup_logger
 from utils.session import init_session_state, get_current_rfp
 from components.navigation_flow import render_navigation_buttons
-from components import open_floating_chat
+from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 
 logger = setup_logger(__name__)
 
@@ -143,12 +143,12 @@ def main():
         render_ai_assistant_modal(key_suffix="draft", page_context="draft")
         st.markdown("---")
     
-    st.title("✍️ Draft Generation")
-    
-    # AI Assistant button in header
+    # Header with AI Assistant button
     col1, col2 = st.columns([5, 1])
+    with col1:
+        st.title("✍️ Draft Generation")
     with col2:
-        st.write("")  # Placeholder
+        render_ai_assistant_button(key_suffix="draft")
     
     # Check prerequisites
     can_generate, error_msg = check_prerequisites()
