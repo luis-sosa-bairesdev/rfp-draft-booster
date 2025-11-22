@@ -1,6 +1,5 @@
 """PDF Processing Service for extracting text from RFP documents."""
 
-import logging
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 import io
@@ -14,9 +13,10 @@ except ImportError as e:
         "Run: pip install PyPDF2 pdfplumber"
     ) from e
 
-from exceptions import PDFProcessingError
+from src.utils.error_handler import PDFError, handle_errors
+from src.utils.logger import setup_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 
 class PDFProcessor:
@@ -43,16 +43,39 @@ class PDFProcessor:
             Tuple of (full_text, text_by_page, page_count)
 
         Raises:
-            PDFProcessingError: If extraction fails
+            PDFError: If extraction fails
         """
+        if not pdf_file:
+            raise PDFError(
+                "PDF file is required",
+                pdf_path="<BytesIO>",
+                user_message="No PDF file provided for extraction"
+            )
+        
+        if not hasattr(pdf_file, 'read'):
+            raise PDFError(
+                "Invalid PDF file object",
+                pdf_path="<invalid>",
+                user_message="PDF file must be a readable file-like object"
+            )
+        
+        logger.debug(f"Starting PDF extraction (preserve_layout={preserve_layout})")
+        
         try:
             if preserve_layout:
                 return self._extract_with_pdfplumber(pdf_file)
             else:
                 return self._extract_with_pypdf2(pdf_file)
+        except PDFError:
+            # Re-raise PDFErrors as-is
+            raise
         except Exception as e:
-            logger.error(f"PDF extraction failed: {e}")
-            raise PDFProcessingError(f"Failed to extract text from PDF: {str(e)}") from e
+            logger.error(f"PDF extraction failed: {e}", exc_info=True)
+            raise PDFError(
+                f"Failed to extract text from PDF: {str(e)}",
+                pdf_path="<BytesIO>",
+                user_message="Failed to extract text from PDF. The file might be corrupted or use unsupported features."
+            ) from e
 
     def _extract_with_pypdf2(
         self, 
@@ -98,13 +121,17 @@ class PDFProcessor:
         full_text = "\n".join(full_text_parts)
         
         if not full_text.strip():
-            raise PDFProcessingError(
-                "No text could be extracted from PDF. "
-                "This might be a scanned document (images only). "
-                "Please use a PDF with selectable text."
+            raise PDFError(
+                "No text could be extracted from PDF",
+                pdf_path="<BytesIO>",
+                user_message=(
+                    "No text could be extracted from PDF. "
+                    "This might be a scanned document (images only). "
+                    "Please use a PDF with selectable text or consider OCR."
+                )
             )
         
-        logger.info(f"Successfully extracted text from {page_count} pages using PyPDF2")
+        logger.info(f"Successfully extracted {len(full_text)} characters from {page_count} pages using PyPDF2")
         return full_text, text_by_page, page_count
 
     def _extract_with_pdfplumber(
@@ -147,13 +174,17 @@ class PDFProcessor:
         full_text = "\n".join(full_text_parts)
         
         if not full_text.strip():
-            raise PDFProcessingError(
-                "No text could be extracted from PDF. "
-                "This might be a scanned document (images only). "
-                "Please use a PDF with selectable text."
+            raise PDFError(
+                "No text could be extracted from PDF",
+                pdf_path="<BytesIO>",
+                user_message=(
+                    "No text could be extracted from PDF. "
+                    "This might be a scanned document (images only). "
+                    "Please use a PDF with selectable text or consider OCR."
+                )
             )
         
-        logger.info(f"Successfully extracted text from {page_count} pages using pdfplumber")
+        logger.info(f"Successfully extracted {len(full_text)} characters from {page_count} pages using pdfplumber")
         return full_text, text_by_page, page_count
 
     def validate_pdf(self, pdf_file: io.BytesIO) -> Tuple[bool, Optional[str]]:
@@ -166,32 +197,45 @@ class PDFProcessor:
         Returns:
             Tuple of (is_valid, error_message)
         """
+        if not pdf_file:
+            return False, "No PDF file provided"
+        
+        if not hasattr(pdf_file, 'read'):
+            return False, "Invalid PDF file object"
+        
         try:
             pdf_file.seek(0)
             reader = PyPDF2.PdfReader(pdf_file)
             
             # Check if encrypted/password protected
             if reader.is_encrypted:
+                logger.warning("PDF is password-protected")
                 return False, "PDF is password-protected. Please provide an unlocked version."
             
             # Check if has pages
-            if len(reader.pages) == 0:
+            page_count = len(reader.pages)
+            if page_count == 0:
+                logger.warning("PDF has no pages")
                 return False, "PDF has no pages."
+            
+            logger.debug(f"PDF has {page_count} pages")
             
             # Try to extract text from first page
             first_page = reader.pages[0]
             text = first_page.extract_text()
             
             if not text or len(text.strip()) < 10:
+                logger.warning("PDF appears to have no extractable text")
                 return False, (
                     "PDF appears to be scanned (images only) or has no extractable text. "
-                    "Please use a PDF with selectable text."
+                    "Please use a PDF with selectable text or consider OCR."
                 )
             
+            logger.info("PDF validation successful")
             return True, None
             
         except Exception as e:
-            logger.error(f"PDF validation failed: {e}")
+            logger.error(f"PDF validation failed: {e}", exc_info=True)
             return False, f"PDF validation failed: {str(e)}"
 
     def get_pdf_info(self, pdf_file: io.BytesIO) -> Dict[str, any]:
@@ -214,6 +258,8 @@ class PDFProcessor:
                 "metadata": {},
             }
             
+            logger.debug(f"PDF info: {info['page_count']} pages, encrypted={info['is_encrypted']}")
+            
             # Extract metadata if available
             if reader.metadata:
                 info["metadata"] = {
@@ -224,10 +270,11 @@ class PDFProcessor:
                     "producer": reader.metadata.get("/Producer", ""),
                     "creation_date": reader.metadata.get("/CreationDate", ""),
                 }
+                logger.debug(f"PDF metadata: {info['metadata']}")
             
             return info
             
         except Exception as e:
-            logger.error(f"Failed to get PDF info: {e}")
+            logger.error(f"Failed to get PDF info: {e}", exc_info=True)
             return {"error": str(e)}
 

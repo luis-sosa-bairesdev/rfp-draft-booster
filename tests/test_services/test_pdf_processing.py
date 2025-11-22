@@ -21,6 +21,7 @@ from services.file_validator import FileValidator
 from services.pdf_processor import PDFProcessor
 from services.storage_manager import StorageManager
 from exceptions import ValidationError, StorageError
+from src.utils.error_handler import PDFError
 from models import RFP, RFPStatus
 
 
@@ -195,7 +196,7 @@ class TestPDFProcessor:
         processor = PDFProcessor()
         
         invalid_content = io.BytesIO(b"Not a PDF")
-        with pytest.raises(Exception):
+        with pytest.raises(PDFError):
             processor.extract_text(invalid_content)
 
 
