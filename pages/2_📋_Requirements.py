@@ -13,10 +13,10 @@ from services.requirement_extractor import RequirementExtractor, extract_require
 from services.llm_client import LLMClient, create_llm_client, LLMProvider, get_available_provider_names
 from src.utils.error_handler import LLMError, ValidationError, handle_errors, handle_error
 from src.utils.logger import setup_logger
-from src.utils.duplicate_detector import DuplicateDetector
+from src.utils.duplicate_detector import get_duplicate_requirement_groups
 from utils.session import init_session_state, get_current_rfp
 from components.navigation_flow import render_navigation_buttons
-from components import open_floating_chat
+from components import open_floating_chat, render_floating_chat
 
 
 def get_category_icon(category: RequirementCategory) -> str:
@@ -543,7 +543,7 @@ def check_duplicates():
         ]
         
         # Find duplicates
-        duplicate_groups = DuplicateDetector.get_duplicate_requirement_groups(
+        duplicate_groups = get_duplicate_requirement_groups(
             req_dicts,
             threshold=0.80
         )
@@ -587,3 +587,4 @@ def check_duplicates():
 
 if __name__ == "__main__":
     main()
+    render_floating_chat()  # Render floating chat on all pages
