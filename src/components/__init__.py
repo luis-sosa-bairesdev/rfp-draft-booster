@@ -14,6 +14,7 @@ from components.floating_chat import (
     open_floating_chat,
     close_floating_chat
 )
+from components.floating_chat_widget import render_floating_chat_widget
 from components.progress_dashboard import render_progress_dashboard
 from components.global_search import render_global_search, search_content, SearchResult
 from components.roi_calculator import (
@@ -49,6 +50,7 @@ __all__ = [
     "render_floating_chat_modal",
     "open_floating_chat",
     "close_floating_chat",
+    "render_floating_chat_widget",
     "render_progress_dashboard",
     "render_global_search",
     "search_content",

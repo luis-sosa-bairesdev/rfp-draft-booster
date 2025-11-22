@@ -15,7 +15,9 @@ from src.utils.error_handler import LLMError, ValidationError, handle_errors, ha
 from src.utils.logger import setup_logger
 from utils.session import init_session_state, get_current_rfp
 from components.navigation_flow import render_navigation_buttons
+from components.floating_chat_widget import render_floating_chat_widget
 from components import open_floating_chat
+from components.floating_chat_widget import render_floating_chat_widget
 
 
 def get_category_icon(category: RiskCategory) -> str:
@@ -229,25 +231,7 @@ def main():
         st.title("⚠️ Risk Detection & Analysis")
         st.markdown("Identify and analyze potentially problematic clauses in RFPs")
     with col2:
-        if st.button("💬 Ask AI", key="btn_ask_ai_risk", use_container_width=True):
-            st.session_state.show_ai_chat_risk = True
-    
-    # AI Chat Dialog
-    if st.session_state.get("show_ai_chat_risk", False):
-        with st.container():
-            st.markdown("### 💬 AI Assistant")
-            user_question = st.text_area("Ask about risks...", height=80, key="ai_q_risk")
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("Send", key="send_ai_risk", type="primary") and user_question.strip():
-                    st.info(f"🤖 Question: {user_question}")
-            with col2:
-                if st.button("Close", key="close_ai_risk"):
-                    st.session_state.show_ai_chat_risk = False
-                    st.rerun()
-            st.markdown("---")
-    
-    # Get current RFP
+        # Get current RFP
     rfp = get_current_rfp()
     
     if not rfp:
@@ -631,4 +615,4 @@ def render_add_risk_modal():
 
 if __name__ == "__main__":
     main()
-    # Chat via Ask AI button
+    render_floating_chat_widget()  # Global floating chat

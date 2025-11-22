@@ -16,6 +16,7 @@ from src.utils.logger import setup_logger
 from src.utils.duplicate_detector import get_duplicate_requirement_groups
 from utils.session import init_session_state, get_current_rfp
 from components.navigation_flow import render_navigation_buttons
+from components.floating_chat_widget import render_floating_chat_widget
 
 
 def get_category_icon(category: RequirementCategory) -> str:
@@ -390,34 +391,7 @@ def main():
         st.title("📋 Requirements Extraction")
         st.markdown("Extract and manage requirements from your RFP using AI")
     with col2:
-        if st.button("💬 Ask AI", key="btn_ask_ai_req", use_container_width=True):
-            st.session_state.show_ai_chat_req = True
-    
-    # AI Chat Dialog
-    if st.session_state.get("show_ai_chat_req", False):
-        with st.container():
-            st.markdown("### 💬 AI Assistant")
-            
-            user_question = st.text_area(
-                "Ask me anything about your requirements...",
-                height=100,
-                key="ai_question_req"
-            )
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("Send", key="send_ai_req", type="primary"):
-                    if user_question.strip():
-                        st.info(f"🤖 Question: {user_question}")
-                        st.success("AI response would appear here...")
-            with col2:
-                if st.button("Close", key="close_ai_req"):
-                    st.session_state.show_ai_chat_req = False
-                    st.rerun()
-            
-            st.markdown("---")
-    
-    st.divider()
+        st.divider()
     
     # Check if RFP is loaded
     rfp = get_current_rfp()
@@ -609,4 +583,4 @@ def check_duplicates():
 
 if __name__ == "__main__":
     main()
-    # Chat functionality available via Ask AI button
+    render_floating_chat_widget()  # Global floating chat

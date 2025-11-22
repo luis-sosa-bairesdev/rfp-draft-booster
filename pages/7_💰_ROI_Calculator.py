@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from config import settings
 from utils.session import get_current_rfp
 from components.roi_calculator import (
+from components.floating_chat_widget import render_floating_chat_widget
     render_roi_calculator,
     init_roi_session_state,
     DEFAULT_RFP_PAGES,
@@ -23,6 +24,7 @@ from components.roi_calculator import (
     DEFAULT_TIME_PER_PAGE
 )
 from components.ai_assistant import render_ai_assistant_in_sidebar
+from components.floating_chat_widget import render_floating_chat_widget
 from utils.calculations import calculate_full_roi
 
 # Page configuration
@@ -234,25 +236,7 @@ def main():
             "Calculate potential ROI based on your team's parameters."
         )
     with col2:
-        if st.button("💬 Ask AI", key="btn_ask_ai_roi", use_container_width=True):
-            st.session_state.show_ai_chat_roi = True
-    
-    # AI Chat Dialog
-    if st.session_state.get("show_ai_chat_roi", False):
-        with st.container():
-            st.markdown("### 💬 AI Assistant")
-            user_question = st.text_area("Ask about ROI calculations...", height=80, key="ai_q_roi")
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("Send", key="send_ai_roi", type="primary") and user_question.strip():
-                    st.info(f"🤖 Question: {user_question}")
-            with col2:
-                if st.button("Close", key="close_ai_roi"):
-                    st.session_state.show_ai_chat_roi = False
-                    st.rerun()
-            st.markdown("---")
-    
-    st.divider()
+        st.divider()
     
     # Check if RFP is loaded
     rfp = get_current_rfp()
