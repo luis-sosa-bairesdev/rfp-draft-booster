@@ -16,6 +16,7 @@ from src.utils.error_handler import PDFError, ValidationError, handle_errors, ha
 from src.utils.logger import setup_logger
 from utils.session import init_session_state
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
+from components.progress_tracker import ProgressTracker, ProgressStep
 
 logger = setup_logger(__name__)
 
@@ -155,7 +156,7 @@ def process_rfp(
     deadline: date,
     notes: str
 ):
-    """Process the uploaded RFP with comprehensive error handling."""
+    """Process the uploaded RFP with enhanced progress tracking."""
     
     logger.info(f"Starting RFP processing: {uploaded_file.name}")
     
@@ -171,64 +172,76 @@ def process_rfp(
         status=RFPStatus.PROCESSING
     )
     
-    # Progress tracking
-    progress_bar = st.progress(0, text="Starting processing...")
-    status_text = st.empty()
+    # Enhanced progress tracking with ProgressTracker
+    steps = [
+        ProgressStep("save", "Saving file to storage", "💾", 0.15),
+        ProgressStep("validate", "Validating PDF structure", "✓", 0.15),
+        ProgressStep("extract", "Extracting text from PDF", "📄", 0.60),
+        ProgressStep("finalize", "Finalizing and storing metadata", "✨", 0.10)
+    ]
     
-    # Step 1: Save file
-    status_text.text("💾 Saving file...")
-    progress_bar.progress(20, text="Saving file...")
-    storage = StorageManager()
-    file_content = io.BytesIO(uploaded_file.getvalue())
-    rfp.file_path = storage.save_upload(
-        file_content=file_content,
-        file_name=uploaded_file.name,
-        rfp_id=rfp.id
-    )
-    logger.info(f"File saved: {rfp.file_path}")
+    tracker = ProgressTracker("RFP Processing", steps, show_elapsed=True)
     
-    # Step 2: Validate PDF
-    status_text.text("✓ Validating PDF...")
-    progress_bar.progress(40, text="Validating PDF...")
-    processor = PDFProcessor()
-    file_content.seek(0)
-    is_valid, error = processor.validate_pdf(file_content)
+    with tracker:
+        # Step 1: Save file
+        tracker.start_step("save")
+        storage = StorageManager()
+        file_content = io.BytesIO(uploaded_file.getvalue())
+        rfp.file_path = storage.save_upload(
+            file_content=file_content,
+            file_name=uploaded_file.name,
+            rfp_id=rfp.id
+        )
+        logger.info(f"File saved: {rfp.file_path}")
+        tracker.complete_step("save")
+        
+        # Step 2: Validate PDF
+        tracker.start_step("validate")
+        processor = PDFProcessor()
+        file_content.seek(0)
+        is_valid, error = processor.validate_pdf(file_content)
+        
+        if not is_valid:
+            raise PDFError(error or "PDF validation failed", pdf_path=uploaded_file.name)
+        logger.info("PDF validation passed")
+        tracker.complete_step("validate")
+        
+        # Step 3: Extract text
+        tracker.start_step("extract")
+        tracker.update_substep("Analyzing PDF structure...")
+        
+        rfp.processing_start = datetime.now()
+        file_content.seek(0)
+        
+        tracker.update_substep(f"Extracting text from {rfp.total_pages or '?'} pages...")
+        full_text, text_by_page, page_count = processor.extract_text(
+            pdf_file=file_content,
+            preserve_layout=True
+        )
+        
+        rfp.extracted_text = full_text
+        rfp.extracted_text_by_page = text_by_page
+        rfp.total_pages = page_count
+        rfp.processing_end = datetime.now()
+        rfp.processing_time = (
+            rfp.processing_end - rfp.processing_start
+        ).total_seconds()
+        
+        logger.info(f"Extracted {len(full_text)} characters from {page_count} pages")
+        tracker.complete_step("extract")
+        
+        # Step 4: Finalize
+        tracker.start_step("finalize")
+        rfp.status = RFPStatus.COMPLETED
+        
+        # Store in session
+        st.session_state.rfp = rfp
+        st.session_state.processing_complete = True
+        
+        logger.info(f"RFP processing complete: {rfp.id}")
+        tracker.complete_step("finalize")
     
-    if not is_valid:
-        raise PDFError(error or "PDF validation failed", pdf_path=uploaded_file.name)
-    
-    # Step 3: Extract text
-    status_text.text("📄 Extracting text...")
-    progress_bar.progress(60, text="Extracting text from PDF...")
-    
-    rfp.processing_start = datetime.now()
-    file_content.seek(0)
-    
-    full_text, text_by_page, page_count = processor.extract_text(
-        pdf_file=file_content,
-        preserve_layout=True
-    )
-    
-    rfp.extracted_text = full_text
-    rfp.extracted_text_by_page = text_by_page
-    rfp.total_pages = page_count
-    rfp.processing_end = datetime.now()
-    rfp.processing_time = (
-        rfp.processing_end - rfp.processing_start
-    ).total_seconds()
-    rfp.status = RFPStatus.COMPLETED
-    
-    # Step 4: Finalize
-    status_text.text("✅ Finalizing...")
-    progress_bar.progress(100, text="Complete!")
-    
-    # Store in session
-    st.session_state.rfp = rfp
-    st.session_state.processing_complete = True
-    
-    logger.info(f"RFP processing complete: {rfp.id}")
-    
-    # Show success
+    # Show success (outside tracker context)
     st.balloons()
     st.success("🎉 **RFP Processing Complete!**")
     st.info("👇 Scroll down to see results or refresh the page")

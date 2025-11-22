@@ -19,6 +19,11 @@ from components.quick_stats import (
     get_quick_stats,
     load_demo_rfp
 )
+from components.progress_tracker import (
+    ProgressTracker,
+    ProgressStep,
+    simple_progress
+)
 
 __all__ = [
     "init_ai_assistant",
@@ -36,5 +41,9 @@ __all__ = [
     "render_quick_stats",
     "get_quick_stats",
     "load_demo_rfp",
+    "ProgressTracker",
+    "ProgressStep",
+    "simple_progress",
 ]
+
 
