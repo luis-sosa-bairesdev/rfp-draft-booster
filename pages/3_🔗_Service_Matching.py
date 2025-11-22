@@ -3,15 +3,16 @@
 import streamlit as st
 import pandas as pd
 from typing import List
-import logging
 
 from models import Service, Requirement
 from models.service import load_services_from_json, get_default_services
 from services.service_matcher import ServiceMatcher, ServiceMatch
+from src.utils.logger import setup_logger
+from src.utils.error_handler import handle_error, ValidationError
 from utils.session import init_session_state, has_current_rfp
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 
 def load_services() -> List[Service]:
