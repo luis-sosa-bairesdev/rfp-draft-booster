@@ -1,6 +1,5 @@
 """Risk Analysis Page - Epic 4: Risk Detection & Analysis."""
 
-import logging
 import streamlit as st
 from datetime import datetime
 from typing import List, Optional
@@ -12,7 +11,8 @@ from models.rfp import RFP
 from models.risk import Risk, RiskCategory, RiskSeverity, get_category_display_names, get_severity_display_names
 from services.risk_detector import RiskDetector, detect_risks_from_rfp
 from services.llm_client import LLMClient, create_llm_client, LLMProvider, get_available_provider_names
-from exceptions import LLMGenerationError, LLMConnectionError
+from src.utils.error_handler import LLMError, ValidationError, handle_errors, handle_error
+from src.utils.logger import setup_logger
 from utils.session import init_session_state, get_current_rfp
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 
@@ -29,7 +29,7 @@ def get_category_icon(category: RiskCategory) -> str:
     return icons.get(category, "⚠️")
 
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 # Page config
 st.set_page_config(
@@ -300,40 +300,34 @@ def main():
             st.error("Please enable at least one detection method (Pattern or AI)")
             return
         
-        with st.spinner("Detecting risks... This may take a moment."):
-            try:
-                llm_client = None
-                if use_ai:
-                    try:
-                        if not llm_provider:
-                            st.error("Please configure an LLM provider to use AI detection")
-                            return
-                        llm_client = create_llm_client(provider=LLMProvider(llm_provider), fallback=True)
-                    except Exception as e:
-                        st.error(f"Failed to initialize LLM client: {e}")
-                        if not use_patterns:
-                            return
-                        st.warning("Continuing with pattern detection only...")
-                
-                risks = detect_risks_from_rfp(
-                    rfp,
-                    llm_client=llm_client,
-                    min_confidence=min_confidence,
-                    use_patterns=use_patterns,
-                    use_ai=use_ai and llm_client is not None
-                )
-                
-                st.session_state.risks = risks
-                st.success(f"✅ Detected {len(risks)} risks")
-                st.rerun()
-                
-            except Exception as e:
-                logger.error(f"Error detecting risks: {e}", exc_info=True)
-                st.error(f"❌ Error detecting risks: {str(e)}")
-                if isinstance(e, LLMConnectionError):
-                    st.info("💡 Tip: Check your API keys and network connection")
-                elif isinstance(e, LLMGenerationError):
-                    st.info("💡 Tip: Try using a different LLM provider")
+        detect_risks_ui(rfp, use_ai, use_patterns, llm_provider, min_confidence)
+
+
+@handle_errors(show_ui=True, allow_retry=True, context={"page": "risk_analysis", "function": "detect_risks"})
+def detect_risks_ui(rfp: RFP, use_ai: bool, use_patterns: bool, llm_provider: str, min_confidence: float):
+    """Detect risks with comprehensive error handling."""
+    
+    logger.info(f"Starting risk detection for RFP: {rfp.id}, AI: {use_ai}, Patterns: {use_patterns}")
+    
+    with st.spinner("Detecting risks... This may take a moment."):
+        llm_client = None
+        if use_ai:
+            if not llm_provider:
+                raise ValidationError("LLM provider required for AI detection", field="llm_provider")
+            llm_client = create_llm_client(provider=LLMProvider(llm_provider), fallback=True)
+        
+        risks = detect_risks_from_rfp(
+            rfp,
+            llm_client=llm_client,
+            min_confidence=min_confidence,
+            use_patterns=use_patterns,
+            use_ai=use_ai and llm_client is not None
+        )
+        
+        st.session_state.risks = risks
+        st.success(f"✅ Detected {len(risks)} risks")
+        logger.info(f"Detected {len(risks)} risks successfully")
+        st.rerun()
     
     # Display existing risks
     if st.session_state.risks:
