@@ -333,10 +333,21 @@ def detect_risks_ui(rfp: RFP, use_ai: bool, use_patterns: bool, llm_provider: st
     if st.session_state.risks:
         st.markdown("---")
         
+        # Action buttons row
+        col1, col2, col3 = st.columns([2, 2, 2])
+        with col1:
+            if st.button("➕ Add Manual Risk", key="btn_add_manual_risk", use_container_width=True):
+                st.session_state.show_add_risk_modal = True
+                st.rerun()
+        
         # Statistics
         display_statistics(st.session_state.risks)
         
         st.markdown("---")
+        
+        # Manual Risk Addition Modal
+        if st.session_state.get("show_add_risk_modal", False):
+            render_add_risk_modal()
         
         # Filters
         col1, col2, col3 = st.columns(3)
@@ -477,6 +488,125 @@ def detect_risks_ui(rfp: RFP, use_ai: bool, use_patterns: bool, llm_provider: st
                 )
     else:
         st.info("👆 Click 'Detect Risks' to start analyzing the RFP for problematic clauses.")
+
+
+def render_add_risk_modal():
+    """Render modal for manually adding a risk."""
+    st.markdown("### ➕ Add Manual Risk")
+    st.markdown("Add a risk that you've identified manually.")
+    
+    with st.form("add_risk_form"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            category = st.selectbox(
+                "Risk Category",
+                options=[cat.value for cat in RiskCategory],
+                format_func=lambda x: get_category_display_names().get(RiskCategory(x), x),
+                key="manual_risk_category"
+            )
+            
+            severity = st.selectbox(
+                "Severity Level",
+                options=[sev.value for sev in RiskSeverity],
+                format_func=lambda x: get_severity_display_names().get(RiskSeverity(x), x),
+                key="manual_risk_severity"
+            )
+        
+        with col2:
+            likelihood = st.selectbox(
+                "Likelihood",
+                options=["HIGH", "MEDIUM", "LOW"],
+                index=1,
+                key="manual_risk_likelihood"
+            )
+            
+            page_number = st.number_input(
+                "Page Number (optional)",
+                min_value=1,
+                value=1,
+                key="manual_risk_page"
+            )
+        
+        clause_text = st.text_area(
+            "Risk Description / Clause Text",
+            placeholder="Describe the risk or paste the problematic clause...",
+            height=100,
+            key="manual_risk_clause"
+        )
+        
+        impact = st.text_area(
+            "Impact",
+            placeholder="What is the potential impact of this risk?",
+            height=80,
+            key="manual_risk_impact"
+        )
+        
+        recommendation = st.text_area(
+            "Recommendation",
+            placeholder="What should be done to mitigate this risk?",
+            height=80,
+            key="manual_risk_recommendation"
+        )
+        
+        alternative_language = st.text_area(
+            "Alternative Language (optional)",
+            placeholder="Suggested alternative wording for the clause...",
+            height=60,
+            key="manual_risk_alternative"
+        )
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            submit = st.form_submit_button("✅ Add Risk", type="primary", use_container_width=True)
+        with col2:
+            cancel = st.form_submit_button("✕ Cancel", use_container_width=True)
+        
+        if cancel:
+            st.session_state.show_add_risk_modal = False
+            st.rerun()
+        
+        if submit:
+            if not clause_text.strip():
+                st.error("❌ Risk description is required")
+                return
+            
+            if not impact.strip():
+                st.error("❌ Impact description is required")
+                return
+            
+            if not recommendation.strip():
+                st.error("❌ Recommendation is required")
+                return
+            
+            # Create new risk
+            from datetime import datetime
+            new_risk = Risk(
+                rfp_id=st.session_state.rfp.id,
+                clause_text=clause_text.strip(),
+                category=RiskCategory(category),
+                severity=RiskSeverity(severity),
+                likelihood=likelihood,
+                impact=impact.strip(),
+                recommendation=recommendation.strip(),
+                alternative_language=alternative_language.strip() if alternative_language.strip() else None,
+                confidence=1.0,  # Manual risks have 100% confidence
+                page_number=page_number,
+                detected_by="manual",
+                created_at=datetime.now(),
+                updated_at=datetime.now()
+            )
+            
+            # Add to session state
+            if "risks" not in st.session_state:
+                st.session_state.risks = []
+            st.session_state.risks.append(new_risk)
+            
+            # Close modal
+            st.session_state.show_add_risk_modal = False
+            
+            st.success(f"✅ Risk added successfully!")
+            st.rerun()
 
 
 if __name__ == "__main__":
