@@ -10,7 +10,9 @@ from components.floating_chat import (
     render_floating_chat,
     init_floating_chat,
     render_floating_chat_button,
-    render_floating_chat_modal
+    render_floating_chat_modal,
+    open_floating_chat,
+    close_floating_chat
 )
 from components.progress_dashboard import render_progress_dashboard
 from components.global_search import render_global_search, search_content, SearchResult
@@ -45,6 +47,8 @@ __all__ = [
     "init_floating_chat",
     "render_floating_chat_button",
     "render_floating_chat_modal",
+    "open_floating_chat",
+    "close_floating_chat",
     "render_progress_dashboard",
     "render_global_search",
     "search_content",

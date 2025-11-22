@@ -15,8 +15,8 @@ from src.utils.error_handler import LLMError, ValidationError, handle_errors, ha
 from src.utils.logger import setup_logger
 from src.utils.duplicate_detector import DuplicateDetector
 from utils.session import init_session_state, get_current_rfp
-from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 from components.navigation_flow import render_navigation_buttons
+from components import open_floating_chat
 
 
 def get_category_icon(category: RequirementCategory) -> str:
@@ -385,18 +385,15 @@ def display_statistics(requirements: List[Requirement]):
 
 def main():
     """Main requirements page."""
-    # Render AI Assistant modal FIRST if open (so it's visible at top)
-    if st.session_state.get("show_ai_assistant", False):
-        render_ai_assistant_modal(key_suffix="requirements", page_context="requirements")
-        st.markdown("---")
-    
     # Header with AI Assistant button
     col1, col2 = st.columns([5, 1])
     with col1:
         st.title("📋 Requirements Extraction")
         st.markdown("Extract and manage requirements from your RFP using AI")
     with col2:
-        render_ai_assistant_button(key_suffix="requirements")
+        if st.button("💬 Ask AI", key="btn_open_chat_req", use_container_width=True):
+            open_floating_chat()
+            st.rerun()
     
     st.divider()
     

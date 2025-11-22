@@ -10,8 +10,8 @@ from services.service_matcher import ServiceMatcher, ServiceMatch
 from src.utils.logger import setup_logger
 from src.utils.error_handler import handle_error, ValidationError
 from utils.session import init_session_state, has_current_rfp
-from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 from components.navigation_flow import render_navigation_buttons
+from components import open_floating_chat
 
 logger = setup_logger(__name__)
 
@@ -427,7 +427,9 @@ def main():
     # AI Assistant button in sidebar
     with st.sidebar:
         st.markdown("---")
-        render_ai_assistant_button(key_suffix="service_matching")
+        if st.button("💬 Ask AI", key="btn_open_chat_matching", use_container_width=True):
+            open_floating_chat()
+            st.rerun()
 
     # Navigation buttons
     render_navigation_buttons('matching')

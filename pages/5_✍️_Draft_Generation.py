@@ -18,8 +18,8 @@ from services.docx_exporter import DocxExporter
 from src.utils.error_handler import LLMError, ValidationError, handle_errors, handle_error
 from src.utils.logger import setup_logger
 from utils.session import init_session_state, get_current_rfp
-from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 from components.navigation_flow import render_navigation_buttons
+from components import open_floating_chat
 
 logger = setup_logger(__name__)
 
@@ -148,7 +148,9 @@ def main():
     # AI Assistant button in header
     col1, col2 = st.columns([5, 1])
     with col2:
-        render_ai_assistant_button(key_suffix="draft")
+        if st.button("💬 Ask AI", key="btn_open_chat_draft", use_container_width=True):
+            open_floating_chat()
+            st.rerun()
     
     # Check prerequisites
     can_generate, error_msg = check_prerequisites()

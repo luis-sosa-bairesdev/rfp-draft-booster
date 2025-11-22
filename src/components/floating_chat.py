@@ -15,11 +15,25 @@ from services.ai_assistant import AIAssistant, AIMessage
 from utils.session import get_current_rfp
 
 
+def open_floating_chat():
+    """Open the floating chat modal."""
+    st.session_state.show_floating_chat = True
+
+
+def close_floating_chat():
+    """Close the floating chat modal."""
+    st.session_state.show_floating_chat = False
+
+
 def render_floating_chat_button():
     """
     Render a floating chat button in the bottom-left corner.
     Uses custom CSS to position it fixed on the page.
     """
+    # Initialize chat state
+    if "show_floating_chat" not in st.session_state:
+        st.session_state.show_floating_chat = False
+    
     # Floating button CSS
     st.markdown("""
     <style>

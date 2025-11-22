@@ -15,9 +15,9 @@ from services.storage_manager import StorageManager
 from src.utils.error_handler import PDFError, ValidationError, handle_errors, handle_error
 from src.utils.logger import setup_logger
 from utils.session import init_session_state
-from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 from components.navigation_flow import render_navigation_buttons
 from components.progress_tracker import ProgressTracker, ProgressStep
+from components import open_floating_chat
 
 logger = setup_logger(__name__)
 
@@ -45,7 +45,9 @@ def main():
         st.title("📤 Upload RFP Document")
         st.markdown("Upload your RFP PDF to begin automated processing")
     with col2:
-        render_ai_assistant_button(key_suffix="upload")
+        if st.button("💬 Ask AI", key="btn_open_chat_upload", use_container_width=True):
+            open_floating_chat()
+            st.rerun()
     
     st.divider()
     
