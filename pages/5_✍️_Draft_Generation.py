@@ -1,6 +1,5 @@
 """Draft Generation Page - Epic 5: Draft Generation & AI Assistant."""
 
-import logging
 import streamlit as st
 from datetime import datetime
 from typing import List, Optional
@@ -16,11 +15,12 @@ from models.risk import Risk
 from services.draft_generator import DraftGenerator
 from services.llm_client import create_llm_client, LLMProvider, get_available_provider_names
 from services.docx_exporter import DocxExporter
-from exceptions import LLMGenerationError, LLMConnectionError
+from src.utils.error_handler import LLMError, ValidationError, handle_errors, handle_error
+from src.utils.logger import setup_logger
 from utils.session import init_session_state, get_current_rfp
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 # Page config
 st.set_page_config(
@@ -267,37 +267,41 @@ def main():
             st.error("Please configure an LLM provider to generate drafts")
             return
         
-        with st.spinner("🤖 Generating draft... This may take 1-2 minutes."):
-            try:
-                # Create LLM client
-                llm_client = create_llm_client(provider=LLMProvider(llm_provider), fallback=True)
-                
-                # Create generator
-                generator = DraftGenerator(llm_client=llm_client, temperature=0.7)
-                
-                # Generate draft
-                draft = generator.generate_draft(
-                    rfp=rfp,
-                    requirements=requirements,
-                    risks=risks,
-                    service_matches=approved_matches,
-                    instructions=instructions,
-                    tone=tone,
-                    audience=audience,
-                    word_count=word_count
-                )
-                
-                # Store in session state
-                st.session_state.draft = draft
-                
-                st.success(f"✅ Draft generated successfully! ({draft.word_count} words, {draft.section_count} sections)")
-                st.rerun()
-                
-            except ValueError as e:
-                st.error(f"❌ {str(e)}")
-            except Exception as e:
-                logger.error(f"Error generating draft: {e}")
-                st.error(f"❌ Error generating draft: {str(e)}")
+        generate_draft_ui(rfp, requirements, risks, approved_matches, llm_provider, instructions, tone, audience, word_count)
+
+
+@handle_errors(show_ui=True, allow_retry=True, context={"page": "draft_generation", "function": "generate_draft"})
+def generate_draft_ui(rfp: RFP, requirements: List[Requirement], risks: List[Risk], approved_matches: list, 
+                      llm_provider: str, instructions: str, tone: str, audience: str, word_count: int):
+    """Generate draft with comprehensive error handling."""
+    
+    logger.info(f"Starting draft generation for RFP: {rfp.id}, provider: {llm_provider}")
+    
+    with st.spinner("🤖 Generating draft... This may take 1-2 minutes."):
+        # Create LLM client
+        llm_client = create_llm_client(provider=LLMProvider(llm_provider), fallback=True)
+        
+        # Create generator
+        generator = DraftGenerator(llm_client=llm_client, temperature=0.7)
+        
+        # Generate draft
+        draft = generator.generate_draft(
+            rfp=rfp,
+            requirements=requirements,
+            risks=risks,
+            service_matches=approved_matches,
+            instructions=instructions,
+            tone=tone,
+            audience=audience,
+            word_count=word_count
+        )
+        
+        # Store in session state
+        st.session_state.draft = draft
+        
+        logger.info(f"Draft generated: {draft.word_count} words, {draft.section_count} sections")
+        st.success(f"✅ Draft generated successfully! ({draft.word_count} words, {draft.section_count} sections)")
+        st.rerun()
     
     # Handle section regeneration
     for section_type in ["executive_summary", "approach", "services", "timeline", "pricing", "risk_mitigation"]:
