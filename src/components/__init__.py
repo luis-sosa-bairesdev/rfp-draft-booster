@@ -30,6 +30,11 @@ from components.progress_tracker import (
     ProgressStep,
     simple_progress
 )
+from components.navigation_flow import (
+    render_navigation_buttons,
+    render_workflow_progress,
+    navigate_to
+)
 
 __all__ = [
     "init_ai_assistant",
@@ -54,6 +59,9 @@ __all__ = [
     "ProgressTracker",
     "ProgressStep",
     "simple_progress",
+    "render_navigation_buttons",
+    "render_workflow_progress",
+    "navigate_to"
 ]
 
 

@@ -16,6 +16,7 @@ from src.utils.error_handler import PDFError, ValidationError, handle_errors, ha
 from src.utils.logger import setup_logger
 from utils.session import init_session_state
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
+from components.navigation_flow import render_navigation_buttons
 from components.progress_tracker import ProgressTracker, ProgressStep
 
 logger = setup_logger(__name__)
@@ -358,6 +359,11 @@ def show_upload_instructions():
         3. Results preview
         4. Continue to requirement analysis
         """)
+
+
+    # Navigation buttons
+    if st.session_state.get('rfp'):
+        render_navigation_buttons('upload')
 
 
 if __name__ == "__main__":

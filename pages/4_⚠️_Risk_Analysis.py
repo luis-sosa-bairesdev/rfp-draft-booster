@@ -15,6 +15,7 @@ from src.utils.error_handler import LLMError, ValidationError, handle_errors, ha
 from src.utils.logger import setup_logger
 from utils.session import init_session_state, get_current_rfp
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
+from components.navigation_flow import render_navigation_buttons
 
 
 def get_category_icon(category: RiskCategory) -> str:
@@ -488,6 +489,9 @@ def detect_risks_ui(rfp: RFP, use_ai: bool, use_patterns: bool, llm_provider: st
                 )
     else:
         st.info("👆 Click 'Detect Risks' to start analyzing the RFP for problematic clauses.")
+    
+    # Navigation buttons
+    render_navigation_buttons('risk')
 
 
 def render_add_risk_modal():

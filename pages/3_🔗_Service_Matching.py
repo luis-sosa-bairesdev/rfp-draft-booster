@@ -11,6 +11,7 @@ from src.utils.logger import setup_logger
 from src.utils.error_handler import handle_error, ValidationError
 from utils.session import init_session_state, has_current_rfp
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
+from components.navigation_flow import render_navigation_buttons
 
 logger = setup_logger(__name__)
 
@@ -427,6 +428,9 @@ def main():
     with st.sidebar:
         st.markdown("---")
         render_ai_assistant_button(key_suffix="service_matching")
+
+    # Navigation buttons
+    render_navigation_buttons('matching')
 
 
 if __name__ == "__main__":

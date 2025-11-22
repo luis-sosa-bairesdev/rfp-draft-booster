@@ -19,6 +19,7 @@ from src.utils.error_handler import LLMError, ValidationError, handle_errors, ha
 from src.utils.logger import setup_logger
 from utils.session import init_session_state, get_current_rfp
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
+from components.navigation_flow import render_navigation_buttons
 
 logger = setup_logger(__name__)
 
@@ -433,6 +434,9 @@ def generate_draft_ui(rfp: RFP, requirements: List[Requirement], risks: List[Ris
             if st.button("📄 Export to DOCX", key="btn_export_docx"):
                 export_to_docx(draft, rfp, approved_matches)
     
+
+    # Navigation buttons
+    render_navigation_buttons('draft')
 
 
 if __name__ == "__main__":
