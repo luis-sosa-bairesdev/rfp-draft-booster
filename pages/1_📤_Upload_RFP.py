@@ -17,7 +17,7 @@ from src.utils.logger import setup_logger
 from utils.session import init_session_state
 from components.navigation_flow import render_navigation_buttons
 from components.progress_tracker import ProgressTracker, ProgressStep
-from components import open_floating_chat, render_floating_chat
+from components import open_floating_chat
 
 logger = setup_logger(__name__)
 
@@ -45,9 +45,23 @@ def main():
         st.title("📤 Upload RFP Document")
         st.markdown("Upload your RFP PDF to begin automated processing")
     with col2:
-        if st.button("💬 Ask AI", key="btn_open_chat_upload", use_container_width=True):
-            open_floating_chat()
-            st.rerun()
+        if st.button("💬 Ask AI", key="btn_ask_ai_upload", use_container_width=True):
+            st.session_state.show_ai_chat_upload = True
+    
+    # AI Chat Dialog
+    if st.session_state.get("show_ai_chat_upload", False):
+        with st.container():
+            st.markdown("### 💬 AI Assistant")
+            user_question = st.text_area("Ask about the RFP process...", height=80, key="ai_q_upload")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Send", key="send_ai_upload", type="primary") and user_question.strip():
+                    st.info(f"🤖 Question: {user_question}")
+            with col2:
+                if st.button("Close", key="close_ai_upload"):
+                    st.session_state.show_ai_chat_upload = False
+                    st.rerun()
+            st.markdown("---")
     
     st.divider()
     
@@ -370,5 +384,5 @@ def show_upload_instructions():
 
 if __name__ == "__main__":
     main()
-    render_floating_chat()  # Render floating chat on all pages
+    # Chat via Ask AI button
 

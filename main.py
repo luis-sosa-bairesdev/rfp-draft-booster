@@ -14,8 +14,6 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from config import settings
 from utils.logging_config import setup_logging
 from utils.session import init_session_state, get_current_rfp
-from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
-from components.floating_chat import render_floating_chat
 from components.progress_dashboard import render_progress_dashboard
 from components.global_search import render_global_search
 from components.quick_stats import render_quick_stats
@@ -43,18 +41,9 @@ init_session_state()
 def main() -> None:
     """Main application entry point."""
     
-    # Render AI Assistant modal FIRST if open (so it's visible at top)
-    if st.session_state.get("show_ai_assistant", False):
-        render_ai_assistant_modal(key_suffix="main", page_context="main")
-        st.markdown("---")
-    
-    # Header with AI Assistant button
-    col1, col2 = st.columns([5, 1])
-    with col1:
-        st.title("🚀 RFP Draft Booster")
-        st.markdown("**Accelerate your RFP responses by 80%**")
-    with col2:
-        render_ai_assistant_button(key_suffix="main")
+    # Header
+    st.title("🚀 RFP Draft Booster")
+    st.markdown("**Accelerate your RFP responses by 80%**")
     
     st.divider()
     
@@ -134,8 +123,7 @@ def main() -> None:
     </div>
     """.format(version=settings.version), unsafe_allow_html=True)
     
-    # Render floating chat widget (always visible, bottom-left corner)
-    render_floating_chat()
+    # Floating chat removed - will use Ask AI buttons per page
 
 
 if __name__ == "__main__":
