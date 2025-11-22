@@ -231,7 +231,9 @@ def main():
         st.title("⚠️ Risk Detection & Analysis")
         st.markdown("Identify and analyze potentially problematic clauses in RFPs")
     with col2:
-        # Get current RFP
+        st.write("")  # Placeholder for future button
+    
+    # Get current RFP
     rfp = get_current_rfp()
     
     if not rfp:

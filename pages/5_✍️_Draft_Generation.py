@@ -150,7 +150,9 @@ def main():
     # AI Assistant button in header
     col1, col2 = st.columns([5, 1])
     with col2:
-        # Check prerequisites
+        st.write("")  # Placeholder
+    
+    # Check prerequisites
     can_generate, error_msg = check_prerequisites()
     
     if not can_generate:

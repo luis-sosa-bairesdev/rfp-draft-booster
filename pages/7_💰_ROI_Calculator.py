@@ -15,8 +15,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from config import settings
 from utils.session import get_current_rfp
-from components.roi_calculator import (
 from components.floating_chat_widget import render_floating_chat_widget
+from components.roi_calculator import (
     render_roi_calculator,
     init_roi_session_state,
     DEFAULT_RFP_PAGES,
