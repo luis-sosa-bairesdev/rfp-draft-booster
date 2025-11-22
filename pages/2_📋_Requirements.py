@@ -1,6 +1,5 @@
 """Requirements Page - Epic 3: LLM Requirement Extraction."""
 
-import logging
 import streamlit as st
 from datetime import datetime
 from typing import List, Optional
@@ -12,7 +11,8 @@ from models.rfp import RFP
 from models.requirement import Requirement, RequirementCategory, RequirementPriority
 from services.requirement_extractor import RequirementExtractor, extract_requirements_from_rfp
 from services.llm_client import LLMClient, create_llm_client, LLMProvider, get_available_provider_names
-from exceptions import LLMGenerationError, LLMConnectionError
+from src.utils.error_handler import LLMError, ValidationError, handle_errors, handle_error
+from src.utils.logger import setup_logger
 from utils.session import init_session_state, get_current_rfp
 from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
 
@@ -28,7 +28,7 @@ def get_category_icon(category: RequirementCategory) -> str:
     }
     return icons.get(category, "📋")
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 # Page config
 st.set_page_config(
@@ -298,63 +298,37 @@ def display_extraction_controls():
             st.error("❌ RFP has no extracted text. Please re-upload the PDF.")
             return False
         
-        with st.spinner("🤖 Extracting requirements... This may take a few moments."):
-            try:
-                # Create LLM client
-                llm_client = create_llm_client(provider=llm_provider, fallback=True)
-                
-                # Extract requirements
-                requirements = extract_requirements_from_rfp(
-                    rfp=rfp,
-                    llm_client=llm_client,
-                    min_confidence=min_confidence
-                )
-                
-                if requirements:
-                    st.session_state.requirements = requirements
-                    st.success(f"✅ Successfully extracted {len(requirements)} requirements!")
-                    st.balloons()
-                else:
-                    st.warning("⚠️ No requirements found. Try lowering the confidence threshold.")
-                    
-            except LLMConnectionError as e:
-                st.error(f"❌ LLM Connection Error: {e}")
-                st.info("💡 **Tip:** Make sure you have configured API keys in your `.env` file:\n"
-                        "- `GEMINI_API_KEY` for Gemini\n"
-                        "- `GROQ_API_KEY` for Groq")
-            except LLMGenerationError as e:
-                st.error(f"❌ LLM Generation Error: {e}")
-                st.info("💡 **Tip:** Try using a different LLM provider or check your API quota.")
-            except RuntimeError as e:
-                # This is the error from create_llm_client when no providers are available
-                error_msg = str(e)
-                st.error("❌ **No LLM Providers Available**")
-                st.markdown("### Configuration Required")
-                st.markdown(error_msg)
-                st.markdown("""
-                ### Quick Setup Guide:
-                
-                1. **Create a `.env` file** in the project root (if it doesn't exist)
-                2. **Add your API key** for at least one provider:
-                
-                ```env
-                # For Gemini (recommended - free tier available)
-                GEMINI_API_KEY=your_api_key_here
-                
-                # OR for Groq (fast inference)
-                GROQ_API_KEY=your_api_key_here
-                ```
-                
-                3. **Get API keys:**
-                   - **Gemini**: https://makersuite.google.com/app/apikey
-                   - **Groq**: https://console.groq.com/keys
-                
-                4. **Restart Streamlit** after adding the API key
-                """)
-            except Exception as e:
-                logger.error(f"Error extracting requirements: {e}", exc_info=True)
-                st.error(f"❌ Error: {e}")
-                st.info("💡 Check the logs for more details or try a different LLM provider.")
+        extract_requirements_ui(rfp, llm_provider, min_confidence)
+        return True
+    
+    return False
+
+
+@handle_errors(show_ui=True, allow_retry=True, context={"page": "requirements", "function": "extract_requirements"})
+def extract_requirements_ui(rfp: RFP, llm_provider: LLMProvider, min_confidence: float):
+    """Extract requirements with comprehensive error handling."""
+    
+    logger.info(f"Starting requirement extraction for RFP: {rfp.id}, provider: {llm_provider.value}")
+    
+    with st.spinner("🤖 Extracting requirements... This may take a few moments."):
+        # Create LLM client
+        llm_client = create_llm_client(provider=llm_provider, fallback=True)
+        
+        # Extract requirements
+        requirements = extract_requirements_from_rfp(
+            rfp=rfp,
+            llm_client=llm_client,
+            min_confidence=min_confidence
+        )
+        
+        if requirements:
+            st.session_state.requirements = requirements
+            st.success(f"✅ Successfully extracted {len(requirements)} requirements!")
+            st.balloons()
+            logger.info(f"Extracted {len(requirements)} requirements successfully")
+        else:
+            st.warning("⚠️ No requirements found. Try lowering the confidence threshold.")
+            logger.warning(f"No requirements found for RFP: {rfp.id}")
     
     return True
 
