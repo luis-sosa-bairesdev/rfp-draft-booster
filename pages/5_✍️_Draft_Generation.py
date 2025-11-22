@@ -211,35 +211,47 @@ def main():
         height=100
     )
     
-    # LLM Provider selection
-    available_providers = get_available_provider_names()
-    
-    if not available_providers:
-        st.error("❌ **No LLM Providers Configured**")
-        st.info("""
-        Draft generation requires a configured LLM provider.
+    # LLM Provider selection with settings expander
+    with st.expander("⚙️ Generation Settings", expanded=False):
+        col1, col2 = st.columns(2)
+        with col1:
+            available_providers = get_available_provider_names()
+            
+            if not available_providers:
+                st.error("❌ **No LLM Providers Configured**")
+                st.info("""
+                Draft generation requires a configured LLM provider.
+                
+                Please configure at least one in your `.env` file:
+                
+                - **Gemini**: Set `GEMINI_API_KEY=your_api_key`
+                  Get key at: https://makersuite.google.com/app/apikey
+                
+                - **Groq**: Set `GROQ_API_KEY=your_api_key`
+                  Get key at: https://console.groq.com/keys
+                
+                - **Ollama**: Install with `pip install ollama` and ensure Ollama is running locally
+                """)
+                llm_provider = None
+            else:
+                llm_provider = st.selectbox(
+                    "LLM Provider",
+                    options=available_providers,
+                    index=0,
+                    key="draft_llm_provider",
+                    help=f"Select LLM provider for draft generation ({len(available_providers)} available)"
+                )
         
-        Please configure at least one in your `.env` file:
-        
-        - **Gemini**: Set `GEMINI_API_KEY=your_api_key`
-          Get key at: https://makersuite.google.com/app/apikey
-        
-        - **Groq**: Set `GROQ_API_KEY=your_api_key`
-          Get key at: https://console.groq.com/keys
-        
-        - **Ollama**: Install with `pip install ollama` and ensure Ollama is running locally
-        """)
-        generate_btn = False
-        regenerate_btn = False
-        llm_provider = None
-    else:
-        llm_provider = st.selectbox(
-            "LLM Provider",
-            options=available_providers,
-            index=0,
-            key="draft_llm_provider",
-            help=f"Select LLM provider for draft generation ({len(available_providers)} available)"
-        )
+        with col2:
+            temperature = st.slider(
+                "Creativity Level",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.7,
+                step=0.1,
+                key="draft_temperature",
+                help="Higher values = more creative/varied output. Lower = more focused/deterministic"
+            )
     
     # Generate button
     col1, col2, col3 = st.columns([1, 1, 2])
@@ -248,7 +260,8 @@ def main():
             "🚀 Generate Draft",
             key="btn_generate_draft",
             use_container_width=True,
-            type="primary"
+            type="primary",
+            disabled=not llm_provider
         )
     
     with col2:
@@ -256,7 +269,8 @@ def main():
             regenerate_btn = st.button(
                 "🔄 Regenerate",
                 key="btn_regenerate_draft",
-                use_container_width=True
+                use_container_width=True,
+                disabled=not llm_provider
             )
         else:
             regenerate_btn = False
