@@ -55,19 +55,39 @@ description: "Fundamental principles for AI assistant behavior - always applied"
 - Sanitize user inputs to prevent injection attacks
 - Follow principle of least privilege for access control
 
-### 7. Version Control
-- Write clear, descriptive commit messages
+### 7. Version Control & Commits
+
+**Commit Strategy:**
+- **For Epics:** ONE comprehensive commit when epic is 100% complete
+  - Include all changes: models, services, UI, tests, documentation
+  - Commit AFTER Confluence upload (see epic-workflow.mdc Phase 3, Step 3.5)
+  - ❌ NO partial commits during epic implementation
+  - ❌ NO "work in progress" commits
+  - ❌ NO commits after each feature/fix
+
+**Commit Message Format:**
 - Follow conventional commit format: `type(scope): description`
-- Keep commits atomic and focused on single concerns
+- For epic commits: `feat(epic-X): [Epic Title] - Complete implementation`
 - Reference ticket numbers in commit messages
+- Include key metrics: test coverage, story counts, Jira status
+
+**Semantic Versioning:**
 - Follow semantic versioning for releases (MAJOR.MINOR.PATCH)
 - Maintain CHANGELOG.md with all notable changes
+
+**Why ONE commit per epic:**
+1. Clean git history - One entry per epic, easy to track
+2. Atomic changes - All related code in one commit
+3. Easy rollback - Revert entire epic if needed
+4. Clear milestones - Commits = completed epics
+5. Better code review - Review complete feature, not fragments
 
 ### 8. Iterative Development
 - Build features incrementally with clear milestones
 - Test each layer before moving to the next
-- Commit working code frequently
+- **Save progress in local workspace, but DO NOT commit** until epic is complete
 - Rollback if tests fail or issues arise
+- Follow epic-workflow.mdc for commit strategy (ONE commit per epic)
 
 ## AI Assistant Behavior
 

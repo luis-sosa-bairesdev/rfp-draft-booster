@@ -22,7 +22,7 @@ from components.roi_calculator import (
     DEFAULT_HOURLY_RATE,
     DEFAULT_TIME_PER_PAGE
 )
-from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
+from components.ai_assistant import render_ai_assistant_in_sidebar
 from utils.calculations import calculate_full_roi
 
 # Page configuration
@@ -225,23 +225,16 @@ def render_rfp_based_calculator(rfp):
 def main():
     """Main ROI Calculator page."""
     
-    # Render AI Assistant modal FIRST if open
-    if st.session_state.get("show_ai_assistant", False):
-        render_ai_assistant_modal(key_suffix="roi", page_context="roi")
-        st.markdown("---")
+    # Render AI Assistant in sidebar
+    render_ai_assistant_in_sidebar()
     
-    # Header with AI Assistant button
-    col1, col2 = st.columns([5, 1])
-    with col1:
-        st.title("💰 ROI Calculator")
-        st.markdown(
-            "**Estimate your savings** with AI-powered RFP processing. "
-            "Calculate potential ROI based on your team's parameters."
-        )
-    with col2:
-        render_ai_assistant_button(key_suffix="roi")
-    with col2:
-        st.divider()
+    # Header
+    st.title("💰 ROI Calculator")
+    st.markdown(
+        "**Estimate your savings** with AI-powered RFP processing. "
+        "Calculate potential ROI based on your team's parameters."
+    )
+    st.markdown("---")
     
     # Check if RFP is loaded
     rfp = get_current_rfp()

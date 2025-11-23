@@ -91,7 +91,8 @@ class TestEndToEndRequirementExtraction:
         rfp_no_text = RFP(id="test", file_name="test.pdf")
         rfp_no_text.extracted_text = None
         
-        with pytest.raises(ValueError, match="RFP must have extracted_text"):
+        from src.utils.error_handler import ValidationError
+        with pytest.raises(ValidationError, match="RFP must have extracted_text"):
             extractor.extract_from_rfp(rfp_no_text)
     
     def test_requirement_serialization_for_storage(self):

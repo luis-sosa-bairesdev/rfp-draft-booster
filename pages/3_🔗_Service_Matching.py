@@ -11,7 +11,7 @@ from src.utils.logger import setup_logger
 from src.utils.error_handler import handle_error, ValidationError
 from utils.session import init_session_state, has_current_rfp
 from components.navigation_flow import render_navigation_buttons
-from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
+from components.ai_assistant import render_ai_assistant_in_sidebar
 
 logger = setup_logger(__name__)
 
@@ -45,41 +45,6 @@ def compute_matches(
     )
     
     return matches
-
-
-def render_header_stats(
-    requirements: List[Requirement],
-    services: List[Service],
-    matches: List[ServiceMatch],
-    matcher: ServiceMatcher
-):
-    """Render header with statistics."""
-    # Header with AI Assistant button
-    col1, col2 = st.columns([5, 1])
-    with col1:
-        st.title("🔗 Service Matching")
-        st.markdown("Match RFP requirements to BairesDev services automatically")
-    with col2:
-        render_ai_assistant_button(key_suffix="service_matching")
-    
-    st.markdown("---")
-    
-    # Stats
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric("Requirements", len(requirements))
-    
-    with col2:
-        st.metric("Services", len(services))
-    
-    with col3:
-        avg_coverage = matcher.get_overall_coverage(matches) if matches else 0.0
-        st.metric("Avg Match", f"{avg_coverage:.0%}")
-    
-    with col4:
-        approved, total = matcher.count_approved_matches(matches)
-        st.metric("Approved", f"{approved}/{total}")
 
 
 def render_filters(key_suffix: str = ""):
@@ -348,16 +313,21 @@ def render_coverage_chart(matches: List[ServiceMatch], matcher: ServiceMatcher):
 
 def render_empty_state():
     """Render empty state when no requirements exist."""
-    st.info("📋 **No Requirements Found**")
-    st.markdown("""
-    To use Service Matching, you need to:
-    1. Upload an RFP (📤 Upload RFP page)
-    2. Extract requirements (📋 Requirements page)
-    3. Return here to see service matches
-    """)
+    st.info(
+        "💡 **No requirements extracted yet.** Extract requirements from your RFP first. "
+        "Service Matching needs requirements to map them to BairesDev services!"
+    )
     
-    if st.button("Go to Requirements Page"):
-        st.switch_page("pages/2_📋_Requirements.py")
+    # Link to requirements page
+    col1, col2, col3 = st.columns([2, 3, 2])
+    with col2:
+        if st.button(
+            "📋 Go to Requirements Page",
+            type="primary",
+            use_container_width=True,
+            key="btn_requirements_from_matching"
+        ):
+            st.switch_page("pages/2_📋_Requirements.py")
 
 
 def main():
@@ -366,16 +336,32 @@ def main():
     # Initialize session
     init_session_state()
     
-    # Render AI Assistant modal FIRST if open
-    if st.session_state.get("show_ai_assistant", False):
-        render_ai_assistant_modal(key_suffix="service_matching", page_context="service_matching")
-        st.markdown("---")
+    # Render AI Assistant in sidebar
+    render_ai_assistant_in_sidebar()
+    
+    # Header
+    st.title("🔗 Service Matching")
+    st.markdown("Match RFP requirements to BairesDev services automatically")
+    st.markdown("---")
     
     # Check prerequisites
     if not has_current_rfp():
-        st.warning("⚠️ Please upload an RFP first")
-        if st.button("Go to Upload Page"):
-            st.switch_page("pages/1_📤_Upload_RFP.py")
+        st.info(
+            "💡 **No RFP loaded yet.** Upload an RFP and extract requirements first. "
+            "Service Matching will automatically map your requirements to BairesDev services!"
+        )
+        
+        # Link to upload page
+        col1, col2, col3 = st.columns([2, 3, 2])
+        with col2:
+            if st.button(
+                "📤 Upload RFP to Start Matching",
+                type="primary",
+                use_container_width=True,
+                key="btn_upload_from_matching"
+            ):
+                st.switch_page("pages/1_📤_Upload_RFP.py")
+        
         return
     
     # Get requirements
@@ -403,8 +389,22 @@ def main():
     # Initialize matcher for stats
     matcher = ServiceMatcher(services)
     
-    # Render header
-    render_header_stats(requirements, services, matches, matcher)
+    # Stats
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Requirements", len(requirements))
+    
+    with col2:
+        st.metric("Services", len(services))
+    
+    with col3:
+        matched_count = len([m for m in matches if m.score > 0])
+        st.metric("Matched", matched_count)
+    
+    with col4:
+        coverage = matcher.get_overall_coverage(matches)
+        st.metric("Coverage", f"{coverage:.1%}")
     
     st.markdown("---")
     

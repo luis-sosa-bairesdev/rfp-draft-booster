@@ -15,7 +15,7 @@ from src.utils.error_handler import LLMError, ValidationError, handle_errors, ha
 from src.utils.logger import setup_logger
 from utils.session import init_session_state, get_current_rfp
 from components.navigation_flow import render_navigation_buttons
-from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
+from components.ai_assistant import render_ai_assistant_in_sidebar
 
 
 def get_category_icon(category: RiskCategory) -> str:
@@ -218,30 +218,39 @@ def display_statistics(risks: List[Risk]):
 
 def main():
     """Main page content."""
-    # Render AI Assistant modal FIRST if open (so it's visible at top)
-    if st.session_state.get("show_ai_assistant", False):
-        render_ai_assistant_modal(key_suffix="risks", page_context="risks")
-        st.markdown("---")
+    # Render AI Assistant in sidebar
+    render_ai_assistant_in_sidebar()
     
-    # Header with AI Assistant button
-    col1, col2 = st.columns([5, 1])
-    with col1:
-        st.title("⚠️ Risk Detection & Analysis")
-        st.markdown("Identify and analyze potentially problematic clauses in RFPs")
-    with col2:
-        render_ai_assistant_button(key_suffix="risks")
+    # Header
+    st.title("⚠️ Risk Detection & Analysis")
+    st.markdown("Identify and analyze potentially problematic clauses in RFPs")
+    st.markdown("---")
     
     # Get current RFP
     rfp = get_current_rfp()
     
     if not rfp:
-        st.warning("⚠️ No RFP uploaded yet. Please upload an RFP first.")
-        if st.button("📤 Go to Upload", key="btn_go_to_upload"):
-            st.switch_page("pages/1_📤_Upload_RFP.py")
+        st.info(
+            "💡 **No RFP loaded yet.** Upload an RFP document to begin risk analysis. "
+            "The AI will detect and analyze potentially problematic clauses automatically!"
+        )
+        
+        # Link to upload page
+        col1, col2, col3 = st.columns([2, 3, 2])
+        with col2:
+            if st.button(
+                "📤 Upload RFP to Analyze Risks",
+                type="primary",
+                use_container_width=True,
+                key="btn_upload_from_risks"
+            ):
+                st.switch_page("pages/1_📤_Upload_RFP.py")
+        
         return
     
     if not rfp.extracted_text:
         st.error("❌ RFP text not extracted. Please process the RFP first.")
+        return
         if st.button("📋 Go to Requirements", key="btn_go_to_requirements"):
             st.switch_page("pages/2_📋_Requirements.py")
         return
@@ -302,33 +311,6 @@ def main():
             return
         
         detect_risks_ui(rfp, use_ai, use_patterns, llm_provider, min_confidence)
-
-
-@handle_errors(show_ui=True, allow_retry=True, context={"page": "risk_analysis", "function": "detect_risks"})
-def detect_risks_ui(rfp: RFP, use_ai: bool, use_patterns: bool, llm_provider: str, min_confidence: float):
-    """Detect risks with comprehensive error handling."""
-    
-    logger.info(f"Starting risk detection for RFP: {rfp.id}, AI: {use_ai}, Patterns: {use_patterns}")
-    
-    with st.spinner("Detecting risks... This may take a moment."):
-        llm_client = None
-        if use_ai:
-            if not llm_provider:
-                raise ValidationError("LLM provider required for AI detection", field="llm_provider")
-            llm_client = create_llm_client(provider=LLMProvider(llm_provider), fallback=True)
-        
-        risks = detect_risks_from_rfp(
-            rfp,
-            llm_client=llm_client,
-            min_confidence=min_confidence,
-            use_patterns=use_patterns,
-            use_ai=use_ai and llm_client is not None
-        )
-        
-        st.session_state.risks = risks
-        st.success(f"✅ Detected {len(risks)} risks")
-        logger.info(f"Detected {len(risks)} risks successfully")
-        st.rerun()
     
     # Display existing risks
     if st.session_state.risks:
@@ -382,9 +364,15 @@ def detect_risks_ui(rfp: RFP, use_ai: bool, use_patterns: bool, llm_provider: st
                         break
         
         with col3:
-            show_acknowledged = st.checkbox("Show Acknowledged", value=True, key="show_acknowledged")
+            show_acknowledged = st.checkbox(
+                "Show Acknowledged",
+                value=True,
+                key="show_acknowledged"
+            )
         
-        # Display table
+        st.markdown("---")
+        
+        # Display risks
         display_risk_table(
             st.session_state.risks,
             category_filter_value,
@@ -392,106 +380,83 @@ def detect_risks_ui(rfp: RFP, use_ai: bool, use_patterns: bool, llm_provider: st
             show_acknowledged
         )
         
-        # Import/Export options
         st.markdown("---")
-        st.markdown("### 📥 Import / Export Risks")
         
+        # Export section
+        st.markdown("### 📤 Export Risks")
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.markdown("#### 📤 Import Risks")
-            uploaded_file = st.file_uploader(
-                "Upload JSON file with risks",
-                type=['json'],
-                key="import_risks_file",
-                help="Upload a previously exported risks JSON file"
-            )
-            
-            if uploaded_file is not None:
-                try:
-                    import json
-                    risks_data = json.load(uploaded_file)
-                    
-                    # Validate and convert to Risk objects
-                    imported_risks = []
-                    for risk_dict in risks_data:
-                        try:
-                            risk = Risk.from_dict(risk_dict)
-                            imported_risks.append(risk)
-                        except Exception as e:
-                            logger.warning(f"Failed to import risk: {e}")
-                            continue
-                    
-                    if imported_risks:
-                        # Merge with existing risks (avoid duplicates)
-                        existing_ids = {r.id for r in st.session_state.risks}
-                        new_risks = [r for r in imported_risks if r.id not in existing_ids]
-                        
-                        if new_risks:
-                            st.session_state.risks.extend(new_risks)
-                            st.success(f"✅ Imported {len(new_risks)} risks from file")
-                            st.rerun()
-                        else:
-                            st.warning("⚠️ All risks from file already exist")
-                    else:
-                        st.error("❌ No valid risks found in file")
-                        
-                except json.JSONDecodeError:
-                    st.error("❌ Invalid JSON file format")
-                except Exception as e:
-                    logger.error(f"Error importing risks: {e}", exc_info=True)
-                    st.error(f"❌ Error importing risks: {str(e)}")
+            if st.button("📄 Export to Markdown", key="btn_export_md", use_container_width=True):
+                # Generate markdown
+                md_content = "# Risk Analysis Report\n\n"
+                for risk in st.session_state.risks:
+                    md_content += f"## {risk.category.value.title()} - {risk.severity.value.title()}\n\n"
+                    md_content += f"**Clause:** {risk.clause_text}\n\n"
+                    md_content += f"**Recommendation:** {risk.recommendation}\n\n"
+                    if risk.alternative_language:
+                        md_content += f"**Alternative:** {risk.alternative_language}\n\n"
+                    md_content += f"**Confidence:** {risk.confidence:.2f}\n\n"
+                    if risk.page_number:
+                        md_content += f"**Page:** {risk.page_number}\n\n"
+                    md_content += "---\n\n"
+                
+                st.download_button(
+                    label="⬇️ Download Markdown",
+                    data=md_content,
+                    file_name=f"risks_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
+                    mime="text/markdown",
+                    key="download_md"
+                )
         
         with col2:
-            st.markdown("#### 📄 Export to JSON")
-            if st.button("📄 Export to JSON", key="btn_export_json", use_container_width=True):
+            if st.button("📊 Export to JSON", key="btn_export_json", use_container_width=True):
                 import json
-                risks_json = json.dumps([r.to_dict() for r in st.session_state.risks], indent=2)
+                risks_json = json.dumps([r.to_dict() for r in st.session_state.risks], indent=2, default=str)
                 st.download_button(
-                    label="Download JSON",
+                    label="⬇️ Download JSON",
                     data=risks_json,
-                    file_name=f"risks_{rfp.id[:8]}.json",
-                    mime="application/json"
+                    file_name=f"risks_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                    mime="application/json",
+                    key="download_json"
                 )
         
         with col3:
-            st.markdown("#### 📊 Export to CSV")
-            if st.button("📊 Export to CSV", key="btn_export_csv", use_container_width=True):
-                import csv
-                import io
-                
-                output = io.StringIO()
-                writer = csv.writer(output)
-                writer.writerow([
-                    "ID", "Category", "Severity", "Clause Text", "Confidence",
-                    "Page", "Recommendation", "Alternative Language", "Acknowledged", "Notes"
-                ])
-                
-                for risk in st.session_state.risks:
-                    writer.writerow([
-                        risk.id,
-                        risk.category.value,
-                        risk.severity.value,
-                        risk.clause_text,
-                        risk.confidence,
-                        risk.page_number or "",
-                        risk.recommendation,
-                        risk.alternative_language,
-                        risk.acknowledged,
-                        risk.acknowledgment_notes
-                    ])
-                
-                st.download_button(
-                    label="Download CSV",
-                    data=output.getvalue(),
-                    file_name=f"risks_{rfp.id[:8]}.csv",
-                    mime="text/csv"
-                )
-    else:
-        st.info("👆 Click 'Detect Risks' to start analyzing the RFP for problematic clauses.")
+            if st.button("🔄 Clear All Risks", key="btn_clear_risks", use_container_width=True):
+                st.session_state.risks = []
+                st.success("✅ All risks cleared")
+                st.rerun()
     
-    # Navigation buttons
-    render_navigation_buttons('risk')
+    # Navigation
+    st.markdown("---")
+    render_navigation_buttons("Risk_Analysis")
+
+
+@handle_errors(show_ui=True, allow_retry=True, context={"page": "risk_analysis", "function": "detect_risks"})
+def detect_risks_ui(rfp: RFP, use_ai: bool, use_patterns: bool, llm_provider: str, min_confidence: float):
+    """Detect risks with comprehensive error handling."""
+    
+    logger.info(f"Starting risk detection for RFP: {rfp.id}, AI: {use_ai}, Patterns: {use_patterns}")
+    
+    with st.spinner("Detecting risks... This may take a moment."):
+        llm_client = None
+        if use_ai:
+            if not llm_provider:
+                raise ValidationError("LLM provider required for AI detection", field="llm_provider")
+            llm_client = create_llm_client(provider=LLMProvider(llm_provider), fallback=True)
+        
+        risks = detect_risks_from_rfp(
+            rfp,
+            llm_client=llm_client,
+            min_confidence=min_confidence,
+            use_patterns=use_patterns,
+            use_ai=use_ai and llm_client is not None
+        )
+        
+        st.session_state.risks = risks
+        st.success(f"✅ Detected {len(risks)} risks")
+        logger.info(f"Detected {len(risks)} risks successfully")
+        st.rerun()
 
 
 def render_add_risk_modal():
@@ -575,28 +540,27 @@ def render_add_risk_modal():
                 st.error("❌ Risk description is required")
                 return
             
-            if not impact.strip():
-                st.error("❌ Impact description is required")
-                return
-            
             if not recommendation.strip():
                 st.error("❌ Recommendation is required")
                 return
             
             # Create new risk
             from datetime import datetime
+            
+            # Build recommendation with impact and likelihood info
+            full_recommendation = f"[Likelihood: {likelihood}] {recommendation.strip()}"
+            if impact.strip():
+                full_recommendation = f"{impact.strip()}\n\nMitigation: {recommendation.strip()}\n\n[Likelihood: {likelihood}]"
+            
             new_risk = Risk(
                 rfp_id=st.session_state.rfp.id,
                 clause_text=clause_text.strip(),
                 category=RiskCategory(category),
                 severity=RiskSeverity(severity),
-                likelihood=likelihood,
-                impact=impact.strip(),
-                recommendation=recommendation.strip(),
-                alternative_language=alternative_language.strip() if alternative_language.strip() else None,
+                recommendation=full_recommendation,
+                alternative_language=alternative_language.strip() if alternative_language.strip() else "",
                 confidence=1.0,  # Manual risks have 100% confidence
                 page_number=page_number,
-                detected_by="manual",
                 created_at=datetime.now(),
                 updated_at=datetime.now()
             )

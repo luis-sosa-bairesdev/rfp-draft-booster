@@ -16,7 +16,7 @@ from src.utils.logger import setup_logger
 from src.utils.duplicate_detector import get_duplicate_requirement_groups
 from utils.session import init_session_state, get_current_rfp
 from components.navigation_flow import render_navigation_buttons
-from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
+from components.ai_assistant import render_ai_assistant_in_sidebar
 
 
 def get_category_icon(category: RequirementCategory) -> str:
@@ -313,10 +313,16 @@ def display_extraction_controls():
 
 
 @handle_errors(show_ui=True, allow_retry=True, context={"page": "requirements", "function": "extract_requirements"})
-def extract_requirements_ui(rfp: RFP, llm_provider: LLMProvider, min_confidence: float):
-    """Extract requirements with comprehensive error handling."""
+def extract_requirements_ui(rfp: RFP, llm_provider: str, min_confidence: float):
+    """Extract requirements with comprehensive error handling.
     
-    logger.info(f"Starting requirement extraction for RFP: {rfp.id}, provider: {llm_provider.value}")
+    Args:
+        rfp: RFP object
+        llm_provider: Provider name as string (e.g., "gemini", "groq", "ollama")
+        min_confidence: Minimum confidence threshold
+    """
+    
+    logger.info(f"Starting requirement extraction for RFP: {rfp.id}, provider: {llm_provider}")
     
     with st.spinner("🤖 Extracting requirements... This may take a few moments."):
         # Create LLM client
@@ -385,144 +391,153 @@ def display_statistics(requirements: List[Requirement]):
 
 def main():
     """Main requirements page."""
-    # Render AI Assistant modal FIRST if open
-    if st.session_state.get("show_ai_assistant", False):
-        render_ai_assistant_modal(key_suffix="requirements", page_context="requirements")
-        st.markdown("---")
+    # Render AI Assistant in sidebar
+    render_ai_assistant_in_sidebar()
     
-    # Header with AI Assistant button
-    col1, col2 = st.columns([5, 1])
-    with col1:
-        st.title("📋 Requirements Extraction")
-        st.markdown("Extract and manage requirements from your RFP using AI")
-    with col2:
-        render_ai_assistant_button(key_suffix="requirements")
+    # Header
+    st.title("📋 Requirements Extraction")
+    st.markdown("Extract and manage requirements from your RFP using AI")
+    st.markdown("---")
     
     # Check if RFP is loaded
     rfp = get_current_rfp()
     if not rfp:
-        st.warning("⚠️ No RFP uploaded yet. Please upload an RFP first.")
-        if st.button("📤 Go to Upload", key="btn_go_to_upload_main"):
-            st.switch_page("pages/1_📤_Upload_RFP.py")
+        st.info(
+            "💡 **No RFP loaded yet.** Upload an RFP document to begin extracting requirements. "
+            "The AI will analyze your RFP and identify all functional, technical, and compliance requirements!"
+        )
+        
+        # Link to upload page
+        col1, col2, col3 = st.columns([2, 3, 2])
+        with col2:
+            if st.button(
+                "📤 Upload RFP to Extract Requirements",
+                type="primary",
+                use_container_width=True,
+                key="btn_upload_from_requirements"
+            ):
+                st.switch_page("pages/1_📤_Upload_RFP.py")
+        
         return
     
     # Display extraction controls
-    if display_extraction_controls():
+    display_extraction_controls()
+    
+    st.divider()
+    
+    # Display statistics if requirements exist
+    if st.session_state.requirements:
+        display_statistics(st.session_state.requirements)
         st.divider()
-        
-        # Display statistics if requirements exist
-        if st.session_state.requirements:
-            display_statistics(st.session_state.requirements)
-            st.divider()
-        
-        # Filters
-        st.markdown("### 🔍 Filters")
+    
+    # Filters
+    st.markdown("### 🔍 Filters")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        filter_category = st.selectbox(
+            "Filter by Category",
+            options=["All"] + [c.value for c in RequirementCategory],
+            format_func=lambda x: "All" if x == "All" else get_category_icon(RequirementCategory(x)) + " " + RequirementCategory(x).value.title(),
+            key="filter_category_requirements"
+        )
+    with col2:
+        filter_priority = st.selectbox(
+            "Filter by Priority",
+            options=["All"] + [p.value for p in RequirementPriority],
+            format_func=lambda x: "All" if x == "All" else RequirementPriority(x).value.upper(),
+            key="filter_priority_requirements"
+        )
+    with col3:
+        show_only_unverified = st.checkbox("Show only unverified", value=False, key="show_only_unverified")
+    
+    st.divider()
+    
+    # Display requirements table
+    requirements_to_show = st.session_state.requirements
+    if show_only_unverified:
+        requirements_to_show = [r for r in requirements_to_show if not r.verified]
+    
+    display_requirement_table(requirements_to_show, filter_category if filter_category != "All" else None, filter_priority if filter_priority != "All" else None)
+    
+    st.divider()
+    
+    # Add manual requirement
+    display_add_requirement_form()
+    
+    # Import/Export options
+    if st.session_state.requirements:
+        st.divider()
+        st.markdown("### 💾 Import / Export Requirements")
         col1, col2, col3 = st.columns(3)
+        
         with col1:
-            filter_category = st.selectbox(
-                "Filter by Category",
-                options=["All"] + [c.value for c in RequirementCategory],
-                format_func=lambda x: "All" if x == "All" else get_category_icon(RequirementCategory(x)) + " " + RequirementCategory(x).value.title(),
-                key="filter_category_requirements"
+            st.markdown("#### 📤 Import Requirements")
+            uploaded_file = st.file_uploader(
+                "Upload JSON file with requirements",
+                type=['json'],
+                key="import_requirements_file",
+                help="Upload a previously exported requirements JSON file"
             )
-        with col2:
-            filter_priority = st.selectbox(
-                "Filter by Priority",
-                options=["All"] + [p.value for p in RequirementPriority],
-                format_func=lambda x: "All" if x == "All" else RequirementPriority(x).value.upper(),
-                key="filter_priority_requirements"
-            )
-        with col3:
-            show_only_unverified = st.checkbox("Show only unverified", value=False, key="show_only_unverified")
-        
-        st.divider()
-        
-        # Display requirements table
-        requirements_to_show = st.session_state.requirements
-        if show_only_unverified:
-            requirements_to_show = [r for r in requirements_to_show if not r.verified]
-        
-        display_requirement_table(requirements_to_show, filter_category if filter_category != "All" else None, filter_priority if filter_priority != "All" else None)
-        
-        st.divider()
-        
-        # Add manual requirement
-        display_add_requirement_form()
-        
-        # Import/Export options
-        if st.session_state.requirements:
-            st.divider()
-            st.markdown("### 💾 Import / Export Requirements")
-            col1, col2, col3 = st.columns(3)
             
-            with col1:
-                st.markdown("#### 📤 Import Requirements")
-                uploaded_file = st.file_uploader(
-                    "Upload JSON file with requirements",
-                    type=['json'],
-                    key="import_requirements_file",
-                    help="Upload a previously exported requirements JSON file"
-                )
-                
-                if uploaded_file is not None:
-                    try:
-                        import json
-                        requirements_data = json.load(uploaded_file)
-                        
-                        # Validate and convert to Requirement objects
-                        imported_requirements = []
-                        for req_dict in requirements_data:
-                            try:
-                                req = Requirement.from_dict(req_dict)
-                                imported_requirements.append(req)
-                            except Exception as e:
-                                logger.warning(f"Failed to import requirement: {e}")
-                                continue
-                        
-                        if imported_requirements:
-                            # Merge with existing requirements (avoid duplicates)
-                            existing_ids = {r.id for r in st.session_state.requirements}
-                            new_requirements = [r for r in imported_requirements if r.id not in existing_ids]
-                            
-                            if new_requirements:
-                                st.session_state.requirements.extend(new_requirements)
-                                st.success(f"✅ Imported {len(new_requirements)} requirements from file")
-                                st.rerun()
-                            else:
-                                st.warning("⚠️ All requirements from file already exist")
-                        else:
-                            st.error("❌ No valid requirements found in file")
-                            
-                    except json.JSONDecodeError:
-                        st.error("❌ Invalid JSON file format")
-                    except Exception as e:
-                        logger.error(f"Error importing requirements: {e}", exc_info=True)
-                        st.error(f"❌ Error importing requirements: {str(e)}")
-            
-            with col2:
-                st.markdown("#### 📥 Export to JSON")
-                if st.button("📥 Export to JSON", key="btn_export_json", use_container_width=True):
+            if uploaded_file is not None:
+                try:
                     import json
-                    requirements_dict = [r.to_dict() for r in st.session_state.requirements]
-                    st.download_button(
-                        label="Download JSON",
-                        data=json.dumps(requirements_dict, indent=2),
-                        file_name=f"requirements_{rfp.id[:8]}.json",
-                        mime="application/json"
-                    )
-            
-            with col3:
-                st.markdown("#### 📄 Export to CSV")
-                if st.button("📄 Export to CSV", key="btn_export_csv", use_container_width=True):
-                    import pandas as pd
-                    df = pd.DataFrame([r.to_dict() for r in st.session_state.requirements])
-                    csv = df.to_csv(index=False)
-                    st.download_button(
-                        label="Download CSV",
-                        data=csv,
-                        file_name=f"requirements_{rfp.id[:8]}.csv",
-                        mime="text/csv"
-                    )
+                    requirements_data = json.load(uploaded_file)
+                    
+                    # Validate and convert to Requirement objects
+                    imported_requirements = []
+                    for req_dict in requirements_data:
+                        try:
+                            req = Requirement.from_dict(req_dict)
+                            imported_requirements.append(req)
+                        except Exception as e:
+                            logger.warning(f"Failed to import requirement: {e}")
+                            continue
+                    
+                    if imported_requirements:
+                        # Merge with existing requirements (avoid duplicates)
+                        existing_ids = {r.id for r in st.session_state.requirements}
+                        new_requirements = [r for r in imported_requirements if r.id not in existing_ids]
+                        
+                        if new_requirements:
+                            st.session_state.requirements.extend(new_requirements)
+                            st.success(f"✅ Imported {len(new_requirements)} requirements from file")
+                            st.rerun()
+                        else:
+                            st.warning("⚠️ All requirements from file already exist")
+                    else:
+                        st.error("❌ No valid requirements found in file")
+                        
+                except json.JSONDecodeError:
+                    st.error("❌ Invalid JSON file format")
+                except Exception as e:
+                    logger.error(f"Error importing requirements: {e}", exc_info=True)
+                    st.error(f"❌ Error importing requirements: {str(e)}")
+        
+        with col2:
+            st.markdown("#### 📥 Export to JSON")
+            if st.button("📥 Export to JSON", key="btn_export_json", use_container_width=True):
+                import json
+                requirements_dict = [r.to_dict() for r in st.session_state.requirements]
+                st.download_button(
+                    label="Download JSON",
+                    data=json.dumps(requirements_dict, indent=2),
+                    file_name=f"requirements_{rfp.id[:8]}.json",
+                    mime="application/json"
+                )
+        
+        with col3:
+            st.markdown("#### 📄 Export to CSV")
+            if st.button("📄 Export to CSV", key="btn_export_csv", use_container_width=True):
+                import pandas as pd
+                df = pd.DataFrame([r.to_dict() for r in st.session_state.requirements])
+                csv = df.to_csv(index=False)
+                st.download_button(
+                    label="Download CSV",
+                    data=csv,
+                    file_name=f"requirements_{rfp.id[:8]}.csv",
+                    mime="text/csv"
+                )
     
     # Navigation buttons
     render_navigation_buttons('requirements')

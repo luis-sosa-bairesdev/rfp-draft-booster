@@ -178,11 +178,84 @@ def render_ai_assistant_modal(key_suffix: str = "", page_context: str = ""):
 
 
 def render_ai_assistant_in_sidebar():
-    """Render AI Assistant button in sidebar (alternative placement)."""
+    """Render AI Assistant button and modal in sidebar."""
     with st.sidebar:
         st.markdown("---")
+        
+        # Button to open chat
         if st.button("💬 Ask AI Assistant", key="btn_sidebar_ai_assistant", 
                      use_container_width=True, help="Get contextual help"):
             st.session_state.show_ai_assistant = True
             st.rerun()
+        
+        # If chat is open, render it IN THE SIDEBAR
+        if st.session_state.get("show_ai_assistant", False):
+            st.markdown("---")
+            
+            # Initialize assistant
+            assistant = init_ai_assistant()
+            
+            # Get context from session state
+            rfp = get_current_rfp()
+            requirements = st.session_state.get("requirements", [])
+            risks = st.session_state.get("risks", [])
+            
+            # Header with close button
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.markdown("#### 💬 AI Chat")
+            with col2:
+                if st.button("✕", key="btn_close_sidebar_chat", help="Close"):
+                    st.session_state.show_ai_assistant = False
+                    st.rerun()
+            
+            st.markdown("---")
+            
+            # Display conversation history (last 5 messages)
+            history = assistant.get_history()
+            if history:
+                for msg in history[-5:]:  # Show last 5 only (sidebar is narrow)
+                    role = msg["role"]
+                    content = msg["content"]
+                    
+                    if role == "user":
+                        st.markdown(f"**You:** {content}")
+                    else:
+                        st.markdown(f"**AI:** {content}")
+                    st.markdown("---")
+            
+            # Input area
+            question = st.text_input(
+                "Ask a question:",
+                key="sidebar_ai_input",
+                placeholder="e.g., What are the risks?"
+            )
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("📤 Send", key="btn_sidebar_send", use_container_width=True, type="primary"):
+                    if question and question.strip():
+                        with st.spinner("🤔..."):
+                            try:
+                                # Determine page context from current page
+                                page_context = "general"
+                                response = assistant.ask(
+                                    question=question,
+                                    rfp=rfp,
+                                    requirements=requirements,
+                                    risks=risks,
+                                    page_context=page_context
+                                )
+                                # Clear input
+                                if "sidebar_ai_input" in st.session_state:
+                                    del st.session_state["sidebar_ai_input"]
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"❌ {str(e)}")
+            
+            with col2:
+                if st.button("🗑️ Clear", key="btn_sidebar_clear", use_container_width=True):
+                    assistant.clear_history()
+                    st.rerun()
+
 

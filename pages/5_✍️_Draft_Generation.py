@@ -19,7 +19,7 @@ from src.utils.error_handler import LLMError, ValidationError, handle_errors, ha
 from src.utils.logger import setup_logger
 from utils.session import init_session_state, get_current_rfp
 from components.navigation_flow import render_navigation_buttons
-from components.ai_assistant import render_ai_assistant_button, render_ai_assistant_modal
+from components.ai_assistant import render_ai_assistant_in_sidebar
 
 logger = setup_logger(__name__)
 
@@ -138,24 +138,33 @@ def export_to_docx(
 
 def main():
     """Main page function."""
-    # Render AI Assistant modal FIRST if open (so it's visible at top)
-    if st.session_state.get("show_ai_assistant", False):
-        render_ai_assistant_modal(key_suffix="draft", page_context="draft")
-        st.markdown("---")
+    # Render AI Assistant in sidebar
+    render_ai_assistant_in_sidebar()
     
-    # Header with AI Assistant button
-    col1, col2 = st.columns([5, 1])
-    with col1:
-        st.title("✍️ Draft Generation")
-    with col2:
-        render_ai_assistant_button(key_suffix="draft")
+    # Header
+    st.title("✍️ Draft Generation")
+    st.markdown("---")
     
     # Check prerequisites
     can_generate, error_msg = check_prerequisites()
     
     if not can_generate:
-        st.warning(f"⚠️ {error_msg}")
-        st.info("💡 **Next Steps:**\n1. Upload an RFP\n2. Extract requirements\n3. Review and acknowledge critical risks")
+        st.info(
+            f"💡 **{error_msg}** Complete the previous steps to generate your draft response. "
+            "The AI will create a comprehensive proposal based on your RFP analysis!"
+        )
+        
+        # Link to upload page
+        col1, col2, col3 = st.columns([2, 3, 2])
+        with col2:
+            if st.button(
+                "📤 Upload RFP to Start",
+                type="primary",
+                use_container_width=True,
+                key="btn_upload_from_draft"
+            ):
+                st.switch_page("pages/1_📤_Upload_RFP.py")
+        
         return
     
     # Get current data
@@ -283,75 +292,6 @@ def main():
             return
         
         generate_draft_ui(rfp, requirements, risks, approved_matches, llm_provider, instructions, tone, audience, word_count)
-
-
-@handle_errors(show_ui=True, allow_retry=True, context={"page": "draft_generation", "function": "generate_draft"})
-def generate_draft_ui(rfp: RFP, requirements: List[Requirement], risks: List[Risk], approved_matches: list, 
-                      llm_provider: str, instructions: str, tone: str, audience: str, word_count: int):
-    """Generate draft with comprehensive error handling."""
-    
-    logger.info(f"Starting draft generation for RFP: {rfp.id}, provider: {llm_provider}")
-    
-    with st.spinner("🤖 Generating draft... This may take 1-2 minutes."):
-        # Create LLM client
-        llm_client = create_llm_client(provider=LLMProvider(llm_provider), fallback=True)
-        
-        # Create generator
-        generator = DraftGenerator(llm_client=llm_client, temperature=0.7)
-        
-        # Generate draft
-        draft = generator.generate_draft(
-            rfp=rfp,
-            requirements=requirements,
-            risks=risks,
-            service_matches=approved_matches,
-            instructions=instructions,
-            tone=tone,
-            audience=audience,
-            word_count=word_count
-        )
-        
-        # Store in session state
-        st.session_state.draft = draft
-        
-        logger.info(f"Draft generated: {draft.word_count} words, {draft.section_count} sections")
-        st.success(f"✅ Draft generated successfully! ({draft.word_count} words, {draft.section_count} sections)")
-        st.rerun()
-    
-    # Handle section regeneration
-    for section_type in ["executive_summary", "approach", "services", "timeline", "pricing", "risk_mitigation"]:
-        if st.session_state.get(f"regenerating_{section_type}", False):
-            draft = st.session_state.get("draft")
-            if draft:
-                if not llm_provider or not available_providers:
-                    st.error("Please configure an LLM provider to regenerate sections")
-                    st.session_state[f"regenerating_{section_type}"] = False
-                    return
-                
-                with st.spinner(f"🔄 Regenerating {section_type.replace('_', ' ').title()}..."):
-                    try:
-                        llm_client = create_llm_client(provider=LLMProvider(llm_provider), fallback=True)
-                        generator = DraftGenerator(llm_client=llm_client)
-                        
-                        generator.regenerate_section(
-                            draft=draft,
-                            section_type=section_type,
-                            rfp=rfp,
-                            requirements=requirements,
-                            risks=risks,
-                            service_matches=approved_matches,
-                            instructions=instructions,
-                            tone=tone,
-                            audience=audience
-                        )
-                        
-                        st.session_state[f"regenerating_{section_type}"] = False
-                        st.success(f"✅ Section regenerated!")
-                        st.rerun()
-                    except Exception as e:
-                        logger.error(f"Error regenerating section: {e}")
-                        st.error(f"❌ Error: {str(e)}")
-                        st.session_state[f"regenerating_{section_type}"] = False
     
     # Display draft if exists
     draft = st.session_state.get("draft")
@@ -434,9 +374,43 @@ def generate_draft_ui(rfp: RFP, requirements: List[Requirement], risks: List[Ris
             if st.button("📄 Export to DOCX", key="btn_export_docx"):
                 export_to_docx(draft, rfp, approved_matches)
     
-
     # Navigation buttons
     render_navigation_buttons('draft')
+
+
+@handle_errors(show_ui=True, allow_retry=True, context={"page": "draft_generation", "function": "generate_draft"})
+def generate_draft_ui(rfp: RFP, requirements: List[Requirement], risks: List[Risk], approved_matches: list, 
+                      llm_provider: str, instructions: str, tone: str, audience: str, word_count: int):
+    """Generate draft with comprehensive error handling."""
+    
+    logger.info(f"Starting draft generation for RFP: {rfp.id}, provider: {llm_provider}")
+    
+    with st.spinner("🤖 Generating draft... This may take 1-2 minutes."):
+        # Create LLM client
+        llm_client = create_llm_client(provider=LLMProvider(llm_provider), fallback=True)
+        
+        # Create generator
+        generator = DraftGenerator(llm_client=llm_client, temperature=0.7)
+        
+        # Generate draft
+        draft = generator.generate_draft(
+            rfp=rfp,
+            requirements=requirements,
+            risks=risks,
+            service_matches=approved_matches,
+            instructions=instructions,
+            tone=tone,
+            audience=audience,
+            word_count=word_count
+        )
+        
+        # Store in session state
+        st.session_state.draft = draft
+        
+        logger.info(f"Draft generated: {draft.word_count} words, {draft.section_count} sections")
+        st.success(f"✅ Draft generated successfully! ({draft.word_count} words, {draft.section_count} sections)")
+        st.rerun()
+
 
 
 if __name__ == "__main__":

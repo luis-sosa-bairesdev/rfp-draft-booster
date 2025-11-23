@@ -480,7 +480,7 @@ Phase 4: Integration
 
 **During Implementation:**
 - Update `deliverables/epic-XX-name.md` with progress
-- Commit frequently (after each working unit)
+- **⚠️ DO NOT make partial commits** - Only commit when entire epic is complete
 - Follow existing code patterns
 - Use type hints and docstrings
 - Handle errors gracefully
@@ -673,10 +673,10 @@ async def test_export_fallback_to_docx(page: Page):
 
 ### Step 2.6: Verify Code Coverage
 
-**Action:** Ensure coverage stays above 80%
+**Action:** Ensure coverage meets requirements
 
 ```bash
-# Run coverage
+# Run coverage for backend
 pytest --cov=src --cov-report=term-missing --cov-report=html
 
 # Open HTML report
@@ -691,24 +691,47 @@ src/models/document.py               45      2    96%   78-79
 src/services/google_docs.py         120      8    93%   145-152
 src/utils/markdown_converter.py      60      4    93%   89-92
 ---------------------------------------------------------------
-TOTAL                              1250     50    83%
+TOTAL                              1250     50    96%
 ```
 
-**Coverage Targets (MANDATORY):**
-- **Backend (src/models, src/services, src/utils): >80%**
-- **Frontend (pages/, src/components/): >70%** (unit + E2E combined)
+**Coverage Requirements (MANDATORY - Updated 2025-11-22):**
 
-**If coverage < 80%:**
+1. **Backend (src/): ≥80% unit test coverage** ✅
+   - Models: `src/models/` 
+   - Services: `src/services/`
+   - Utils: `src/utils/`
+   - Measured with: `pytest --cov=src`
+
+2. **Frontend (pages/): Quality over Quantity** ✅
+   - **≥10 E2E Critical Regression Tests**
+   - **Manual regression test passes** (all pages load without errors)
+   - **Note:** 40% of frontend is untestable Streamlit DSL (`st.title`, `st.markdown`, layouts)
+   - **Maximum achievable:** 60-70% with reasonable effort
+   - See `deliverables/frontend-coverage-analysis.md` for details
+
+3. **Regression Prevention:** ✅
+   - Manual regression script: `manual_regression_test.py`
+   - E2E critical tests: `tests/test_e2e/test_critical_regression.py`
+   - All bugs documented with root cause analysis
+
+**If Backend coverage < 80%:**
 - ✅ Add more unit tests for uncovered lines
 - ✅ Focus on critical paths first (happy path, error handling)
-- ✅ Use E2E tests if unit tests are not feasible (UI interactions)
 - ✅ Check `htmlcov/index.html` for specific uncovered lines
+- ❌ **DO NOT proceed to Phase 3 until ≥80%**
+
+**If Frontend quality insufficient:**
+- ✅ Add E2E tests for critical user flows
+- ✅ Ensure manual regression test passes
+- ✅ Document any bugs found and fixed
+- ✅ Verify all 6 main pages load without Python errors
 
 **Lines Allowed to Skip:**
 - Import statements
 - Type checking blocks (`if TYPE_CHECKING:`)
 - Abstract methods
 - Defensive programming (should never happen cases)
+- Streamlit DSL (st.title, st.markdown, st.columns, etc.)
 
 ---
 
@@ -749,13 +772,17 @@ TOTAL                              1250     50    83%
 - Ignore code coverage
 - Create new files for updates
 - Implement without tests
+- **Make partial commits during epic implementation**
+- **Commit after each feature or fix**
+- **Commit work-in-progress code**
 
 **✅ DO:**
 - Run regression tests FIRST and AFTER implementation
 - Fix broken tests immediately
 - Maintain >80% coverage (backend), >70% (frontend)
 - Update the SAME epic file continuously
-- Commit working code frequently
+- **Make ONE comprehensive commit when epic is 100% complete**
+- **Commit AFTER Confluence upload (Step 3.4)**
 - Follow layered implementation order
 
 ---
@@ -795,7 +822,9 @@ pytest tests/ -v --cov=src --cov-report=term
 **Validation Checklist:**
 - [ ] ALL regression tests pass (398 old tests)
 - [ ] ALL new tests pass (35 new tests)
-- [ ] Code coverage >80% (backend), >70% (frontend)
+- [ ] Code coverage ≥80% (backend - MANDATORY)
+- [ ] ≥10 E2E critical tests (frontend - MANDATORY)
+- [ ] Manual regression test passes (all pages load)
 - [ ] No linter errors
 - [ ] All acceptance criteria met
 - [ ] Manual testing completed
@@ -1082,22 +1111,89 @@ The template includes **improved markdown → HTML conversion** that produces cl
 
 ### Step 3.5: Final Commit (AFTER Confluence Upload)
 
-**Action:** Commit the completion summary
+**⚠️ CRITICAL PRE-COMMIT VALIDATION:**
+
+**BEFORE committing, you MUST verify:**
+
+1. **✅ Code Coverage >= 80%**
+   ```bash
+   pytest tests/ --cov --cov-report=term
+   # MUST show: "TOTAL ... >= 80%"
+   # Coverage config in .coveragerc excludes UI components (src/components/, pages/)
+   # Backend core (models, services, utils) MUST be >= 80%
+   ```
+
+2. **✅ All Tests Passing**
+   ```bash
+   pytest tests/ -v
+   # MUST show: "XXX passed, 0 failed"
+   ```
+
+3. **✅ Manual Regression Test**
+   ```bash
+   python manual_regression_test.py
+   # MUST show: "✅ ALL PAGES LOADED WITHOUT ERRORS!"
+   ```
+
+4. **✅ No Linter Errors**
+   ```bash
+   # Verify modified files compile
+   python -m py_compile pages/*.py src/**/*.py
+   ```
+
+**🚫 IF ANY CHECK FAILS → DO NOT COMMIT → FIX FIRST**
+
+**Action:** Commit ALL epic changes in ONE commit
 
 ```bash
-git add deliverables/epic-07-google-docs-export.md
-git commit -m "docs: add Epic 7 completion summary
+# Stage ALL epic changes (models, services, UI, tests, docs)
+git add -A
 
-- Complete completion summary appended to epic file
-- Test coverage: 83%
-- All stories closed in Jira (see epic for full list)
-- Epic RDBP-92 complete and closed
-- Confluence documentation uploaded
+# Single comprehensive commit for the entire epic
+git commit -m "feat(epic-X): [Epic Title] - Complete implementation
 
-Ready for production deployment"
+Epic Key: RDBP-XX
+Sprint: Sprint X - [Sprint Name]
 
+## Features Delivered
+- Feature 1: Description
+- Feature 2: Description
+- Feature 3: Description
+
+## Implementation Details
+- Created: [list new files]
+- Modified: [list modified files]
+- Tests: X unit tests + Y E2E tests
+- Coverage: XX% (Backend core: models, services, utils)
+
+## Jira
+- Epic: RDBP-XX (Closed)
+- Stories: RDBP-XX1 to RDBP-XX12 (All closed)
+
+## Documentation
+- Epic documentation: deliverables/epic-XX-name.md
+- Confluence: [URL from upload script]
+
+Status: ✅ Complete and ready for production"
+
+# Push
 git push origin main
 ```
+
+**⚠️ CRITICAL COMMIT RULES:**
+- ✅ **ONE commit per epic** - Contains all changes
+- ✅ **Commit ONLY when epic is 100% complete**
+- ✅ **Commit AFTER Confluence upload** (Step 3.4)
+- ❌ **NO partial commits** during implementation
+- ❌ **NO commits after each step/feature**
+- ❌ **NO "work in progress" commits**
+
+**Why ONE commit per epic:**
+1. **Clean git history** - One entry per epic, easy to track
+2. **Atomic changes** - All related code in one commit
+3. **Easy rollback** - Revert entire epic if needed
+4. **Clear milestones** - Commits = completed epics
+5. **Better code review** - Review complete feature, not fragments
 
 ---
 
@@ -1219,9 +1315,12 @@ git push origin main
 
 - [ ] **Step 5: Final commit (AFTER Confluence upload)**
   - [ ] Verify Confluence page was uploaded successfully
-  - [ ] Commit completion summary: `git add deliverables/epic-XX-name.md`
-  - [ ] Commit: `git commit -m "docs: add Epic X completion summary\n\n- Confluence documentation uploaded\n- All stories closed in Jira"`
+  - [ ] Stage ALL epic changes: `git add -A`
+  - [ ] Create ONE comprehensive commit for entire epic
+  - [ ] Include epic key, features, implementation details, tests, Jira status
+  - [ ] Commit message format: `feat(epic-X): [Epic Title] - Complete implementation`
   - [ ] Push: `git push origin main`
+  - [ ] ⚠️ **IMPORTANT:** This is the ONLY commit for the epic - NO partial commits during implementation
 
 **Total:** Varies by epic size (typically 20-35 steps) | **Time:** 4-6 days | **Output:** Complete, tested, documented epic
 
